@@ -1,14 +1,20 @@
 from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
 
-import requests
+import datetime
+
+import altair as alt
+import pandas as pd
+
+import spacy
+import pytextrank
 
 from bs4 import BeautifulSoup
 
 class FormularioPublicado(models.Model):
     ide_formulario_publicado = models.AutoField(primary_key=True)
     ide_usuario = models.TextField()  # This field type is a guess.
-    tex_url_formulario_publicado = models.TextField()  # This field type is a guess.
+    tex_url_formulario_publicado = models.TextField(db_index=True)  # This field type is a guess.
     nom_titulo_formulario_publicado = models.TextField()  # This field type is a guess.
     des_formulario_publicado = models.TextField(blank=True, null=True)  # This field type is a guess.
     cod_tipo = models.TextField()  # This field type is a guess.
@@ -28,7 +34,6 @@ class FormularioPublicado(models.Model):
     tex_label_link_externo = models.TextField(blank=True, null=True)  # This field type is a guess.
 
     class Meta:
-        managed = False
         db_table = 'Formulario_Publicado'
 
 class Resposta(models.Model):
@@ -38,7 +43,6 @@ class Resposta(models.Model):
     dat_resposta = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = 'Resposta'
 
 class ItemResposta(models.Model):
@@ -50,8 +54,42 @@ class ItemResposta(models.Model):
     tex_texto_livre = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = 'Item_Resposta'
+
+class Posicionamento(models.Model):
+    ide_posicionamento = models.AutoField(primary_key=True)
+    ide_formulario_publicado = models.ForeignKey('FormularioPublicado', null=True, on_delete=models.SET_NULL, db_column='ide_formulario_publicado')
+    ide_resposta = models.ForeignKey('Resposta', null=True, on_delete=models.SET_NULL, db_column='ide_resposta')
+    ide_usuario = models.TextField(blank=True, null=True)
+    nom_usuario = models.TextField(blank=True, null=True)
+    ind_positivo = models.IntegerField()
+    qtd_curtidas = models.IntegerField()
+    des_conteudo = models.TextField(blank=True, null=True)
+    dat_posicionamento = models.DateTimeField(blank=True, null=True)
+    cod_autorizado = models.IntegerField(null=True)
+    qtd_descurtidas = models.IntegerField(null=True)
+
+
+    class Meta:
+        db_table = 'Posicionamento'
+
+class PosicionamentoExtra(models.Model):
+    class ClassificationTypes(models.IntegerChoices):
+        UNRATED = (0, 'Unrated')
+        INSIGHTFUL = (1, 'Insightful')
+        NOT_INSIGHTFUL = (-1, 'Not insightful')
+    posicionamento = models.OneToOneField('Posicionamento', on_delete=models.DO_NOTHING)
+    classification = models.IntegerField(
+        choices=ClassificationTypes.choices,
+        default=ClassificationTypes.UNRATED)
+
+class Curtida(models.Model):
+    ide_posicionamento = models.ForeignKey('Posicionamento', null=True, on_delete=models.SET_NULL, db_column='ide_posicionamento')
+    ide_usuario = models.TextField(blank=True, null=True)
+    ide_formulario_publicado = models.ForeignKey('FormularioPublicado', null=True, on_delete=models.SET_NULL, db_column='ide_formulario_publicado')
+    ind_positivo = models.IntegerField(null=True)
+    class Meta:
+        db_table = 'Curtida'
 
 class Proposicao(models.Model):
 
@@ -83,12 +121,92 @@ class Proposicao(models.Model):
 
     def nome(self):
         return '%s %s/%s' % (self.sigla_tipo, self.numero, self.ano)
+    # def __str__(self):
+    #     return '%s %s/%s' % (self.sigla_tipo, self.numero, self.ano)
+    def enquete_votos_data(self):
+        qs = ItemResposta.objects.filter(ide_resposta__ide_formulario_publicado=self.formulario_publicado.pk) \
+                                 .values('num_indice_opcao') \
+                                 .annotate(votos=models.Count('num_indice_opcao'))
+
+        source = pd.DataFrame({
+            'cats': ['Concordo totalmente', 'Concordo na maior parte', 'Estou indeciso', 'Discordo na maior parte', 'Discordo totalmente'],
+            'votos': [qs.get(num_indice_opcao=4)['votos'],
+                      qs.get(num_indice_opcao=3)['votos'],
+                      qs.get(num_indice_opcao=2)['votos'], 
+                      qs.get(num_indice_opcao=1)['votos'], 
+                      qs.get(num_indice_opcao=0)['votos']]
+        })
+        return source
+
+    def enquete_votos_chart_small(self):
+        source = self.enquete_votos_data()
+        chart = alt.Chart(source).mark_bar().encode(
+            x=alt.X('cats', axis=alt.Axis(labels=False, ticks=False), title=None, type='nominal', sort=None),
+            y=alt.Y('votos', axis=alt.Axis(labels=False, ticks=False), title=None),
+            color=alt.Color('cats', title='Escala Likert', scale=alt.Scale(
+                range=['rgb(89,162,74)', 'rgb(157,198,77)', 'rgb(102,143,205)', 'rgb(215,51,23)', 'rgb(155,37,17)']), sort=None),
+            tooltip=['cats', 'votos']
+        ).configure_axis(
+            grid=False
+        ).properties(
+            width=120,
+            height=80
+        )
+        return chart.to_json()
+
+    def enquete_votos_chart_large(self):
+        source = self.enquete_votos_data()
+        chart = alt.Chart(source).mark_bar().encode(
+            x=alt.X('cats', axis=alt.Axis(labels=False, ticks=False), title=None, type='nominal', sort=None),
+            y=alt.Y('votos', axis=alt.Axis(labels=False, ticks=False), title=None),
+            color=alt.Color('cats', title='Escala Likert', scale=alt.Scale(
+                range=['rgb(89,162,74)', 'rgb(157,198,77)', 'rgb(102,143,205)', 'rgb(215,51,23)', 'rgb(155,37,17)']), sort=None),
+            tooltip=['cats', 'votos']
+        ).configure_axis(
+            grid=False
+        ).properties(
+            width=600,
+            height=200
+        )
+        return chart.to_json()
+
+    def enquete_pontos_top_ranked(self):
+        queryset = Posicionamento.objects.filter(ide_formulario_publicado=self.formulario_publicado)
+
+        posicionamentos = [item.des_conteudo for item in queryset]
+
+        # queryset = Posicionamento.objects.filter(ide_formulario_publicado=self.formulario_publicado, ind_positivo=0)
+        # posicionamentos_negativos = [item.des_conteudo for item in queryset]
+        # queryset = Posicionamento.objects.filter(ide_formulario_publicado=self.formulario_publicado, ind_positivo=1)
+        # posicionamentos_positivos = [item.des_conteudo for item in queryset]
+        # doc_negativos = nlp(' '.join(posicionamentos_negativos))
+        # [print("{:.4f}  {:60s}".format(p.rank, p.text)) for p in doc_positivos._.phrases[:20]]
+        # doc_positivos = nlp('. '.join(posicionamentos_positivos))
+        # [print("{:.4f}  {:60s}".format(p.rank, p.text)) for p in doc_negativos._.phrases[:20]]
+
+        import pdb;pdb.set_trace()
+
+
+
+    def ficha_pageviews_chart_large(self,days_ago=30):
+        queryset = ProposicaoPageview.objects.filter(proposicao=self).order_by('date')
+        source = pd.DataFrame(list(queryset.values('date', 'pageviews')))
+        chart = alt.Chart(source).mark_line().encode(
+            x=alt.X('date'),
+            y=alt.Y('pageviews')
+        ).properties(
+            width=500,
+            height=200
+        )
+        return chart.to_json()
 
     def enquete_votos_count(self):
         return self.formulario_publicado.resposta_set.count()
 
 class Tema(models.Model):
     nome = models.TextField(blank=True, null=True)
+    def __str__(self):
+        return '%s' % (self.nome,)
 
 class Deputado(models.Model):
     nome = models.TextField(blank=True, null=True)
@@ -101,3 +219,8 @@ class Deputado(models.Model):
 class Orgao(models.Model):
     sigla = models.TextField(blank=True, null=True)
     nome = models.TextField(blank=True, null=True)
+
+class ProposicaoPageview(models.Model):
+    proposicao = models.ForeignKey('Proposicao', on_delete=models.CASCADE)
+    date = models.DateField()
+    pageviews = models.IntegerField()

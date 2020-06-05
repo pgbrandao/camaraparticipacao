@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <link rel="stylesheet" href="{% static 'template.css' %}">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
   </head>
   <body>
     <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
@@ -82,29 +85,13 @@
             <input type="date" class="form-control" id="publishDateMax" name="date_max" placeholder="Data final">
           </div>
           <div class="form-group col-md-4">
-            <label for="category">Category</label>
+            <label for="category">Tema (não implementado)</label>
             <select id="category" class="form-control" name="category">
               <option selected>Choose...</option>
               {% for cat in categories %}
               <option value="{{ cat }}">{{ cat }}</option>
               {% endfor %}
             </select>
-          </div>
-        </div>
-        <div class="form-group">
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="reviewed" name="reviewed">
-            <label class="form-check-label" for="reviewed">
-              Reviewed
-            </label>
-          </div>
-        </div>
-        <div class="form-group">
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="notReviewed" name="notReviewed">
-            <label class="form-check-label" for="notReviewed">
-              Not reviewed
-            </label>
           </div>
         </div>
         <button type="submit" class="btn btn-primary">Search</button>
@@ -117,6 +104,12 @@
           {% for proposicao in queryset %}
             <li>
               <a href="{% url 'detail' proposicao.id %}">{{ proposicao.nome}}</a><br />
+              <div id="proposicao-{{ proposicao.pk }}-votes_chart"></div>
+              <script type="text/javascript">
+              var spec = {{ proposicao.get_enquete_votos_chart|safe }};
+              var opt = {"renderer": "canvas", "actions": false};
+              vegaEmbed("#proposicao-{{ proposicao.pk }}-votes_chart", spec, opt);
+              </script><br />
               <span>Autor: 
                 {% for autor in proposicao.autor.all|slice:":3" %}
                     {{ autor }}), 
@@ -132,6 +125,9 @@
               </span><br />
               <span>
                 Votos: {{ proposicao.enquete_votos_count }}
+              </span><br />
+              <span>
+                Visualizações (ficha de tramitação): {# proposicao.pageviews #}
               </span><br />
               <span>
                 Temas:
