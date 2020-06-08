@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 
-from core import dataloader
+from app import dataloader
 
 import datetime
 
@@ -28,13 +28,18 @@ class Command(BaseCommand):
             action='store_true',
             help='Syncs analytics'
         )
-
+        parser.add_argument(
+            '--preprocess',
+            action='store_true',
+            help='Pre-processes data'
+        )
 
     def handle(self, *args, **options):
         if  not options['all'] and \
             not options['enquetes'] and \
             not options['dados_abertos'] and \
-            not options['analytics']:
+            not options['analytics'] and \
+            not options['preprocess']:
             raise CommandError('No option specified.')
 
         if options['all'] or options['enquetes']:
@@ -47,6 +52,8 @@ class Command(BaseCommand):
             dataloader.load_proposicoes_temas(cmd=self)
         if options['all'] or options['analytics']:
             dataloader.load_analytics_proposicoes(cmd=self)
+        
+        dataloader.preprocess(cmd=self)
 
 
 

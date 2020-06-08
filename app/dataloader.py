@@ -7,6 +7,7 @@ import zipfile
 
 from django.conf import settings
 from django.db import connection, IntegrityError
+from django.db.models import Count, Sum
 
 from oauth2client.service_account import ServiceAccountCredentials
 from oauth2client.client import HttpAccessTokenRefreshError
@@ -166,21 +167,21 @@ def load_proposicoes_temas(cmd=None):
 
 
 def load_enquetes(cmd=None):
-    # os.system("rm SqlProFormsVotacao.zip")
-    # session = boto3.Session(
-    #     aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-    #     aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-    # )
+    os.system("rm SqlProFormsVotacao.zip")
+    session = boto3.Session(
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+    )
 
-    # s3 = session.resource('s3')
-    # s3.Bucket(settings.AWS_BUCKET_NAME).download_file(Key="SqlProFormsVotacao.zip", Filename="SqlProFormsVotacao.zip")
+    s3 = session.resource('s3')
+    s3.Bucket(settings.AWS_BUCKET_NAME).download_file(Key="SqlProFormsVotacao.zip", Filename="SqlProFormsVotacao.zip")
 
-    # # os.system("gpg --batch --passphrase cppsemidcamara --output SqlProFormsVotacao.zip --decrypt SqlProFormsVotacao.gpg.zip")
+    # os.system("gpg --batch --passphrase cppsemidcamara --output SqlProFormsVotacao.zip --decrypt SqlProFormsVotacao.gpg.zip")
 
-    # os.system("rm -rf SqlProFormsVotacao")
-    # with zipfile.ZipFile("SqlProFormsVotacao.zip", 'r') as zip_ref:
-    #     zip_ref.extractall(".")
-    # os.system("rm SqlProFormsVotacao.zip")
+    os.system("rm -rf SqlProFormsVotacao")
+    with zipfile.ZipFile("SqlProFormsVotacao.zip", 'r') as zip_ref:
+        zip_ref.extractall(".")
+    os.system("rm SqlProFormsVotacao.zip")
 
     mypath = "SqlProFormsVotacao"
     sql_dumps = [os.path.join(mypath,f) for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))]
@@ -210,7 +211,7 @@ def load_analytics_proposicoes(cmd=None):
     token = ServiceAccountCredentials.from_json_keyfile_dict(
         json.loads(os.environ['ANALYTICS_CREDENTIALS']), 'https://www.googleapis.com/auth/analytics.readonly').get_access_token().access_token
 
-    daterange = [datetime.date.today() - datetime.timedelta(days=i) for i in range(1,31)]
+    daterange = [datetime.date.today() - datetime.timedelta(days=i) for i in range(1,93)]
     for date in daterange:
         if ProposicaoPageview.objects.filter(date=date).count() > 0:
             continue
@@ -266,3 +267,50 @@ def load_analytics_proposicoes(cmd=None):
                 pageviews=pageviews,
                 date=date
             )
+
+def preprocess(cmd=None):
+    pageviews_qs = ProposicaoPageview.objects.all()
+    
+    for row in tqdm(pageviews_qs, 'Updating pageviews totals'):
+        ProposicaoAggregated.objects.update_or_create(
+            proposicao=row.proposicao,
+            date=row.date,
+            defaults={'pageviews': row.pageviews}
+        )
+
+    votes_qs = Resposta.objects \
+        .extra(select={'date':'date(dat_resposta)'}) \
+        .values('ide_formulario_publicado__proposicao', 'date') \
+        .annotate(votes_count=Count('ide_resposta')) \
+        .values('ide_formulario_publicado__proposicao','date','votes_count')
+
+    for row in tqdm(votes_qs, 'Updating poll votes counts'):
+        if not row['ide_formulario_publicado__proposicao'] or \
+            not row['date']:
+            continue
+
+        ProposicaoAggregated.objects.update_or_create(
+            proposicao_id=row['ide_formulario_publicado__proposicao'],
+            date=row['date'],
+            defaults={'poll_votes': row['votes_count']},
+        )
+
+    comments_qs = Posicionamento.objects \
+        .extra(select={'date':'date(dat_posicionamento)'}) \
+        .values('ide_formulario_publicado__proposicao', 'date') \
+        .annotate(comments_count=Count('ide_posicionamento')) \
+        .values('ide_formulario_publicado__proposicao','date','comments_count')
+
+    for row in tqdm(comments_qs, 'Updating poll comments counts'):
+        if not row['ide_formulario_publicado__proposicao'] or \
+            not row['date']:
+            continue
+
+        ProposicaoAggregated.objects.update_or_create(
+            proposicao_id=row['ide_formulario_publicado__proposicao'],
+            date=row['date'],
+            defaults={'poll_comments': row['comments_count']},
+        )
+    
+    
+    

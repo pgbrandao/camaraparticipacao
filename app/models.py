@@ -6,9 +6,6 @@ import datetime
 import altair as alt
 import pandas as pd
 
-import spacy
-import pytextrank
-
 from bs4 import BeautifulSoup
 
 class FormularioPublicado(models.Model):
@@ -224,3 +221,12 @@ class ProposicaoPageview(models.Model):
     proposicao = models.ForeignKey('Proposicao', on_delete=models.CASCADE)
     date = models.DateField()
     pageviews = models.IntegerField()
+
+class ProposicaoAggregated(models.Model):
+    proposicao = models.ForeignKey('Proposicao', on_delete=models.CASCADE)
+    date = models.DateField(db_index=True)
+    pageviews = models.IntegerField(default=0)
+    poll_votes = models.IntegerField(default=0)
+    poll_comments = models.IntegerField(default=0)
+    class Meta:
+        unique_together = ('proposicao', 'date')

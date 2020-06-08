@@ -3,8 +3,9 @@ from django.shortcuts import render
 from django.http import HttpResponse
 
 import datetime
-from .models import *
+from . import plots
 
+from .models import *
 
 def is_valid_queryparam(param):
     return param != '' and param is not None
@@ -48,8 +49,35 @@ def BootstrapFilterView(request):
 def index(request):
     # Proposições mais acessadas
     # proposicoes = Proposicao.objects.annotate(num_resposta=Count('formulario_publicado__resposta')).order_by('-num_resposta')[:50]
+    d0 = datetime.date.today()
+    dm7 = datetime.date.today()-datetime.timedelta(days=7)
+    dm14 = datetime.date.today()-datetime.timedelta(days=14)
 
-    return render(request, 'index.html')
+    votos_this_week = Resposta.objects.filter(dat_resposta__gte=dm7, dat_resposta__lt=d0).count()
+    votos_past_week = Resposta.objects.filter(dat_resposta__gte=dm14, dat_resposta__lt=dm7).count()
+    votos_change = (votos_this_week / votos_past_week - 1) * 100 if votos_past_week else 0
+
+    posicionamentos_this_week = Posicionamento.objects.filter(dat_posicionamento__gte=dm7, dat_posicionamento__lt=d0).count()
+    posicionamentos_past_week = Posicionamento.objects.filter(dat_posicionamento__gte=dm14, dat_posicionamento__lt=dm7).count()
+    posicionamentos_change = (posicionamentos_this_week / posicionamentos_past_week - 1) * 100 if posicionamentos_past_week else 0
+
+    proposicao_pageview_this_week = ProposicaoPageview.objects.filter(date__gte=dm7, date__lt=d0).aggregate(Sum('pageviews'))['pageviews__sum']
+    proposicao_pageview_past_week = ProposicaoPageview.objects.filter(date__gte=dm14, date__lt=dm7).aggregate(Sum('pageviews'))['pageviews__sum']
+    proposicao_pageview_change = (proposicao_pageview_this_week / proposicao_pageview_past_week - 1) * 100 if proposicao_pageview_past_week else 0
+
+    daily_summary_plot = plots.daily_summary()
+
+    qs = ProposicaoAggregated.objects.filter(date__gte=dm7, date__lt=d0) \
+        .values('proposicao') \
+        .annotate(poll_votes_total=Sum('poll_votes'), poll_comments_total=Sum('poll_comments'), pageviews_total=Sum('pageviews')) \
+        .values('proposicao__id', 'proposicao__sigla_tipo', 'proposicao__numero', 'proposicao__ano', 'poll_votes_total', 'poll_comments_total', 'pageviews_total')
+    
+    proposicoes = pd.DataFrame.from_records(qs)
+    proposicoes['p_score'] = proposicoes['poll_votes_total'] + proposicoes['poll_comments_total'] + proposicoes['pageviews_total']
+    proposicoes.sort_values(by=['p_score'], ascending=False, inplace=True)
+    proposicoes = proposicoes[:50]
+
+    return render(request, 'index.html', locals())
 
 def detail(request, id_proposicao):
     proposicao = Proposicao.objects.get(pk=id_proposicao)
