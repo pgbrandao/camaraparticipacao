@@ -321,7 +321,7 @@ def load_enquetes(cmd=None):
 
 
 def load_analytics_proposicoes(cmd=None):
-    proposicao_ids = set(Proposicao.objects.values_list('id'))
+    proposicao_ids = set(Proposicao.objects.values_list('id', flat=True))
 
     token = ServiceAccountCredentials.from_json_keyfile_dict(
         json.loads(os.environ['ANALYTICS_CREDENTIALS']), 'https://www.googleapis.com/auth/analytics.readonly').get_access_token().access_token
@@ -359,11 +359,11 @@ def load_analytics_proposicoes(cmd=None):
 
                 r = re.search('^/proposicoesWeb/fichadetramitacao\?.*idProposicao=([0-9]+)', page_path)
                 if r:
-                    id_proposicao = r.group(1)
+                    id_proposicao = int(r.group(1))
 
                 r = re.search('^/propostas-legislativas/([0-9]+)', page_path)
                 if r:
-                    id_proposicao = r.group(1)
+                    id_proposicao = int(r.group(1))
                 pageviews_dict[id_proposicao] = pageviews_dict.get(id_proposicao, 0) + pageviews
 
             try:

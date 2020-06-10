@@ -47,8 +47,6 @@ def BootstrapFilterView(request):
     return render(request, "bootstrap_form.html", context)
 
 def index(request):
-    # Proposições mais acessadas
-    # proposicoes = Proposicao.objects.annotate(num_resposta=Count('formulario_publicado__resposta')).order_by('-num_resposta')[:50]
     d0 = datetime.date.today()
     dm7 = datetime.date.today()-datetime.timedelta(days=7)
     dm14 = datetime.date.today()-datetime.timedelta(days=14)
@@ -65,7 +63,7 @@ def index(request):
     proposicao_pageview_past_week = ProposicaoPageview.objects.filter(date__gte=dm14, date__lt=dm7).aggregate(Sum('pageviews'))['pageviews__sum']
     proposicao_pageview_change = (proposicao_pageview_this_week / proposicao_pageview_past_week - 1) * 100 if proposicao_pageview_past_week else 0
 
-    daily_summary_plot = plots.daily_summary()
+    daily_summary_global_plot = plots.daily_summary_global()
 
     qs = ProposicaoAggregated.objects.filter(date__gte=dm7, date__lt=d0) \
         .values('proposicao') \
@@ -73,15 +71,16 @@ def index(request):
         .values('proposicao__id', 'proposicao__sigla_tipo', 'proposicao__numero', 'proposicao__ano', 'poll_votes_total', 'poll_comments_total', 'pageviews_total')
     
     proposicoes = pd.DataFrame.from_records(qs)
-    proposicoes['p_score'] = proposicoes['poll_votes_total'] + proposicoes['poll_comments_total'] + proposicoes['pageviews_total']
-    proposicoes.sort_values(by=['p_score'], ascending=False, inplace=True)
-    proposicoes = proposicoes[:50]
+    if not proposicoes.empty:
+        proposicoes['p_score'] = proposicoes['poll_votes_total'] + proposicoes['poll_comments_total'] + proposicoes['pageviews_total']
+        proposicoes.sort_values(by=['p_score'], ascending=False, inplace=True)
+        proposicoes = proposicoes[:50]
 
     return render(request, 'index.html', locals())
 
-def detail(request, id_proposicao):
+def proposicao_detail(request, id_proposicao):
     proposicao = Proposicao.objects.get(pk=id_proposicao)
-    context = {
-        'proposicao': proposicao,
-    }
-    return render(request, 'bootstrap_details.html', context)
+
+    daily_summary_proposicao_plot = plots.daily_summary_proposicao(proposicao)
+
+    return render(request, 'proposicao_details.html', locals())

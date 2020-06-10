@@ -118,8 +118,7 @@ class Proposicao(models.Model):
 
     def nome(self):
         return '%s %s/%s' % (self.sigla_tipo, self.numero, self.ano)
-    # def __str__(self):
-    #     return '%s %s/%s' % (self.sigla_tipo, self.numero, self.ano)
+
     def enquete_votos_data(self):
         qs = ItemResposta.objects.filter(ide_resposta__ide_formulario_publicado=self.formulario_publicado.pk) \
                                  .values('num_indice_opcao') \

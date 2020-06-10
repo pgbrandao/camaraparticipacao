@@ -11,7 +11,8 @@
 
     {% include "includes/header.html" %}
 
-
+    {{ proposicao.nome }}
+    
     <div class="container-fluid mt--7 bg-secondary">
 
       <div class="row">
@@ -29,7 +30,7 @@
             <div class="card-body plotly">
               <div class="chart">
                 {% autoescape off %}
-                {{ daily_summary_global_plot }}
+                {{ daily_summary_proposicao_plot }}
                 {% endautoescape %}
               </div>
             </div>
