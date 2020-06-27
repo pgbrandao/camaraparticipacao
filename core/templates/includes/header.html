@@ -4,59 +4,64 @@
 <div class="header pb-8 pt-5 pt-md-6 bg-secondary">
     <div class="container-fluid">
         <div class="header-body">
-        <!-- Card stats -->
-        <div class="row">
-            <div class="col-xl-4 col-lg-6">
-            <div class="card shadow card-stats mb-4 mb-xl-0 fade-in-top">
-                <div class="card-body ">
-                <div class="row">
-                    <div class="col">
-                    <h5 class="card-title text-uppercase text-muted mb-0">Votos</h5>
-                    <span class="h2 font-weight-bold mb-0">{{ votos_this_week | intcomma }}</span>
-                    últimos 7 dias
-                    </div>
-                    <div class="col-auto">
-                    <div class="icon icon-shape bg-primary text-white rounded-circle shadow">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    </div>
-                </div>
-                <p class="mt-3 mb-0 text-muted text-sm">
-                    <span class="{% if votos_change >= 0 %}text-success{% else %}text-danger{% endif %} mr-2">
-                        <i class="fa {% if votos_change >= 0 %}fa-angle-up{% else %}-angle-down{% endif %}"></i>
-                        {{ votos_change | floatformat:"0" }}%
-                        <span class="text-nowrap">em relação à semana anterior</span>
-                    </span>
-                </p>
-                </div>
-            </div>
-            </div>
-            <div class="col-xl-4 col-lg-6">
-            <div class="card shadow card-stats mb-4 mb-xl-0 fade-in-top">
-                <div class="card-body ">
-                <div class="row">
-                    <div class="col">
-                    <h5 class="card-title text-uppercase text-muted mb-0">Posicionamentos</h5>
-                    <span class="h2 font-weight-bold mb-0">{{ posicionamentos_this_week | intcomma }}</span>
-                    últimos 7 dias
-                    </div>
-                    <div class="col-auto">
-                    <div class="icon icon-shape bg-green text-white rounded-circle shadow">
-                        <i class="fas fa-pencil-alt"></i>
-                    </div>
+            <!-- Card stats -->
+            <div class="row">
+                <div class="col-xl-4 col-lg-6">
+                    <div class="card shadow card-stats mb-4 mb-xl-0 fade-in-top">
+                        <div class="card-body ">
+                            <div class="row">
+                                <div class="col">
+                                    <h5 class="card-title text-uppercase text-muted mb-0">Votos</h5>
+                                    <span class="h2 font-weight-bold mb-0">{{ votos_this_week | intcomma }}</span>
+                                    últimos 7 dias
+                                </div>
+                                <div class="col-auto">
+                                    <div class="icon icon-shape bg-primary text-white rounded-circle shadow">
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="mt-3 mb-0 text-muted text-sm">
+                                <span
+                                    class="{% if votos_change >= 0 %}text-success{% else %}text-danger{% endif %} mr-2">
+                                    <i
+                                        class="fa {% if votos_change >= 0 %}fa-angle-up{% else %}-angle-down{% endif %}"></i>
+                                    {{ votos_change | floatformat:"0" }}%
+                                    <span class="text-nowrap">em relação à semana anterior</span>
+                                </span>
+                            </p>
+                        </div>
                     </div>
                 </div>
-                <p class="mt-3 mb-0 text-muted text-sm">
-                    <span class="{% if posicionamentos_change >= 0 %}text-success{% else %}text-danger{% endif %} mr-2">
-                        <i class="fa {% if posicionamentos_change >= 0 %}fa-angle-up{% else %}-angle-down{% endif %}"></i>
-                        {{ posicionamentos_change | floatformat:"0" }}%
-                        <span class="text-nowrap">em relação à semana anterior</span>
-                    </span>
-                </p>
+                <div class="col-xl-4 col-lg-6">
+                    <div class="card shadow card-stats mb-4 mb-xl-0 fade-in-top">
+                        <div class="card-body ">
+                            <div class="row">
+                                <div class="col">
+                                    <h5 class="card-title text-uppercase text-muted mb-0">Posicionamentos</h5>
+                                    <span
+                                        class="h2 font-weight-bold mb-0">{{ posicionamentos_this_week | intcomma }}</span>
+                                    últimos 7 dias
+                                </div>
+                                <div class="col-auto">
+                                    <div class="icon icon-shape bg-green text-white rounded-circle shadow">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="mt-3 mb-0 text-muted text-sm">
+                                <span
+                                    class="{% if posicionamentos_change >= 0 %}text-success{% else %}text-danger{% endif %} mr-2">
+                                    <i
+                                        class="fa {% if posicionamentos_change >= 0 %}fa-angle-up{% else %}-angle-down{% endif %}"></i>
+                                    {{ posicionamentos_change | floatformat:"0" }}%
+                                    <span class="text-nowrap">em relação à semana anterior</span>
+                                </span>
+                            </p>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            </div>
-            <!-- <div class="col-xl-3 col-lg-6">
+                <!-- <div class="col-xl-3 col-lg-6">
             <div class="card shadow card-stats mb-4 mb-xl-0 fade-in-top">
                 <div class="card-body ">
                 <div class="row">
@@ -77,32 +82,35 @@
                 </div>
             </div>
             </div> -->
-            <div class="col-xl-4 col-lg-6">
-            <div class="card shadow card-stats mb-4 mb-xl-0 fade-in-top">
-                <div class="card-body ">
-                <div class="row">
-                    <div class="col">
-                    <h5 class="card-title text-uppercase text-muted mb-0">Acessos à ficha</h5>
-                    <span class="h2 font-weight-bold mb-0">{{ proposicao_pageview_this_week | intcomma }}</span>
-                    últimos 7 dias
-                    </div>
-                    <div class="col-auto">
-                    <div class="icon icon-shape bg-warning text-white rounded-circle shadow">
-                        <i class="fa fa-chart-line"></i>
-                    </div>
+                <div class="col-xl-4 col-lg-6">
+                    <div class="card shadow card-stats mb-4 mb-xl-0 fade-in-top">
+                        <div class="card-body ">
+                            <div class="row">
+                                <div class="col">
+                                    <h5 class="card-title text-uppercase text-muted mb-0">Acessos à ficha</h5>
+                                    <span
+                                        class="h2 font-weight-bold mb-0">{{ proposicao_pageview_this_week | intcomma }}</span>
+                                    últimos 7 dias
+                                </div>
+                                <div class="col-auto">
+                                    <div class="icon icon-shape bg-warning text-white rounded-circle shadow">
+                                        <i class="fa fa-chart-line"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="mt-3 mb-0 text-muted text-sm">
+                                <span
+                                    class="{% if proposicao_pageview_change >= 0 %}text-success{% else %}text-danger{% endif %} mr-2">
+                                    <i
+                                        class="fa {% if proposicao_pageview_change >= 0 %}fa-angle-up{% else %}-angle-down{% endif %}"></i>
+                                    {{ proposicao_pageview_change | floatformat:"0" }}%
+                                    <span class="text-nowrap">em relação à semana anterior</span>
+                                </span>
+                            </p>
+                        </div>
                     </div>
                 </div>
-                <p class="mt-3 mb-0 text-muted text-sm">
-                    <span class="{% if proposicao_pageview_change >= 0 %}text-success{% else %}text-danger{% endif %} mr-2">
-                        <i class="fa {% if proposicao_pageview_change >= 0 %}fa-angle-up{% else %}-angle-down{% endif %}"></i>
-                        {{ proposicao_pageview_change | floatformat:"0" }}%
-                        <span class="text-nowrap">em relação à semana anterior</span>
-                    </span>
-                </p>
-                </div>
-            </div>
             </div>
         </div>
-        </div>
     </div>
-    </div>
+</div>
