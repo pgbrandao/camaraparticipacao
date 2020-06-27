@@ -1,0 +1,137 @@
+{% extends 'layouts/base.html' %}
+{% load humanize %}
+
+
+{% block title %} Dashboard da participação {% endblock title %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+<div class="header pb-8 pt-5 pt-md-6 bg-primary">
+    <div class="container-fluid">
+        <div class="header-body">
+            <div class="col-lg-6 col-7">
+                <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+                    <h6 class="h2 text-white d-inline-block mb-0">Relatório de enquetes</h6>
+                    <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+                        <li class="breadcrumb-item"><a href="#"><i class="fas fa-home"></i></a></li>
+                        <li class="breadcrumb-item"><a href="#">Enquetes</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Por período</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="container-fluid mt--7 bg-secondary">
+
+    <div class="row">
+        <div class="col-xl-4 col-lg-6">
+            <div class="card shadow card-stats mb-4 mb-xl-0 fade-in-top">
+                <div class="card-body ">
+                    <div class="row">
+                        <div class="col">
+                            <form method="GET" action=".">
+                                <div class="input-daterange datepicker row align-items-center">
+                                    <div class="col">
+                                        <div class="form-group">
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text"><i class="ni ni-calendar-grid-58"></i></span>
+                                                </div>
+                                                <input class="form-control" placeholder="Start date" type="text" value="06/18/2020">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <div class="form-group">
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text"><i class="ni ni-calendar-grid-58"></i></span>
+                                                </div>
+                                                <input class="form-control" placeholder="End date" type="text" value="06/22/2020">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="date_min">Data inicial</label>
+                                    <input type="text" class="form-control" name="date_min"
+                                        value="{{ date_min|date:"SHORT_DATE_FORMAT" }}">
+                                </div>
+                                <div class="form-group">
+                                    <label for="date_max">Data final</label>
+                                    <input type="text" class="form-control" name="date_max"
+                                        value="{{ date_max|date:"SHORT_DATE_FORMAT" }}">
+                                </div>
+                                <div class="form-group">
+                                    <button class="btn btn-primary" type="submit">Atualizar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-xl-12">
+            <div class="card shadow">
+                <div class="card-header bg-transparent">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h6 class="text-uppercase text-muted ls-1 mb-1"></h6>
+                            <h2 class="mb-0">Propostas: {{ date_min|date:"SHORT_DATE_FORMAT" }} a {{ date_max|date:"SHORT_DATE_FORMAT" }}</h2>
+                        </div>
+                        <div class="col text-right">
+                            <a href="#!" class="btn btn-sm btn-white">
+                                &nbsp;<i class="fas fa-download">&nbsp;</i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <!-- cases table -->
+                    <table class="table align-items-center table-flush sortable">
+                        <thead class="thead-light">
+                            <tr>
+                                <th scope="col">Proposta</th>
+                                <th scope="col">Votos</th>
+                                <th scope="col">Pontos</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for i, row in proposicoes.iterrows %}
+                            <tr>
+                                <td class="font-weight-bold"><a
+                                        href="{% url "proposicao_detail" id_proposicao=row.proposicao__id %}">{{ row.proposicao__sigla_tipo }}
+                                        {{ row.proposicao__numero }}/{{ row.proposicao__ano }}</a></td>
+                                <td>{{ row.poll_votes_total | intcomma }}</td>
+                                <td>{{ row.poll_comments_total | intcomma  }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include "includes/footer.html" %}
+
+</div>
+
+{% endblock content %}
+
+<!-- Specific JS goes HERE -->
+{% block javascripts %}
+<script>
+    $('.nav-item a').removeClass('active');
+    $('.home-item a').addClass('active');
+</script>
+{% endblock javascripts %}
