@@ -21,8 +21,10 @@ RUN apk add g++ make
 RUN apk add gnupg
 
 # install psycopg2 dependencies
-RUN apk update \
-    && apk add postgresql-dev gcc python3-dev musl-dev
+RUN apk add postgresql-dev gcc python3-dev musl-dev
+
+# install pyodbc dependency
+RUN apk add unixodbc unixodbc-dev
 
 # set project environment variables
 # grab these via Python's os.environ
