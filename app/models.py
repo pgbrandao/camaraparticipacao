@@ -80,14 +80,6 @@ class PosicionamentoExtra(models.Model):
         choices=ClassificationTypes.choices,
         default=ClassificationTypes.UNRATED)
 
-class Curtida(models.Model):
-    ide_posicionamento = models.ForeignKey('Posicionamento', null=True, on_delete=models.SET_NULL, db_column='ide_posicionamento')
-    ide_usuario = models.TextField(blank=True, null=True)
-    ide_formulario_publicado = models.ForeignKey('FormularioPublicado', null=True, on_delete=models.SET_NULL, db_column='ide_formulario_publicado')
-    ind_positivo = models.IntegerField(null=True)
-    class Meta:
-        db_table = 'Curtida'
-
 class Proposicao(models.Model):
 
     sigla_tipo = models.TextField(blank=True, null=True)

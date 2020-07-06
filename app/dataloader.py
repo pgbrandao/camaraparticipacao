@@ -8,7 +8,7 @@ import zipfile
 from collections import defaultdict
 
 from django.conf import settings
-from django.db import connection, IntegrityError
+from django.db import connections, IntegrityError
 from django.db.models import Count, Sum
 
 from oauth2client.service_account import ServiceAccountCredentials
@@ -46,7 +46,7 @@ def load_deputados(cmd=None):
         field_values.append(nome)
     
 
-    with connection.cursor() as cursor:  
+    with connections['default'].cursor() as cursor:  
         cursor.execute('ALTER TABLE app_deputado DISABLE TRIGGER ALL;')
         cursor.execute('DELETE FROM app_deputado')
         sql = 'INSERT INTO app_deputado (id, nome) VALUES %s' % \
@@ -70,7 +70,7 @@ def load_orgaos(cmd=None):
         field_values.append(row['sigla'])
         field_values.append(row['nome'])
 
-    with connection.cursor() as cursor:  
+    with connections['default'].cursor() as cursor:  
         cursor.execute('ALTER TABLE app_orgao DISABLE TRIGGER ALL;')
         cursor.execute('DELETE FROM app_orgao')
         sql = 'INSERT INTO app_orgao (id, sigla, nome) VALUES %s' % \
@@ -141,7 +141,7 @@ def load_proposicoes(cmd=None):
             )
             proposicoes.append(proposicao)
 
-        with connection.cursor() as cursor:  
+        with connections['default'].cursor() as cursor:  
             cursor.execute('ALTER TABLE app_proposicao DISABLE TRIGGER ALL;')
             cursor.execute('DELETE FROM app_proposicao')
             Proposicao.objects.bulk_create(proposicoes)
@@ -151,7 +151,7 @@ def load_proposicoes(cmd=None):
 
         
 def load_proposicoes_autores(cmd=None):
-    with connection.cursor() as cursor:  
+    with connections['default'].cursor() as cursor:  
         cursor.execute('ALTER TABLE app_proposicao_autor DISABLE TRIGGER ALL;')
         cursor.execute('DELETE FROM app_proposicao_autor')
 
@@ -178,18 +178,18 @@ def load_proposicoes_autores(cmd=None):
                 count += 1
                 field_values.append(proposicao_id)
                 field_values.append(deputado_id)
-        with connection.cursor() as cursor:  
+        with connections['default'].cursor() as cursor:  
             sql = 'INSERT INTO app_proposicao_autor (proposicao_id, deputado_id) VALUES %s ON CONFLICT DO NOTHING' % \
                 ', '.join('(%s, %s)' for i in range(count))
             cursor.execute(sql, field_values)
         
         cmd.stdout.write("Loaded proposicoes autores %d" % (i,))
-    with connection.cursor() as cursor:
+    with connections['default'].cursor() as cursor:
         cursor.execute('ALTER TABLE app_proposicao_autor ENABLE TRIGGER ALL;')
 
 
 def load_proposicoes_temas(cmd=None):
-    with connection.cursor() as cursor:  
+    with connections['default'].cursor() as cursor:  
         cursor.execute('ALTER TABLE app_proposicao_tema DISABLE TRIGGER ALL;')
         cursor.execute('ALTER TABLE app_tema DISABLE TRIGGER ALL;')
         cursor.execute('DELETE FROM app_proposicao_tema')
@@ -225,99 +225,57 @@ def load_proposicoes_temas(cmd=None):
                 field_values.append(proposicao_id)
                 field_values.append(tema_id)
 
-        with connection.cursor() as cursor:  
+        with connections['default'].cursor() as cursor:  
             sql = 'INSERT INTO app_proposicao_tema (proposicao_id, tema_id) VALUES %s ON CONFLICT DO NOTHING' % \
                 ', '.join('(%s, %s)' for i in range(count))
             cursor.execute(sql, field_values)
         
         cmd.stdout.write("Loaded proposicoes temas %d" % (i,))
 
-    with connection.cursor() as cursor:
+    with connections['default'].cursor() as cursor:
         cursor.execute('ALTER TABLE app_proposicao_tema ENABLE TRIGGER ALL;')
         cursor.execute('ALTER TABLE app_tema ENABLE TRIGGER ALL;')
 
+def batch_qs(qs, batch_size=1000):
+    """
+    Returns a (start, end, total, queryset) tuple for each batch in the given
+    queryset. Useful when memory is an issue. Picked from djangosnippets.
+    """
+    total = qs.count()
+
+    for start in range(0, total, batch_size):
+        end = min(start + batch_size, total)
+        yield (start, end, total, qs[start:end])
+
 def load_enquetes(cmd=None):
-    process_tables_list = ['Formulario_Publicado', 'Resposta', 'Item_Resposta', 'Posicionamento', 'Curtida']
-    with connection.cursor() as cursor:
-        for table in process_tables_list:
-            cursor.execute('ALTER TABLE public."%s" DISABLE TRIGGER ALL;' % (table,))
-            cursor.execute('DELETE FROM public."%s"' % (table,))
+    process_models = [FormularioPublicado, Resposta, ItemResposta, Posicionamento]
 
-    os.system("rm SqlProFormsVotacao.zip")
-    session = boto3.Session(
-        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-    )
+    for model in process_models:
+        table_name = model._meta.db_table
 
-    s3 = session.resource('s3')
-    s3.Bucket(settings.AWS_BUCKET_NAME).download_file(Key="SqlProFormsVotacao.zip", Filename="SqlProFormsVotacao.zip")
+        with connections['default'].cursor() as cursor:
+            cursor.execute('ALTER TABLE public."%s" DISABLE TRIGGER ALL;' % (table_name,))
+            cursor.execute('DELETE FROM public."%s"' % (table_name,))
 
-    # os.system("gpg --batch --passphrase cppsemidcamara --output SqlProFormsVotacao.zip --decrypt SqlProFormsVotacao.gpg.zip")
+        field_list = []                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+        instance_list = []
 
-    os.system("rm -rf SqlProFormsVotacao")
-    with zipfile.ZipFile("SqlProFormsVotacao.zip", 'r') as zip_ref:
-        zip_ref.extractall(".")
-    os.system("rm SqlProFormsVotacao.zip")
+        for _, _, _, qs in batch_qs(model.objects.using('enquetes')):
+            instance_list = []
 
-    mypath = "SqlProFormsVotacao"
-    sql_dumps = [os.path.join(mypath,f) for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))]
-    sql_dumps = [x for x in sql_dumps if re.search('\.sql$', x)]
-    sql_dumps.sort()
-    with connection.cursor() as cursor:        
-        for sql_dump in sql_dumps:
-            last_table_name = None
-            last_field_names = None
-            field_values_list = []
-            with open(sql_dump, 'r') as f:
-                data = f.read()
-                queries = re.findall(r'\n(INSERT INTO[\s\S]*?;)(?=\n(?:INSERT|COMMIT|CREATE))', data)
-                for q in queries:
-                    query_segments = re.search(r'^INSERT INTO \[(\S*?)\] \(([\s\S]*?)\) VALUES \(([\s\S]*?)\);$', q)
-
-                    table_name = query_segments.group(1)
-                    field_names = ','.join(re.findall('\[([\s\S]*?)\]',query_segments.group(2)))
-                    field_values = query_segments.group(3)
-
-                    # Ignore all tables not in list
-                    if table_name not in process_tables_list:
-                        continue
-
-                    # If this query refers to the same table as the last iteration, save the values for commiting later
-                    if table_name == last_table_name:
-                        field_values_list.append(field_values)
-                    elif table_name != last_table_name:
-                        # This query refers to another table! So we must commit everything that has been collected
-                        if last_table_name:
-                            postgres_query = 'INSERT INTO public."%s" (%s) VALUES %s ON CONFLICT DO NOTHING' % (last_table_name, last_field_names,
-                                ', '.join('('+f+')' for f in field_values_list)
-                            )
-                            try:
-                                cursor.execute(postgres_query)
-                            except IntegrityError:
-                                cmd.stderr.write(cmd.style.NOTICE("Error running query %s" % (postgres_query,)))
-                        
-
-                        last_table_name = table_name
-                        last_field_names = field_names
-                        field_values_list = [field_values]
-
-            # Commit any data that's been left behind
-            if last_table_name:
-                postgres_query = 'INSERT INTO public."%s" (%s) VALUES %s ON CONFLICT DO NOTHING' % (last_table_name, last_field_names,
-                    ', '.join('('+f+')' for f in field_values_list)
+            for instance_values in qs.values(*field_list):
+                instance_list.append(
+                    model(**instance_values)
                 )
-                try:
-                    cursor.execute(postgres_query)
-                except IntegrityError:
-                    cmd.stderr.write(cmd.style.NOTICE("Error running query %s" % (postgres_query,)))
-            
-            cmd.stdout.write('Loaded %s' % (sql_dump,))
-    
-    # Reenable triggers
-    with connection.cursor() as cursor:
-        for table in process_tables_list:
-            cursor.execute('ALTER TABLE public."%s" ENABLE TRIGGER ALL;' % (table,))
 
+            model.objects.using('default').bulk_create(instance_list)
+                
+        
+
+        with connections['default'].cursor() as cursor:
+            cursor.execute('ALTER TABLE public."%s" DISABLE TRIGGER ALL;' % (table_name,))
+
+        cmd.stdout.write('Loaded enquetes %s' % (table_name,))
 
 
 def load_analytics_proposicoes(cmd=None):
@@ -431,7 +389,7 @@ def preprocess(cmd=None):
 
         pa[(proposicao_id,date)]['poll_comments'] = poll_comments
 
-    with connection.cursor() as cursor:  
+    with connections['default'].cursor() as cursor:  
         cursor.execute('ALTER TABLE app_proposicaoaggregated DISABLE TRIGGER ALL;')
         cursor.execute('DELETE FROM app_proposicaoaggregated')
         pa_list = [ProposicaoAggregated(proposicao_id=k[0], date=k[1], pageviews=v['pageviews'], poll_votes=v['poll_votes'], poll_comments=v['poll_comments']) for k, v in pa.items()]

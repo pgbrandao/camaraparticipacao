@@ -11,3 +11,4 @@ pandas==1.0.3
 psycopg2==2.8.5
 tqdm==4.46.0
 plotly==4.8.1
+django-mssql-backend==2.8.1
