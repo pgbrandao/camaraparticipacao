@@ -15,16 +15,26 @@ ENV PYTHONDONTWRITEBYTECODE 1
 # ENV LANG C.UTF-8
 # ENV DEBIAN_FRONTEND=noninteractive 
 
-# Install necessary packages
 RUN apk update
+
+# Install necessary packages
 RUN apk add g++ make
 RUN apk add gnupg
 
 # install psycopg2 dependencies
 RUN apk add postgresql-dev gcc python3-dev musl-dev
 
-# install pyodbc dependency
+# install pyodbc dependencies
 RUN apk add unixodbc unixodbc-dev
+
+# Add SQL Server ODBC Driver 17 for Ubuntu 18.04
+RUN apk add curl
+RUN curl -O https://download.microsoft.com/download/e/4/e/e4e67866-dffd-428c-aac7-8d28ddafb39b/msodbcsql17_17.5.2.2-1_amd64.apk
+RUN curl -O https://download.microsoft.com/download/e/4/e/e4e67866-dffd-428c-aac7-8d28ddafb39b/mssql-tools_17.5.2.1-1_amd64.apk
+RUN ACCEPT_EULA=Y apk add --allow-untrusted msodbcsql17_17.5.2.2-1_amd64.apk
+RUN ACCEPT_EULA=Y apk add --allow-untrusted mssql-tools_17.5.2.1-1_amd64.apk
+# RUN echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bash_profile
+# RUN echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc
 
 # set project environment variables
 # grab these via Python's os.environ
