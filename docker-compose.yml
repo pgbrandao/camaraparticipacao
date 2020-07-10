@@ -10,11 +10,25 @@ services:
       - 80:80
     depends_on:
       - db
+      - redis
     env_file:
       - ./.env_docker
   redis:
-    image: redis:6.0-alpine
-    command: redis-server
+    image: redis:alpine
+  celery:
+    build: .
+    command: celery -A core worker -l info
+    volumes:
+      - .:/usr/src/app/
+    depends_on:
+      - redis
+  celery-beat:
+    build: .
+    command: celery -A core beat -l info
+    volumes:
+      - .:/usr/src/app/
+    depends_on:
+      - redis
   db:
     image: postgres:12.0-alpine
     volumes:
