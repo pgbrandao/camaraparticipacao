@@ -22,6 +22,9 @@ load_dotenv()
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# Base path which will be prepended to all URLs. Should include trailing slash
+BASE_PATH = os.environ.get('BASE_PATH', default='/')
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
@@ -77,7 +80,7 @@ TEMPLATES = [
     },
 ]
 
-STATIC_URL = '/static/'
+STATIC_URL = BASE_PATH + 'static/'
 # STATIC_ROOT = os.path.join(BASE_DIR, 'static_root')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'core/static'),
