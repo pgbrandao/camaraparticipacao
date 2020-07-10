@@ -16,7 +16,11 @@ from oauth2client.client import HttpAccessTokenRefreshError
 
 import requests
 
-from .models import *
+from django.apps import apps
+
+# Models need to be imported like this in order to avoid cyclic import issues with celery
+def get_model(model_name):
+    return apps.get_model(app_label='app', model_name=model_name)
 
 def get_http():
     retry_strategy = requests.packages.urllib3.util.retry.Retry(
@@ -84,7 +88,7 @@ def load_proposicoes(cmd=None):
     # Dict to store {tex_url_formulario_publicado => ide_formulario_publicado}
     # tex_url_formulario_publicado: ID proposição
     formulario_publicado_dict = {}
-    for r in FormularioPublicado.objects.values_list('ide_formulario_publicado', 'tex_url_formulario_publicado'):
+    for r in get_model('FormularioPublicado').objects.values_list('ide_formulario_publicado', 'tex_url_formulario_publicado'):
         try:
             formulario_publicado_dict[int(r[1])] = r[0]
         except ValueError:
@@ -119,7 +123,7 @@ def load_proposicoes(cmd=None):
             except KeyError:
                 formulario_publicado_id = None
 
-            proposicao = Proposicao(
+            proposicao = get_model('Proposicao')(
                 id = p['id'],
                 sigla_tipo = p['siglaTipo'],
                 numero = p['numero'],
@@ -144,7 +148,7 @@ def load_proposicoes(cmd=None):
         with connections['default'].cursor() as cursor:  
             cursor.execute('ALTER TABLE app_proposicao DISABLE TRIGGER ALL;')
             cursor.execute('DELETE FROM app_proposicao')
-            Proposicao.objects.bulk_create(proposicoes)
+            get_model('Proposicao').objects.bulk_create(proposicoes)
             cursor.execute('ALTER TABLE app_proposicao ENABLE TRIGGER ALL;')
 
         cmd.stdout.write("Loaded proposicoes %d" % (i,))
@@ -209,12 +213,12 @@ def load_proposicoes_temas(cmd=None):
         for row in j['dados']:
             try:
                 proposicao_id = re.search('/([0-9]*)$', row['uriProposicao']).group(1)
-            except Proposicao.DoesNotExist:
+            except get_model('Proposicao').DoesNotExist:
                 proposicao_id = None
             
             tema_id = row['codTema']
             if tema_id not in temas_id_set:
-                tema = Tema.objects.create(
+                tema = get_model('Tema').objects.create(
                     id = row['codTema'],
                     nome = row['tema']
                 )
@@ -248,7 +252,7 @@ def batch_qs(qs, batch_size=1000):
         yield (start, end, total, qs[start:end])
 
 def load_enquetes(cmd=None):
-    process_models = [FormularioPublicado, Resposta, ItemResposta, Posicionamento]
+    process_models = [get_model('FormularioPublicado'), get_model('Resposta'), get_model('ItemResposta'), get_model('Posicionamento')]
 
     for model in process_models:
         table_name = model._meta.db_table
@@ -279,14 +283,14 @@ def load_enquetes(cmd=None):
 
 
 def load_analytics_proposicoes(cmd=None):
-    proposicao_ids = set(Proposicao.objects.values_list('id', flat=True))
+    proposicao_ids = set(get_model('Proposicao').objects.values_list('id', flat=True))
 
     token = ServiceAccountCredentials.from_json_keyfile_dict(
         json.loads(os.environ['ANALYTICS_CREDENTIALS']), 'https://www.googleapis.com/auth/analytics.readonly').get_access_token().access_token
 
     daterange = [datetime.date.today() - datetime.timedelta(days=i) for i in range(1,93)]
     for date in daterange:
-        if ProposicaoPageview.objects.filter(date=date).count() > 0:
+        if get_model('roposicaoPageview').objects.filter(date=date).count() > 0:
             continue
 
         pageviews_dict = {}
@@ -332,20 +336,19 @@ def load_analytics_proposicoes(cmd=None):
         proposicao_pageview_list = []
         for proposicao_id, pageviews in pageviews_dict.items():
             if proposicao_id in proposicao_ids:
-                proposicao_pageview_list.append(ProposicaoPageview(
+                proposicao_pageview_list.append(get_model('ProposicaoPageview')(
                     proposicao_id=proposicao_id,
                     pageviews=pageviews,
                     date=date
                 ))
         
-        ProposicaoPageview.objects.bulk_create(proposicao_pageview_list)
 
         cmd.stdout.write('Loaded analytics %s' % (date,))
 
 def preprocess(cmd=None):
     pa = defaultdict(lambda:{'pageviews': 0, 'poll_votes': 0, 'poll_comments': 0})
 
-    pageviews_qs = ProposicaoPageview.objects.all()
+    pageviews_qs = get_model('ProposicaoPageview').objects.all()
 
     for row in pageviews_qs:
         proposicao_id = row.proposicao_id
@@ -354,7 +357,7 @@ def preprocess(cmd=None):
 
         pa[(proposicao_id,date)]['pageviews'] = pageviews
 
-    votes_qs = Resposta.objects \
+    votes_qs = get_model('Resposta').objects \
         .extra(select={'date':'date(dat_resposta)'}) \
         .values('ide_formulario_publicado__proposicao', 'date') \
         .annotate(votes_count=Count('ide_resposta')) \
@@ -372,7 +375,7 @@ def preprocess(cmd=None):
         pa[(proposicao_id,date)]['poll_votes'] = poll_votes
 
 
-    comments_qs = Posicionamento.objects \
+    comments_qs = get_model('Posicionamento').objects \
         .extra(select={'date':'date(dat_posicionamento)'}) \
         .values('ide_formulario_publicado__proposicao', 'date') \
         .annotate(comments_count=Count('ide_posicionamento')) \
@@ -392,8 +395,8 @@ def preprocess(cmd=None):
     with connections['default'].cursor() as cursor:  
         cursor.execute('ALTER TABLE app_proposicaoaggregated DISABLE TRIGGER ALL;')
         cursor.execute('DELETE FROM app_proposicaoaggregated')
-        pa_list = [ProposicaoAggregated(proposicao_id=k[0], date=k[1], pageviews=v['pageviews'], poll_votes=v['poll_votes'], poll_comments=v['poll_comments']) for k, v in pa.items()]
-        ProposicaoAggregated.objects.bulk_create(pa_list)
+        pa_list = [get_model('ProposicaoAggregated')(proposicao_id=k[0], date=k[1], pageviews=v['pageviews'], poll_votes=v['poll_votes'], poll_comments=v['poll_comments']) for k, v in pa.items()]
+        get_model('ProposicaoAggregated').objects.bulk_create(pa_list)
         cursor.execute('ALTER TABLE app_proposicaoaggregated ENABLE TRIGGER ALL;')
 
     cmd.stdout.write('Finished preprocess')
