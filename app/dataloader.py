@@ -290,7 +290,7 @@ def load_analytics_proposicoes(cmd=None):
 
     daterange = [datetime.date.today() - datetime.timedelta(days=i) for i in range(1,93)]
     for date in daterange:
-        if get_model('roposicaoPageview').objects.filter(date=date).count() > 0:
+        if get_model('ProposicaoPageview').objects.filter(date=date).count() > 0:
             continue
 
         pageviews_dict = {}
