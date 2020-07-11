@@ -60,8 +60,8 @@
                 <thead class="thead-light">
                   <tr>
                     <th scope="col">Proposta</th>
-                    <th scope="col">Votos</th>
-                    <th scope="col">Pontos</th>
+                    <th scope="col">Votos no período (total)</th>
+                    <th scope="col">Pontos no período (total)</th>
                     <th scope="col">Pageviews</th>
                   </tr>
                 </thead>
@@ -69,8 +69,8 @@
                   {% for i, row in proposicoes.iterrows %}
                   <tr>
                       <td class="font-weight-bold" ><a href="{% url "proposicao_detail" id_proposicao=row.proposicao__id %}">{{ row.proposicao__sigla_tipo }} {{ row.proposicao__numero }}/{{ row.proposicao__ano }}</a></td>
-                      <td>{{ row.poll_votes_total | intcomma }}</td>
-                      <td>{{ row.poll_comments_total | intcomma  }}</td>
+                      <td>{{ row.poll_votes_period | intcomma }} ({{ row.poll_votes_total | intcomma }})</td>
+                      <td>{{ row.poll_comments_period | intcomma  }} ({{ row.poll_comments_total | intcomma  }})</td>
                       <td>{{ row.pageviews_total | intcomma }}</td>
                   </tr>
                   {% endfor %}

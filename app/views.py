@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db.models import Count, Sum, Q
 from django.shortcuts import render
 from django.http import HttpResponse
@@ -45,11 +46,15 @@ def BootstrapFilterView(request):
 
 def index(request):
     d0 = datetime.date.today()
+    dm1 = datetime.date.today()-datetime.timedelta(days=1)
     dm7 = datetime.date.today()-datetime.timedelta(days=7)
+    dm8 = datetime.date.today()-datetime.timedelta(days=8)
     dm14 = datetime.date.today()-datetime.timedelta(days=14)
 
-    votos_this_week = Resposta.objects.filter(dat_resposta__gte=dm7, dat_resposta__lt=d0).count()
-    votos_past_week = Resposta.objects.filter(dat_resposta__gte=dm14, dat_resposta__lt=dm7).count()
+    qs = ProposicaoAggregated.objects.all()
+
+    votos_this_week = qs.filter(date__gte=dm7, date__lte=dm1).count()
+    votos_past_week = qs.filter(date__gte=dm14, date__lte=dm8).count()
     votos_change = (votos_this_week / votos_past_week - 1) * 100 if votos_past_week else 0
 
     posicionamentos_this_week = Posicionamento.objects.filter(dat_posicionamento__gte=dm7, dat_posicionamento__lt=d0).count()
@@ -62,16 +67,28 @@ def index(request):
 
     daily_summary_global_plot = plots.daily_summary_global()
 
-    qs = ProposicaoAggregated.objects.filter(date__gte=dm7, date__lt=d0) \
-        .values('proposicao') \
-        .annotate(poll_votes_total=Sum('poll_votes'), poll_comments_total=Sum('poll_comments'), pageviews_total=Sum('pageviews')) \
-        .values('proposicao__id', 'proposicao__sigla_tipo', 'proposicao__numero', 'proposicao__ano', 'poll_votes_total', 'poll_comments_total', 'pageviews_total')
+    qs = ProposicaoAggregated.objects.values('proposicao') \
+        .annotate(poll_votes_total=Sum('poll_votes'), poll_votes_period=Sum('poll_votes', filter=Q(date__gte=dm7, date__lt=d0)),
+                  poll_comments_total=Sum('poll_comments'), poll_comments_period=Sum('poll_comments', filter=Q(date__gte=dm7, date__lt=d0)),
+                  pageviews_period=Sum('pageviews', filter=Q(date__gte=dm7, date__lt=d0)))
+    fields_list = {'proposicao__id', 'proposicao__sigla_tipo', 'proposicao__numero', 'proposicao__ano', 'poll_votes_total', 'poll_votes_period', 'poll_comments_total', 'poll_comments_period', 'pageviews_period'}
+    non_count = {'proposicao__id', 'proposicao__sigla_tipo', 'proposicao__numero', 'proposicao__ano'}
+    records = list(qs.values(*fields_list))
+    for record in records:
+        for k, v in record.items():
+            if v is None and k in fields_list - non_count:
+                record[k] = 0
     
-    proposicoes = pd.DataFrame.from_records(qs)
+    import pdb;pdb.set_trace()
+    # proposicoes = pd.DataFrame(, columns=fields_list, dtype=['int']*7)
+    proposicoes = pd.DataFrame.from_records(records)
+
     if not proposicoes.empty:
-        proposicoes['p_score'] = proposicoes['poll_votes_total'] + proposicoes['poll_comments_total'] + proposicoes['pageviews_total']
+        proposicoes['p_score'] = proposicoes['poll_votes_period'] + proposicoes['poll_comments_period'] + proposicoes['pageviews_period']
         proposicoes.sort_values(by=['p_score'], ascending=False, inplace=True)
         proposicoes = proposicoes[:50]
+
+    import pdb;pdb.set_trace()
 
     return render(request, 'index.html', locals())
 
