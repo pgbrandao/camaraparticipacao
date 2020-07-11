@@ -8,11 +8,12 @@ services:
       - .:/usr/src/app/
     ports:
       - 80:80
+    entrypoint: /usr/src/app/entrypoint.sh
+    env_file:
+      - ./.env_docker
     depends_on:
       - db
       - redis
-    env_file:
-      - ./.env_docker
   redis:
     image: redis:alpine
   celery:
@@ -20,6 +21,8 @@ services:
     command: celery -A core worker -l info
     volumes:
       - .:/usr/src/app/
+    env_file:
+    - ./.env_docker
     depends_on:
       - redis
   celery-beat:
@@ -27,6 +30,8 @@ services:
     command: celery -A core beat -l info
     volumes:
       - .:/usr/src/app/
+    env_file:
+    - ./.env_docker
     depends_on:
       - redis
   db:

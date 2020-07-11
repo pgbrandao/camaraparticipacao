@@ -101,7 +101,10 @@ DATABASES = {
         "HOST": os.environ.get("SQL_HOST"),
         "PORT": os.environ.get("SQL_PORT"),
     },
-    "enquetes": {
+}
+
+if "ENQUETES_SQL_DATABASE" in os.environ:
+    DATABASES["enquetes"] = {
         "ENGINE": os.environ.get("ENQUETES_SQL_ENGINE"),
         "NAME": os.environ.get("ENQUETES_SQL_DATABASE"),
         "USER": os.environ.get("ENQUETES_SQL_USER"),
@@ -113,7 +116,8 @@ DATABASES = {
             'extra_params': 'Trusted_connection=no'
         },
     }
-}
+
+
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
@@ -155,6 +159,6 @@ CELERY_RESULT_BACKEND = "redis://redis:6379"
 CELERY_BEAT_SCHEDULE = {
     "dataloader": {
         "task": "core.tasks.dataloader",
-        "schedule": crontab(hour="5"),
+        "schedule": crontab(hour="5", minute="0"),
     },
 }

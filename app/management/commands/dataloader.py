@@ -43,17 +43,17 @@ class Command(BaseCommand):
             raise CommandError('No option specified.')
 
         if options['all'] or options['enquetes']:
-            dataloader.load_enquetes(cmd=self)
+            dataloader.load_enquetes()
         if options['all'] or options['dados_abertos']:
-            dataloader.load_deputados(cmd=self)
-            dataloader.load_orgaos(cmd=self)
-            dataloader.load_proposicoes(cmd=self)
-            dataloader.load_proposicoes_autores(cmd=self)
-            dataloader.load_proposicoes_temas(cmd=self)
+            dataloader.load_deputados()
+            dataloader.load_orgaos()
+            dataloader.load_proposicoes()
+            dataloader.load_proposicoes_autores()
+            dataloader.load_proposicoes_temas()
         if options['all'] or options['analytics']:
-            dataloader.load_analytics_proposicoes(cmd=self)
+            dataloader.load_analytics_proposicoes()
         
-        dataloader.preprocess(cmd=self)
+        dataloader.preprocess()
 
 
 

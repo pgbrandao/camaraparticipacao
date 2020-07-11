@@ -35,7 +35,7 @@ def get_http():
     http.mount("http://", adapter)
     return http
 
-def load_deputados(cmd=None):
+def load_deputados():
     url = 'https://dadosabertos.camara.leg.br/arquivos/deputados/json/deputados.json'
 
     r = get_http().get(url)
@@ -58,10 +58,10 @@ def load_deputados(cmd=None):
         cursor.execute(sql, field_values)
         cursor.execute('ALTER TABLE app_deputado ENABLE TRIGGER ALL;')
     
-    cmd.stdout.write("Loaded deputados")
+    print("Loaded deputados")
 
 
-def load_orgaos(cmd=None):
+def load_orgaos():
     url = 'https://dadosabertos.camara.leg.br/arquivos/orgaos/json/orgaos.json'
 
     r = get_http().get(url)
@@ -82,9 +82,9 @@ def load_orgaos(cmd=None):
         cursor.execute(sql, field_values)
         cursor.execute('ALTER TABLE app_orgao ENABLE TRIGGER ALL;')
     
-    cmd.stdout.write("Loaded orgaos")
+    print("Loaded orgaos")
 
-def load_proposicoes(cmd=None):
+def load_proposicoes():
     # Dict to store {tex_url_formulario_publicado => ide_formulario_publicado}
     # tex_url_formulario_publicado: ID proposição
     formulario_publicado_dict = {}
@@ -151,10 +151,10 @@ def load_proposicoes(cmd=None):
             get_model('Proposicao').objects.bulk_create(proposicoes)
             cursor.execute('ALTER TABLE app_proposicao ENABLE TRIGGER ALL;')
 
-        cmd.stdout.write("Loaded proposicoes %d" % (i,))
+        print("Loaded proposicoes %d" % (i,))
 
         
-def load_proposicoes_autores(cmd=None):
+def load_proposicoes_autores():
     with connections['default'].cursor() as cursor:  
         cursor.execute('ALTER TABLE app_proposicao_autor DISABLE TRIGGER ALL;')
         cursor.execute('DELETE FROM app_proposicao_autor')
@@ -187,12 +187,12 @@ def load_proposicoes_autores(cmd=None):
                 ', '.join('(%s, %s)' for i in range(count))
             cursor.execute(sql, field_values)
         
-        cmd.stdout.write("Loaded proposicoes autores %d" % (i,))
+        print("Loaded proposicoes autores %d" % (i,))
     with connections['default'].cursor() as cursor:
         cursor.execute('ALTER TABLE app_proposicao_autor ENABLE TRIGGER ALL;')
 
 
-def load_proposicoes_temas(cmd=None):
+def load_proposicoes_temas():
     with connections['default'].cursor() as cursor:  
         cursor.execute('ALTER TABLE app_proposicao_tema DISABLE TRIGGER ALL;')
         cursor.execute('ALTER TABLE app_tema DISABLE TRIGGER ALL;')
@@ -234,7 +234,7 @@ def load_proposicoes_temas(cmd=None):
                 ', '.join('(%s, %s)' for i in range(count))
             cursor.execute(sql, field_values)
         
-        cmd.stdout.write("Loaded proposicoes temas %d" % (i,))
+        print("Loaded proposicoes temas %d" % (i,))
 
     with connections['default'].cursor() as cursor:
         cursor.execute('ALTER TABLE app_proposicao_tema ENABLE TRIGGER ALL;')
@@ -251,7 +251,11 @@ def batch_qs(qs, batch_size=1000):
         end = min(start + batch_size, total)
         yield (start, end, total, qs[start:end])
 
-def load_enquetes(cmd=None):
+def load_enquetes():
+    if 'enquetes' not in settings.DATABASES:
+        print('Enquetes connection not available')
+        return
+ 
     process_models = [get_model('FormularioPublicado'), get_model('Resposta'), get_model('ItemResposta'), get_model('Posicionamento')]
 
     for model in process_models:
@@ -279,10 +283,10 @@ def load_enquetes(cmd=None):
         with connections['default'].cursor() as cursor:
             cursor.execute('ALTER TABLE public."%s" DISABLE TRIGGER ALL;' % (table_name,))
 
-        cmd.stdout.write('Loaded enquetes %s' % (table_name,))
+        print('Loaded enquetes %s' % (table_name,))
 
 
-def load_analytics_proposicoes(cmd=None):
+def load_analytics_proposicoes():
     proposicao_ids = set(get_model('Proposicao').objects.values_list('id', flat=True))
 
     token = ServiceAccountCredentials.from_json_keyfile_dict(
@@ -343,9 +347,9 @@ def load_analytics_proposicoes(cmd=None):
                 ))
         
 
-        cmd.stdout.write('Loaded analytics %s' % (date,))
+        print('Loaded analytics %s' % (date,))
 
-def preprocess(cmd=None):
+def preprocess():
     pa = defaultdict(lambda:{'pageviews': 0, 'poll_votes': 0, 'poll_comments': 0})
 
     pageviews_qs = get_model('ProposicaoPageview').objects.all()
@@ -399,4 +403,4 @@ def preprocess(cmd=None):
         get_model('ProposicaoAggregated').objects.bulk_create(pa_list)
         cursor.execute('ALTER TABLE app_proposicaoaggregated ENABLE TRIGGER ALL;')
 
-    cmd.stdout.write('Finished preprocess')
+    print('Finished preprocess')
