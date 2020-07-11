@@ -68,6 +68,3 @@ RUN pip install -r requirements.txt
 # CMD gunicorn camaraparticipacao.wsgi:application --bind 0.0.0.0:$PORT
 
 COPY . /usr/src/app/
-
-# run entrypoint.sh
-ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
