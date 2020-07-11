@@ -79,7 +79,6 @@ def index(request):
             if v is None and k in fields_list - non_count:
                 record[k] = 0
     
-    import pdb;pdb.set_trace()
     # proposicoes = pd.DataFrame(, columns=fields_list, dtype=['int']*7)
     proposicoes = pd.DataFrame.from_records(records)
 
@@ -87,8 +86,6 @@ def index(request):
         proposicoes['p_score'] = proposicoes['poll_votes_period'] + proposicoes['poll_comments_period'] + proposicoes['pageviews_period']
         proposicoes.sort_values(by=['p_score'], ascending=False, inplace=True)
         proposicoes = proposicoes[:50]
-
-    import pdb;pdb.set_trace()
 
     return render(request, 'index.html', locals())
 

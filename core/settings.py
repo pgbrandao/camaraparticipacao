@@ -81,10 +81,10 @@ TEMPLATES = [
 ]
 
 STATIC_URL = BASE_PATH + 'static/'
-# STATIC_ROOT = os.path.join(BASE_DIR, 'static_root')
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'core/static'),
-]
+STATIC_ROOT = os.path.join(BASE_DIR, 'core/static')
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, 'core/static'),
+# ]
 
 WSGI_APPLICATION = 'core.wsgi.application'
 

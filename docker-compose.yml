@@ -3,14 +3,15 @@ version: "3"
 services:
   web:
     build: .
-    command: gunicorn core.wsgi:application --bind 0.0.0.0:80
+    command: gunicorn core.wsgi:application --bind 0.0.0.0:50101
     volumes:
       - .:/usr/src/app/
+      - static_data:/usr/src/app/core/static
     ports:
-      - 80:80
-    entrypoint: /usr/src/app/entrypoint.sh
+      - 50101:50101
+    entrypoint: /usr/src/app/conf/entrypoint.sh
     env_file:
-      - ./.env_docker
+      - ./conf/.env_docker
     depends_on:
       - db
       - redis
@@ -22,7 +23,7 @@ services:
     volumes:
       - .:/usr/src/app/
     env_file:
-    - ./.env_docker
+    - ./conf/.env_docker
     depends_on:
       - redis
   celery-beat:
@@ -31,7 +32,7 @@ services:
     volumes:
       - .:/usr/src/app/
     env_file:
-    - ./.env_docker
+    - ./conf/.env_docker
     depends_on:
       - redis
   db:
@@ -42,7 +43,17 @@ services:
       - POSTGRES_DB=camaraparticipacao
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+  nginx:
+    image: nginx
+    ports:
+      - 50001:80
+    volumes:
+      - ./conf/nginx_conf:/etc/nginx/conf.d/default.conf
+      - static_data:/home/app/web/project/static
+    depends_on:
+      - web
 
 volumes:
+  static_data:
   postgres_data:
-    driver: local 
+    driver: local

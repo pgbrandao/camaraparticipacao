@@ -172,7 +172,6 @@ class Proposicao(models.Model):
         # doc_positivos = nlp('. '.join(posicionamentos_positivos))
         # [print("{:.4f}  {:60s}".format(p.rank, p.text)) for p in doc_negativos._.phrases[:20]]
 
-        import pdb;pdb.set_trace()
 
 
 
