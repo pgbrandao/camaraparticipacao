@@ -85,6 +85,10 @@ def load_orgaos():
     print("Loaded orgaos")
 
 def load_proposicoes():
+    with connections['default'].cursor() as cursor:  
+        cursor.execute('ALTER TABLE app_proposicao DISABLE TRIGGER ALL;')
+        cursor.execute('DELETE FROM app_proposicao')
+    
     # Dict to store {tex_url_formulario_publicado => ide_formulario_publicado}
     # tex_url_formulario_publicado: ID proposição
     formulario_publicado_dict = {}
@@ -146,12 +150,13 @@ def load_proposicoes():
             proposicoes.append(proposicao)
 
         with connections['default'].cursor() as cursor:  
-            cursor.execute('ALTER TABLE app_proposicao DISABLE TRIGGER ALL;')
-            cursor.execute('DELETE FROM app_proposicao')
             get_model('Proposicao').objects.bulk_create(proposicoes)
-            cursor.execute('ALTER TABLE app_proposicao ENABLE TRIGGER ALL;')
 
         print("Loaded proposicoes %d" % (i,))
+
+    with connections['default'].cursor() as cursor:  
+        cursor.execute('ALTER TABLE app_proposicao ENABLE TRIGGER ALL;')
+
 
         
 def load_proposicoes_autores():
@@ -188,6 +193,7 @@ def load_proposicoes_autores():
             cursor.execute(sql, field_values)
         
         print("Loaded proposicoes autores %d" % (i,))
+    
     with connections['default'].cursor() as cursor:
         cursor.execute('ALTER TABLE app_proposicao_autor ENABLE TRIGGER ALL;')
 
