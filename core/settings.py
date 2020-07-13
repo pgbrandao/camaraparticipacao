@@ -81,10 +81,10 @@ TEMPLATES = [
 ]
 
 STATIC_URL = BASE_PATH + 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'core/static')
-# STATICFILES_DIRS = [
-#     os.path.join(BASE_DIR, 'core/static'),
-# ]
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'core/static'),
+]
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
@@ -161,6 +161,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "core.tasks.dataloader",
         "schedule": crontab(hour="5", minute="0"),
     },
+    # "datacacher": {
+    #     "task": "core.tasks.datacacher",
+    #     "schedule": crontab(hour="*", minute="0")
+    # }
 }
 
 CACHES = {

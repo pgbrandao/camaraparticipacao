@@ -6,7 +6,7 @@ services:
     command: gunicorn core.wsgi:application --bind 0.0.0.0:50101
     volumes:
       - .:/usr/src/app/
-      - static_data:/usr/src/app/core/static
+      - static_data:/usr/src/app/static
     ports:
       - 50101:50101
     entrypoint: /usr/src/app/conf/entrypoint.sh
@@ -28,7 +28,7 @@ services:
       - redis
   celery-beat:
     build: .
-    command: celery -A core beat -l info
+    command: celery -A core beat -l info --pidfile=
     volumes:
       - .:/usr/src/app/
     env_file:
