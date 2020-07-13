@@ -6,12 +6,8 @@
 
 <!-- Specific CSS goes HERE -->
 {% block stylesheets %}
-.table {
-table-layout: fixed;
-}
-.table td {
-padding: 0.5rem;
-overflow: hidden;
+.datatable-container {
+    padding: 1.25rem 1.5rem;
 }
 {% endblock stylesheets %}
 
@@ -70,22 +66,29 @@ overflow: hidden;
             <div class="card">
                 <!-- Card header -->
                 <div class="card-header border-0">
-                    <h3 class="mb-0">Posicionamentos</h3>
+                    <h3 class="mb-0">Comentários da enquete</h3>
                 </div>
                 <!-- Light table -->
-                <div class="table-responsive">
+                <div class="datatable-container">
                     <table class="align-items-center table-flush" id="posicionamentos_table">
                         <thead class="thead-light">
                             <tr>
-                                <th scope="col" width="700px">Posicionamento</th>
+                                <th scope="col" width="150px">Posicionamento</th>
+                                <th scope="col" width="700px">Conteúdo</th>
                                 <th scope="col" width="100px">Data</th>
                                 <th scope="col" width="150px">Moderado?</th>
-                                <th scope="col" width="150px">Favorável/Contrário</th>
                             </tr>
                         </thead>
                         <tbody class="list">
                             {% for posicionamento in proposicao.enquete_posicionamentos %}
                             <tr>
+                                <td>
+                                    {% if posicionamento.ind_positivo == 1 %}
+                                        Favorável
+                                    {% elif posicionamento.ind_positivo == 0 %}
+                                        Contrário
+                                    {% endif %}
+                                </td>
                                 <td class="overflow: hidden;">
                                     {{ posicionamento.des_conteudo }}
                                 </td>
@@ -94,27 +97,11 @@ overflow: hidden;
                                 </td>
                                 <td>
                                     {% if posicionamento.cod_autorizado == 0 %}
-                                    <span class="badge badge-dot mr-4">
-                                        <i class="bg-info"></i>
-                                        <span class="status">não moderado</span>
-                                    </span>
+                                        Não moderado
                                     {% elif posicionamento.cod_autorizado == 1 %}
-                                    <span class="badge badge-dot mr-4">
-                                        <i class="bg-success"></i>
-                                        <span class="status">autorizado</span>
-                                    </span>
+                                        Autorizado
                                     {% elif posicionamento.cod_autorizado == 2 %}
-                                    <span class="badge badge-dot mr-4">
-                                        <i class="bg-warning"></i>
-                                        <span class="status">não autorizado</span>
-                                    </span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if posicionamento.ind_positivo == 1 %}
-                                        Favorável
-                                    {% elif posicionamento.ind_positivo == 0 %}
-                                        Contrário
+                                        Não autorizado
                                     {% endif %}
                                 </td>
                             </tr>
@@ -144,7 +131,17 @@ overflow: hidden;
     $('.nav-item a').removeClass('active');
     $('.home-item a').addClass('active');
     $(document).ready( function () {
-        $('#posicionamentos_table').DataTable();
+        $('#posicionamentos_table').DataTable({
+            columns: [
+                { name: 'posicionamento' },
+                { name: 'conteudo' },
+                { name: 'data' },
+                { name: 'moderado' },
+            ],
+            searchPane: {
+                columns: ['posicionamento:name', 'moderado:name']
+            }
+        });
     } );
 </script>
 {% endblock javascripts %}

@@ -1,0 +1,78 @@
+{% extends 'layouts/base.html' %}
+{% load humanize %}
+
+
+{% block title %} Dashboard da participação {% endblock title %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+<div class="header pb-8 pt-5 pt-md-6 bg-primary">
+    <div class="container-fluid">
+        <div class="header-body">
+            <div class="col-lg-6 col-7">
+                <h6 class="h2 text-white d-inline-block mb-0">Busca por proposta</h6>
+                <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+                    <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+                        <li class="breadcrumb-item"><a href="#"><i class="fas fa-home"></i></a></li>
+                        <li class="breadcrumb-item"><a href="#">Propostas</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Busca</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="container-fluid mt--7 bg-secondary">
+
+    <div class="row">
+        <div class="col-xl-4 col-lg-6">
+            <div class="card shadow card-stats mb-4 mb-xl-0 fade-in-top">
+                <div class="card-body ">
+                    <div class="row">
+                        <div class="col">
+                            <form method="POST" action=".">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    <label for="sigla_tipo">Sigla</label>
+                                    <select class="form-control" name="sigla_tipo">
+                                        {% for sigla_tipo in sigla_tipos %}
+                                            <option value="{{ sigla_tipo }}">{{ sigla_tipo }}</option>
+                                        {% endfor %}
+                                      </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="numero">Número</label>
+                                    <input type="text" class="form-control" name="numero">
+                                </div>
+                                <div class="form-group">
+                                    <label for="ano">Ano</label>
+                                    <input type="text" class="form-control" name="ano">
+                                </div>
+                                <div class="form-group">
+                                    <button class="btn btn-primary" type="submit">Acessar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include "includes/footer.html" %}
+
+</div>
+
+{% endblock content %}
+
+<!-- Specific JS goes HERE -->
+{% block javascripts %}
+<script>
+    $('.nav-item a').removeClass('active');
+    $('.home-item a').addClass('active');
+</script>
+{% endblock javascripts %}

@@ -1,7 +1,8 @@
 from django.conf import settings
 from django.core.cache import cache
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, Sum, Q
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.http import HttpResponse
 
 import datetime
@@ -103,7 +104,7 @@ def index(request):
         
         cache.set('index_proposicoes', proposicoes, 3600)
 
-    return render(request, 'index.html', locals())
+    return render(request, 'pages/index.html', locals())
 
 def enquetes_busca_data(request):
     date_min = None
@@ -129,13 +130,27 @@ def enquetes_busca_data(request):
         proposicoes.sort_values(by=['p_score'], ascending=False, inplace=True)
         proposicoes = proposicoes[:50]
 
-    return render(request, 'enquetes_busca_data.html', locals())
+    return render(request, 'pages/enquetes_busca_data.html', locals())
 
-    
+def busca_proposicao(request,):
+    if request.method == "POST":
+        sigla_tipo = request.POST.get('sigla_tipo')
+        numero = request.POST.get('numero')
+        ano = request.POST.get('ano')
+
+        try:
+            proposicao = Proposicao.objects.get(sigla_tipo=sigla_tipo, numero=int(numero), ano=int(ano))
+            return redirect('proposicao_detail', id_proposicao=proposicao.pk)
+        except ObjectDoesNotExist:
+            pass
+
+    sigla_tipos = Proposicao.objects.values_list('sigla_tipo', flat=True).distinct('sigla_tipo')
+
+    return render(request, 'pages/busca_proposicao.html', locals())
 
 def proposicao_detail(request, id_proposicao):
     proposicao = Proposicao.objects.get(pk=id_proposicao)
 
     daily_summary_proposicao_plot = plots.daily_summary_proposicao(proposicao)
 
-    return render(request, 'proposicao_details.html', locals())
+    return render(request, 'pages/proposicao_details.html', locals())
