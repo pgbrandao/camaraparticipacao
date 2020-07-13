@@ -21,9 +21,13 @@
   <script src="https://kit.fontawesome.com/c58634d3ee.js" crossorigin="anonymous"></script>
   <!-- Theme CSS -->
   <link href="{% static 'assets/css/argon.min.css' %}" rel="stylesheet" />
-
+  <link href="{% static 'assets/js/plugins/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css' %}" rel="stylesheet" />
+  <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.css">
+  
   <!-- Specific CSS goes HERE -->
-  {% block stylesheets %}{% endblock stylesheets %}
+  <style>
+    {% block stylesheets %}{% endblock stylesheets %}
+  </style>
 
 </head>
 

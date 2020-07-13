@@ -12,8 +12,8 @@
     <div class="container-fluid">
         <div class="header-body">
             <div class="col-lg-6 col-7">
+                <h6 class="h2 text-white d-inline-block mb-0">Relatório de enquetes</h6>
                 <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
-                    <h6 class="h2 text-white d-inline-block mb-0">Relatório de enquetes</h6>
                     <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
                         <li class="breadcrumb-item"><a href="#"><i class="fas fa-home"></i></a></li>
                         <li class="breadcrumb-item"><a href="#">Enquetes</a></li>
@@ -35,29 +35,6 @@
                     <div class="row">
                         <div class="col">
                             <form method="GET" action=".">
-                                <div class="input-daterange datepicker row align-items-center">
-                                    <div class="col">
-                                        <div class="form-group">
-                                            <div class="input-group">
-                                                <div class="input-group-prepend">
-                                                    <span class="input-group-text"><i class="ni ni-calendar-grid-58"></i></span>
-                                                </div>
-                                                <input class="form-control" placeholder="Start date" type="text" value="06/18/2020">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col">
-                                        <div class="form-group">
-                                            <div class="input-group">
-                                                <div class="input-group-prepend">
-                                                    <span class="input-group-text"><i class="ni ni-calendar-grid-58"></i></span>
-                                                </div>
-                                                <input class="form-control" placeholder="End date" type="text" value="06/22/2020">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
                                 <div class="form-group">
                                     <label for="date_min">Data inicial</label>
                                     <input type="text" class="form-control" name="date_min"
@@ -86,7 +63,8 @@
                     <div class="row align-items-center">
                         <div class="col">
                             <h6 class="text-uppercase text-muted ls-1 mb-1"></h6>
-                            <h2 class="mb-0">Propostas: {{ date_min|date:"SHORT_DATE_FORMAT" }} a {{ date_max|date:"SHORT_DATE_FORMAT" }}</h2>
+                            <h2 class="mb-0">Propostas: {{ date_min|date:"SHORT_DATE_FORMAT" }} a
+                                {{ date_max|date:"SHORT_DATE_FORMAT" }}</h2>
                         </div>
                         <div class="col text-right">
                             <a href="#!" class="btn btn-sm btn-white">
