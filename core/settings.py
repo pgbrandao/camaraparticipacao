@@ -158,7 +158,7 @@ CELERY_RESULT_BACKEND = "redis://redis:6379"
 
 CELERY_BEAT_SCHEDULE = {
     "dataloader": {
-        "task": "core.tasks.dataloader",
+        "task": "core.tasks.dataloader_task",
         "schedule": crontab(hour="5", minute="0"),
     },
     # "datacacher": {
