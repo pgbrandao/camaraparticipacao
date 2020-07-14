@@ -351,8 +351,9 @@ def load_analytics_proposicoes():
                     pageviews=pageviews,
                     date=date
                 ))
-        
 
+        get_model('ProposicaoPageview').objects.bulk_create(proposicao_pageview_list)
+        
         print('Loaded analytics %s' % (date,))
 
 def preprocess():
