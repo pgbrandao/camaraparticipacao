@@ -1,0 +1,112 @@
+{% extends 'layouts/base.html' %}
+{% load humanize %}
+
+
+{% block title %} Dashboard da participação {% endblock title %}
+
+
+{% block stylesheets %}
+.plotly {
+    width: 1000px;
+    height: 800px;
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="header pb-8 pt-5 pt-md-6 bg-primary">
+    <div class="container-fluid">
+        <div class="header-body">
+            <div class="col-lg-6 col-7">
+                <h6 class="h2 text-white d-inline-block mb-0">Raio-X dos temas</h6>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="container-fluid mt--7 bg-secondary">
+
+    <div class="row">
+        <div class="col-xl-4 col-lg-6">
+            <div class="card shadow card-stats mb-4 mb-xl-0 fade-in-top">
+                <div class="card-body ">
+                    <form method="GET" action=".">
+                        {% csrf_token %}
+                        <h6 class="heading-small text-muted mb-4">parâmetros de busca</h6>
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-group">
+                                    <label for="dimension_field">Dimensão</label>
+                                    <select class="form-control" name="dimension_field">
+                                        {% for value, text in dimension_field_choices %}
+                                            <option value="{{ value }}" {% if dimension_field == value %}selected{% endif %}>{{ text }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-group">
+                                    <label for="month_year">Período</label>
+                                    <select class="form-control" name="month_year">
+                                        {% for value, text in month_year_choices %}
+                                            <option value="{{ value }}" {% if month_year == value %}selected{% endif %}>{{ text }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-group">
+                                    <button class="btn btn-primary" type="submit">Atualizar</button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    {% if sunburst_proposicao_tema %}
+        <div class="row mt-5">
+            <div class="col-xl-12 mb-5 mb-xl-0">
+                <div class="card shadow">
+                    <div class="card-header bg-transparent">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <h6 class="text-uppercase text-muted ls-1 mb-1"></h6>
+                                <h2 class="mb-0">Breakdown dos temas</h2>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-body plotly">
+                        <div class="chart">
+                            {% autoescape off %}
+                            {{ sunburst_proposicao_tema }}
+                            {% endautoescape %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% include "includes/footer.html" %}
+
+</div>
+
+{% endblock content %}
+
+<!-- Specific JS goes HERE -->
+{% block javascripts %}
+<script>
+    $('.nav-item a').removeClass('active');
+    $('.home-item a').addClass('active');
+</script>
+{% endblock javascripts %}

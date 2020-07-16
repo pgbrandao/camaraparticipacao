@@ -109,4 +109,34 @@ def daily_summary_proposicao(proposicao):
     plot_div = plot(fig, output_type='div', config={'displayModeBar': False})
     
     return plot_div
-    
+
+def sunburst_proposicao_tema(date_min, date_max, metric_field):
+    qs = ProposicaoAggregated.objects \
+        .filter(date__gte=date_min, date__lte=date_max, poll_votes__gt=0) \
+        .annotate(metric_total=Sum(metric_field)) \
+        .values('proposicao__pk', 'proposicao__sigla_tipo', 'proposicao__numero', 'proposicao__ano', 'metric_total', 'proposicao__tema__nome')
+    df = pd.DataFrame.from_records(qs)
+
+    # g = df.groupby(['proposicao__pk', 'proposicao__sigla_tipo', 'proposicao__numero', 'proposicao__ano', 'poll_votes_total'])
+
+    # def f(group):
+    #     if len(group) > 1:
+    #         return 'Múltiplos temas'
+    #     elif len(group) == 1:
+    #         if group.iloc[0] is None:
+    #             return 'Não classificado'
+    #         else:
+    #             return group.iloc[0]
+
+    # df = g['proposicao__tema__nome'].apply(f).reset_index()
+
+    df['proposicao_nome'] = df['proposicao__sigla_tipo'] + ' ' + df['proposicao__numero'].astype(str) + '/' + df['proposicao__ano'].astype(str)
+    df['proposicao__tema__nome'] = df['proposicao__tema__nome'].fillna('Não classificado')
+    fig = px.sunburst(df, path=['proposicao__tema__nome', 'proposicao_nome'], values='metric_total')
+    fig.update_layout(
+        width=700,
+        height=700
+    )
+    plot_div = plot(fig, output_type='div', config={})
+    return plot_div
+

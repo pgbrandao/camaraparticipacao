@@ -5,57 +5,58 @@ from django.db.models import Count, Sum, Q
 from django.shortcuts import redirect, render
 from django.http import HttpResponse
 
+import calendar
 import datetime
 from . import plots
 
 from .models import *
 
-def BootstrapFilterView(request):
-    sigla_tipo = request.GET.get('sigla_tipo')
-    numero = request.GET.get('numero')
-    ano = request.GET.get('ano')
-    deputado_autor_relator_nome = request.GET.get('deputado_autor_relator_nome')
+# def BootstrapFilterView(request):
+#     sigla_tipo = request.GET.get('sigla_tipo')
+#     numero = request.GET.get('numero')
+#     ano = request.GET.get('ano')
+#     deputado_autor_relator_nome = request.GET.get('deputado_autor_relator_nome')
 
-    date_min = None
-    try:
-        date_min = datetime.datetime.strptime('%d/%m/%Y', request.GET.get('date_min'))
-    except ValueError:
-        pass
+#     date_min = None
+#     try:
+#         date_min = datetime.datetime.strptime('%d/%m/%Y', request.GET.get('date_min'))
+#     except ValueError:
+#         pass
     
-    date_max = None
-    try:
-        date_max = datetime.datetime.strptime('%d/%m/%Y', request.GET.get('date_max'))
-    except ValueError:
-        pass
+#     date_max = None
+#     try:
+#         date_max = datetime.datetime.strptime('%d/%m/%Y', request.GET.get('date_max'))
+#     except ValueError:
+#         pass
 
-    qs = Proposicao.objects.all()
-    if is_valid_queryparam(sigla_tipo):
-        qs = qs.filter(sigla_tipo__icontains=sigla_tipo)
-    if is_valid_queryparam(numero):
-        qs = qs.filter(numero=numero)
-    if is_valid_queryparam(ano):
-        qs = qs.filter(ano=ano)
-    if is_valid_queryparam(deputado_autor_relator_nome):
-        qs = qs.filter(Q(ultimo_status_relator__nome__icontains=deputado_autor_relator_nome)
-                     | Q(autor__nome__icontains=deputado_autor_relator_nome)).distinct()
-    qs = qs.annotate(num_resposta=Count('formulario_publicado__resposta')).order_by('-num_resposta')[:50]
-    #        .annotate(pageviews=Sum('proposicaopageview__pageviews')) \
+#     qs = Proposicao.objects.all()
+#     if is_valid_queryparam(sigla_tipo):
+#         qs = qs.filter(sigla_tipo__icontains=sigla_tipo)
+#     if is_valid_queryparam(numero):
+#         qs = qs.filter(numero=numero)
+#     if is_valid_queryparam(ano):
+#         qs = qs.filter(ano=ano)
+#     if is_valid_queryparam(deputado_autor_relator_nome):
+#         qs = qs.filter(Q(ultimo_status_relator__nome__icontains=deputado_autor_relator_nome)
+#                      | Q(autor__nome__icontains=deputado_autor_relator_nome)).distinct()
+#     qs = qs.annotate(num_resposta=Count('formulario_publicado__resposta')).order_by('-num_resposta')[:50]
+#     #        .annotate(pageviews=Sum('proposicaopageview__pageviews')) \
 
-    context = {
-        'queryset': qs,
-    }
-    return render(request, "bootstrap_form.html", context)
+#     context = {
+#         'queryset': qs,
+#     }
+#     return render(request, "bootstrap_form.html", context)
 
 def index(request):
+    d0 = datetime.date.today()
+    dm1 = datetime.date.today()-datetime.timedelta(days=1)
+    dm7 = datetime.date.today()-datetime.timedelta(days=7)
+    dm8 = datetime.date.today()-datetime.timedelta(days=8)
+    dm14 = datetime.date.today()-datetime.timedelta(days=14)
+
     if 'index_stats' in cache:
         stats = cache.get('index_stats')
     else:
-        d0 = datetime.date.today()
-        dm1 = datetime.date.today()-datetime.timedelta(days=1)
-        dm7 = datetime.date.today()-datetime.timedelta(days=7)
-        dm8 = datetime.date.today()-datetime.timedelta(days=8)
-        dm14 = datetime.date.today()-datetime.timedelta(days=14)
-
         qs = ProposicaoAggregated.objects.all()
 
         stats = {}
@@ -103,8 +104,34 @@ def index(request):
             proposicoes = proposicoes[:50]
         
         cache.set('index_proposicoes', proposicoes, 3600)
-
+    
     return render(request, 'pages/index.html', locals())
+
+def raiox_temas(request):
+    dimension_field = request.GET.get('dimension_field')
+    month_year = request.GET.get('month_year')
+
+    if dimension_field and month_year:
+        dt = datetime.datetime.strptime(month_year, '%m-%Y')
+        _, num_days = calendar.monthrange(int(dt.strftime('%Y')), int(dt.strftime('%m')))
+
+        date_min = dt
+        date_max = dt.replace(day=num_days)
+
+        sunburst_proposicao_tema = plots.sunburst_proposicao_tema(date_min, date_max, dimension_field)
+
+    month_year_choices = [
+        (x.strftime('%m-%Y'), x.strftime('%B-%Y'))
+        for x in pd.date_range('2019-01-01',datetime.date.today(), freq='MS').to_series()
+    ]
+    dimension_field_choices = [
+        ('poll_votes', 'Por votos nas enquetes'),
+        ('pageviews', 'Por visualizações na ficha de tramitação'),
+    ]
+    print(month_year_choices)
+    print(month_year)
+
+    return render(request, 'pages/raiox_temas.html', locals())
 
 def enquetes_busca_data(request):
     date_min = None
