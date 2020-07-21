@@ -1,14 +1,15 @@
 from django.db.models import Count, Sum
 
 import pandas as pd 
+import plotly
 import plotly.express as px
 import plotly.graph_objs as go
 from plotly.graph_objs import Layout
-from plotly.offline import plot
 
 import datetime
 
 from .models import *
+
 
 def daily_summary_global():
     """[summary] Plots daily votes, comments and daily proposal pageviews as stacked bar
@@ -58,7 +59,7 @@ def daily_summary_global():
     fig.update_xaxes(range=[dm30, d0])
     fig.update_yaxes(gridcolor='#fff')
     fig.add_traces([daily_pageviews_trace, daily_poll_votes_trace, daily_poll_comments_trace])
-    plot_div = plot(fig, output_type='div', config={'displayModeBar': False})
+    plot_div = plotly.io.to_html(fig, include_plotlyjs='cdn', config={'displayModeBar': False}, full_html=False)
     
     return plot_div
     
@@ -106,37 +107,56 @@ def daily_summary_proposicao(proposicao):
     # fig.update_xaxes(range=[dm30, d0])
     fig.update_yaxes(gridcolor='#fff')
     fig.add_traces([daily_pageviews_trace, daily_poll_votes_trace, daily_poll_comments_trace])
-    plot_div = plot(fig, output_type='div', config={'displayModeBar': False})
+    plot_div = plotly.io.to_html(fig, include_plotlyjs='cdn', config={'displayModeBar': False}, full_html=False)
     
     return plot_div
 
-def sunburst_proposicao_tema(date_min, date_max, metric_field):
+def proposicao_tema(date_min, date_max, metric_field, plot_type):
     qs = ProposicaoAggregated.objects \
         .filter(date__gte=date_min, date__lte=date_max, poll_votes__gt=0) \
         .annotate(metric_total=Sum(metric_field)) \
         .values('proposicao__pk', 'proposicao__sigla_tipo', 'proposicao__numero', 'proposicao__ano', 'metric_total', 'proposicao__tema__nome')
     df = pd.DataFrame.from_records(qs)
 
-    # g = df.groupby(['proposicao__pk', 'proposicao__sigla_tipo', 'proposicao__numero', 'proposicao__ano', 'poll_votes_total'])
-
-    # def f(group):
-    #     if len(group) > 1:
-    #         return 'Múltiplos temas'
-    #     elif len(group) == 1:
-    #         if group.iloc[0] is None:
-    #             return 'Não classificado'
-    #         else:
-    #             return group.iloc[0]
-
-    # df = g['proposicao__tema__nome'].apply(f).reset_index()
-
     df['proposicao_nome'] = df['proposicao__sigla_tipo'] + ' ' + df['proposicao__numero'].astype(str) + '/' + df['proposicao__ano'].astype(str)
     df['proposicao__tema__nome'] = df['proposicao__tema__nome'].fillna('Não classificado')
-    fig = px.sunburst(df, path=['proposicao__tema__nome', 'proposicao_nome'], values='metric_total')
-    fig.update_layout(
-        width=700,
-        height=700
-    )
-    plot_div = plot(fig, output_type='div', config={})
-    return plot_div
+    df['proposicao__pk'] = df['proposicao__pk'].astype(str)
 
+    # print(len(df))
+    # # Group proposicoes lower than threshold
+    # tema_totals = df.groupby('proposicao__tema__nome')['metric_total'].agg('sum')
+    # threshold=0.0025
+    # for key, value in tema_totals.items():
+    #     tema_threshold = value*threshold
+    #     tema_others_filter = (df['metric_total'] < tema_threshold) & (df['proposicao__tema__nome'] == key)
+    #     tema_others_sum = df[tema_others_filter]['metric_total'].sum()
+    #     df = df.drop(df[tema_others_filter].index)
+    #     df = df.append([{'proposicao__tema__nome': key, 'metric_total': tema_others_sum, 'proposicao_nome': '(outras)'}])
+    # print(len(df))
+
+    if plot_type=='treemap':
+        fig = px.treemap(df, path=['proposicao__tema__nome', 'proposicao_nome'], values='metric_total', custom_data=['proposicao__pk'])
+        fig.update_layout(
+            width=1200,
+            height=900
+        )
+    else: # Sunburst is the fallback
+        fig = px.sunburst(df, path=['proposicao__tema__nome', 'proposicao_nome'], values='metric_total', custom_data=['proposicao__pk'])
+        fig.update_layout(
+            width=900,
+            height=900
+        )
+
+    from django.urls import reverse
+    base_url = reverse('proposicao_detail', args=[0])
+
+    post_script = """
+        document.getElementById('{plot_id}').on('plotly_click', function(data){
+            if(!isNaN(data.points[0].customdata[0])) {
+                window.location.href='base_url'.replace('0', data.points[0].customdata[0]);
+            }
+        });
+    """.replace('base_url', base_url)
+    plot_div = plotly.io.to_html(fig, include_plotlyjs='cdn', full_html=False, post_script=post_script)
+
+    return plot_div

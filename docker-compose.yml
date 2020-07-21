@@ -3,18 +3,21 @@ version: "3"
 services:
   web:
     build: .
-    command: gunicorn core.wsgi:application --bind 0.0.0.0:50101
+    command: python manage.py runserver 0.0.0.0:50101
     volumes:
       - .:/usr/src/app/
       - static_data:/usr/src/app/static
     ports:
       - 50101:50101
+      - 4444:4444
+    stdin_open: true
+    tty: true
     entrypoint: /usr/src/app/conf/entrypoint.sh
     env_file:
       - ./conf/.env_docker
     depends_on:
       - db
-      - redis
+      - celery
   redis:
     image: redis:alpine
   celery:
@@ -35,10 +38,13 @@ services:
     - ./conf/.env_docker
     depends_on:
       - redis
+      - celery
   db:
     image: postgres:12.0-alpine
     volumes:
       - postgres_data:/var/lib/postgresql/data/
+    ports:
+      - 5432:5432
     environment:
       - POSTGRES_DB=camaraparticipacao
       - POSTGRES_USER=postgres

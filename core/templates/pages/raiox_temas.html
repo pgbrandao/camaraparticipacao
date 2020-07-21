@@ -6,9 +6,6 @@
 
 
 {% block stylesheets %}
-.plotly {
-    width: 1000px;
-    height: 800px;
 {% endblock stylesheets %}
 
 {% block content %}
@@ -26,7 +23,7 @@
 <div class="container-fluid mt--7 bg-secondary">
 
     <div class="row">
-        <div class="col-xl-4 col-lg-6">
+        <div class="col-xl-12">
             <div class="card shadow card-stats mb-4 mb-xl-0 fade-in-top">
                 <div class="card-body ">
                     <form method="GET" action=".">
@@ -43,13 +40,21 @@
                                     </select>
                                 </div>
                             </div>
-                        </div>
-                        <div class="row">
                             <div class="col">
                                 <div class="form-group">
                                     <label for="month_year">Período</label>
                                     <select class="form-control" name="month_year">
                                         {% for value, text in month_year_choices %}
+                                            <option value="{{ value }}" {% if month_year == value %}selected{% endif %}>{{ text }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-group">
+                                    <label for="plot_type">Visualização</label>
+                                    <select class="form-control" name="plot_type">
+                                        {% for value, text in plot_type_choices %}
                                             <option value="{{ value }}" {% if month_year == value %}selected{% endif %}>{{ text }}</option>
                                         {% endfor %}
                                     </select>
@@ -63,18 +68,16 @@
                                 </div>
                             </div>
                         </div>
-
                     </form>
-
                 </div>
             </div>
         </div>
     </div>
 
 
-    {% if sunburst_proposicao_tema %}
+    {% if proposicao_tema_plot %}
         <div class="row mt-5">
-            <div class="col-xl-12 mb-5 mb-xl-0">
+            <div class="col-xl-12">
                 <div class="card shadow">
                     <div class="card-header bg-transparent">
                         <div class="row align-items-center">
@@ -85,12 +88,10 @@
                         </div>
                     </div>
 
-                    <div class="card-body plotly">
-                        <div class="chart">
-                            {% autoescape off %}
-                            {{ sunburst_proposicao_tema }}
-                            {% endautoescape %}
-                        </div>
+                    <div class="card-body">
+                        {% autoescape off %}
+                        {{ proposicao_tema_plot }}
+                        {% endautoescape %}
                     </div>
                 </div>
             </div>

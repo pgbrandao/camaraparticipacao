@@ -7,24 +7,17 @@
 <!-- Specific CSS goes HERE -->
 {% block stylesheets %}
 .datatable-container {
-    padding: 1.25rem 1.5rem;
+padding: 1.25rem 1.5rem;
 }
 {% endblock stylesheets %}
 
 {% block content %}
 
-<div class="header pb-8 pt-5 pt-md-6 bg-primary">
+<div class="header pb-8 pt-5 bg-primary">
     <div class="container-fluid">
         <div class="header-body">
             <div class="col-lg-6 col-7">
-                <h6 class="h2 text-white d-inline-block mb-0">Proposição</h6>
-                <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
-                    <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
-                        <li class="breadcrumb-item"><a href="#"><i class="fas fa-home"></i></a></li>
-                        <li class="breadcrumb-item"><a href="#">Proposição</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">{{ proposicao.nome }}</li>
-                    </ol>
-                </nav>
+                <h6 class="h2 text-white d-inline-block mb-0">{{ proposicao.nome }}</h6>
             </div>
         </div>
     </div>
@@ -35,31 +28,60 @@
     <div class="row">
         <div class="col-xl-12 mb-5 mb-xl-0">
             <div class="card shadow">
-                <div class="card-header bg-transparent">
-                    <h4>{{ proposicao.nome }}</h4>
-                </div>
-
                 <div class="card-body">
-                    Autor:
-                    {% for autor in proposicao.autor.all %}
-                    {{ autor }}),
-                    {% endfor %}
-
-                    Relator:
-                    {% if proposicao.ultimo_status_relator %}
-                    {{ proposicao.ultimo_status_relator.nome }}
-                    ({{ proposicao.ultimo_status_relator.partido}}/{{ proposicao.ultimo_status_relator.uf }})
-                    {% endif %}
-                    Tema:
-                    {% for tema in proposicao.tema.all %}
-                    {{ tema.nome }},
-                    {% endfor %}
-
+                    <table class="table align-items-center">
+                        <tbody>
+                            <tr>
+                                <th scope="row">Autor</th>
+                                <td>
+                                    {% for autor in proposicao.autor.all %}
+                                    {{ autor }}<br />
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Relator</th>
+                                <td>
+                                    {% if proposicao.ultimo_status_relator %}
+                                        {{ proposicao.ultimo_status_relator.nome }}
+                                        ({{ proposicao.ultimo_status_relator.partido}}/{{ proposicao.ultimo_status_relator.uf }})
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Tema</th>
+                                <td>
+                                    {% for tema in proposicao.tema.all %}
+                                    {{ tema.nome }}<br />
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
 
     </div>
+
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <!-- Card header -->
+                <div class="card-header">
+                    <h3 class="mb-0">Timeline da proposição</h3>
+                </div>
+                <div class="card-body plotly">
+                    <div class="chart">
+                        {% autoescape off %}
+                        {{ daily_summary_proposicao_plot }}
+                        {% endautoescape %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <div class="row">
         <div class="col">
@@ -77,6 +99,9 @@
                                 <th scope="col" width="700px">Conteúdo</th>
                                 <th scope="col" width="100px">Data</th>
                                 <th scope="col" width="150px">Moderado?</th>
+                                <th scope="col" width="150px">Curtidas</th>
+                                <th scope="col" width="150px">Descurtidas</th>
+
                             </tr>
                         </thead>
                         <tbody class="list">
@@ -84,9 +109,9 @@
                             <tr>
                                 <td>
                                     {% if posicionamento.ind_positivo == 1 %}
-                                        Favorável
+                                    Favorável
                                     {% elif posicionamento.ind_positivo == 0 %}
-                                        Contrário
+                                    Contrário
                                     {% endif %}
                                 </td>
                                 <td class="overflow: hidden;">
@@ -97,12 +122,18 @@
                                 </td>
                                 <td>
                                     {% if posicionamento.cod_autorizado == 0 %}
-                                        Não moderado
+                                    Não moderado
                                     {% elif posicionamento.cod_autorizado == 1 %}
-                                        Autorizado
+                                    Autorizado
                                     {% elif posicionamento.cod_autorizado == 2 %}
-                                        Não autorizado
+                                    Não autorizado
                                     {% endif %}
+                                </td>
+                                <td class="overflow: hidden;">
+                                    {{ posicionamento.qtd_curtidas }}
+                                </td>
+                                <td class="overflow: hidden;">
+                                    {{ posicionamento.qtd_descurtidas }}
                                 </td>
                             </tr>
                             {% empty %}
@@ -130,18 +161,20 @@
 <script>
     $('.nav-item a').removeClass('active');
     $('.home-item a').addClass('active');
-    $(document).ready( function () {
+    $(document).ready(function () {
         $('#posicionamentos_table').DataTable({
             columns: [
                 { name: 'posicionamento' },
                 { name: 'conteudo' },
                 { name: 'data' },
                 { name: 'moderado' },
+                { name: 'curtidas' },
+                { name: 'descurtidas' },
             ],
             searchPane: {
                 columns: ['posicionamento:name', 'moderado:name']
             }
         });
-    } );
+    });
 </script>
 {% endblock javascripts %}
