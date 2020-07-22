@@ -5,47 +5,60 @@
 {% load static %}
 
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-  <title>
-    {% block title %}{% endblock %} | Dashboard da participação
-  </title>
+    <title>
+        {% block title %}{% endblock %} | Dashboard da participação
+    </title>
 
-  <!-- Favicon - loaded as static -->
-  <link href="{% static 'assets/img/brand/favicon.ico' %}" rel="icon" type="image/png">
+    <!-- Favicon - loaded as static -->
+    <link href="{% static 'assets/img/brand/favicon.ico' %}" rel="icon" type="image/png">
 
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet">
-  <!-- Icons -->
-  <script src="https://kit.fontawesome.com/c58634d3ee.js" crossorigin="anonymous"></script>
-  <!-- Theme CSS -->
-  <link href="{% static 'assets/css/argon.min.css' %}" rel="stylesheet" />
-  <link href="{% static 'assets/js/plugins/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css' %}" rel="stylesheet" />
-  <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.css">
-  <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/plug-ins/preview/searchPane/dataTables.searchPane.min.css">
-  
-  <!-- Specific CSS goes HERE -->
-  <style>
-    {% block stylesheets %}{% endblock stylesheets %}
-  </style>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet">
+    <!-- Icons -->
+    <script src="https://kit.fontawesome.com/c58634d3ee.js" crossorigin="anonymous"></script>
+    <!-- Theme CSS -->
+    <link href="{% static 'assets/css/argon.min.css' %}" rel="stylesheet" />
+    <link href="{% static 'assets/js/plugins/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css' %}"
+        rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.css">
+    <link rel="stylesheet" type="text/css"
+        href="https://cdn.datatables.net/plug-ins/preview/searchPane/dataTables.searchPane.min.css">
+
+    <!-- Cal-heatmap -->
+    <script type="text/javascript" src="//d3js.org/d3.v3.min.js"></script>
+    <script type="text/javascript" src="//cdn.jsdelivr.net/cal-heatmap/3.3.10/cal-heatmap.min.js"></script>
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/cal-heatmap/3.3.10/cal-heatmap.css" />
+
+    <!-- Specific CSS goes HERE -->
+    <style>
+        {
+            % block stylesheets %
+        }
+
+            {
+            % endblock stylesheets %
+        }
+    </style>
 
 </head>
 
 <body class="">
 
-  {% include "includes/sidenav.html" %}
+    {% include "includes/sidenav.html" %}
 
-  <div class="main-content">
+    <div class="main-content">
 
-    {% block content %}{% endblock content %}
+        {% block content %}{% endblock content %}
 
-  </div>
+    </div>
 
-  {% include "includes/scripts.html" %}
+    {% include "includes/scripts.html" %}
 
-  <!-- Specific JS goes HERE -->
-  {% block javascripts %}{% endblock javascripts %}
+    <!-- Specific JS goes HERE -->
+    {% block javascripts %}{% endblock javascripts %}
 
 </body>
 

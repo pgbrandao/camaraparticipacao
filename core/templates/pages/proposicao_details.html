@@ -18,6 +18,9 @@ padding: 1.25rem 1.5rem;
         <div class="header-body">
             <div class="col-lg-6 col-7">
                 <h6 class="h2 text-white d-inline-block mb-0">{{ proposicao.nome }}</h6>
+                <a class="nav-link" href="{% url 'busca_proposicao' %}">
+                    <i class="fas fa-map-marked-alt text-warning"></i>Proposições
+                </a>
             </div>
         </div>
     </div>
@@ -72,16 +75,28 @@ padding: 1.25rem 1.5rem;
                     <h3 class="mb-0">Timeline da proposição</h3>
                 </div>
                 <div class="card-body plotly">
-                    <div class="chart">
                         {% autoescape off %}
                         {{ daily_summary_proposicao_plot }}
                         {% endautoescape %}
-                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">Heatmap de atividade</h3>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-primary" id="example-g-PreviousDomain-selector">Anterior</button>
+                    <button class="btn btn-primary" id="example-g-NextDomain-selector">Próximo</button>
+                    <div id="example-g"></div>
+                </div>
+            </div>
+        </div>
+    </div> -->
 
     <div class="row">
         <div class="col">
@@ -91,60 +106,62 @@ padding: 1.25rem 1.5rem;
                     <h3 class="mb-0">Comentários da enquete</h3>
                 </div>
                 <!-- Light table -->
-                <div class="datatable-container">
-                    <table class="align-items-center table-flush" id="posicionamentos_table">
-                        <thead class="thead-light">
-                            <tr>
-                                <th scope="col" width="150px">Posicionamento</th>
-                                <th scope="col" width="700px">Conteúdo</th>
-                                <th scope="col" width="100px">Data</th>
-                                <th scope="col" width="150px">Moderado?</th>
-                                <th scope="col" width="150px">Curtidas</th>
-                                <th scope="col" width="150px">Descurtidas</th>
+                <div class="card-body">
+                    <div class="datatable-container">
+                        <table class="align-items-center table-flush" id="posicionamentos_table">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th scope="col" width="150px">Posicionamento</th>
+                                    <th scope="col" width="700px">Conteúdo</th>
+                                    <th scope="col" width="100px">Data</th>
+                                    <th scope="col" width="150px">Moderado?</th>
+                                    <th scope="col" width="150px">Curtidas</th>
+                                    <th scope="col" width="150px">Descurtidas</th>
 
-                            </tr>
-                        </thead>
-                        <tbody class="list">
-                            {% for posicionamento in proposicao.enquete_posicionamentos %}
-                            <tr>
-                                <td>
-                                    {% if posicionamento.ind_positivo == 1 %}
-                                    Favorável
-                                    {% elif posicionamento.ind_positivo == 0 %}
-                                    Contrário
-                                    {% endif %}
-                                </td>
-                                <td class="overflow: hidden;">
-                                    {{ posicionamento.des_conteudo }}
-                                </td>
-                                <td data-sort="{{ posicionamento.dat_posicionamento.timestamp }}">
-                                    {{ posicionamento.dat_posicionamento|date:"SHORT_DATE_FORMAT" }}
-                                </td>
-                                <td>
-                                    {% if posicionamento.cod_autorizado == 0 %}
-                                    Não moderado
-                                    {% elif posicionamento.cod_autorizado == 1 %}
-                                    Autorizado
-                                    {% elif posicionamento.cod_autorizado == 2 %}
-                                    Não autorizado
-                                    {% endif %}
-                                </td>
-                                <td class="overflow: hidden;">
-                                    {{ posicionamento.qtd_curtidas }}
-                                </td>
-                                <td class="overflow: hidden;">
-                                    {{ posicionamento.qtd_descurtidas }}
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="4">
-                                    Vazio
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                                </tr>
+                            </thead>
+                            <tbody class="list">
+                                {% for posicionamento in proposicao.enquete_posicionamentos %}
+                                <tr>
+                                    <td>
+                                        {% if posicionamento.ind_positivo == 1 %}
+                                        Favorável
+                                        {% elif posicionamento.ind_positivo == 0 %}
+                                        Contrário
+                                        {% endif %}
+                                    </td>
+                                    <td class="overflow: hidden;">
+                                        {{ posicionamento.des_conteudo }}
+                                    </td>
+                                    <td data-sort="{{ posicionamento.dat_posicionamento.timestamp }}">
+                                        {{ posicionamento.dat_posicionamento|date:"SHORT_DATE_FORMAT" }}
+                                    </td>
+                                    <td>
+                                        {% if posicionamento.cod_autorizado == 0 %}
+                                        Não moderado
+                                        {% elif posicionamento.cod_autorizado == 1 %}
+                                        Autorizado
+                                        {% elif posicionamento.cod_autorizado == 2 %}
+                                        Não autorizado
+                                        {% endif %}
+                                    </td>
+                                    <td class="overflow: hidden;">
+                                        {{ posicionamento.qtd_curtidas }}
+                                    </td>
+                                    <td class="overflow: hidden;">
+                                        {{ posicionamento.qtd_descurtidas }}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4">
+                                        Vazio
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -176,5 +193,32 @@ padding: 1.25rem 1.5rem;
             }
         });
     });
+
+    // var cal = new CalHeatMap();
+    // cal.init({
+    //     itemSelector: "#example-g",
+    //     domain: "month",
+    //     subDomain: "x_day",
+    //     data: {{ proposicao_heatmap }},
+    //     cellSize: 20,
+    //     cellPadding: 5,
+    //     domainGutter: 20,
+    //     range: 4,
+    //     maxDate: new Date(),
+    //     domainDynamicDimension: false,
+    //     previousSelector: "#example-g-PreviousDomain-selector",
+    //     nextSelector: "#example-g-NextDomain-selector",
+    //     // subDomainTextFormat: "%d",
+    //     domainLabelFormat: "%m-%Y",
+    //     tooltip: true,
+    //     weekStartOnMonday: false,
+    //     legend: [1168, 2337, 3506, 4675],
+    //     legendColors: {
+    // 		empty: "#ededed",
+	//     	min: "#40ffd8",
+    // 		max: "#f20013"
+	//     }
+    // });
+
 </script>
 {% endblock javascripts %}
