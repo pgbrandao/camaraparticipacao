@@ -15,6 +15,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 from oauth2client.client import HttpAccessTokenRefreshError
 
 import requests
+import tenacity
 
 from django.apps import apps
 
@@ -22,25 +23,13 @@ from django.apps import apps
 def get_model(model_name):
     return apps.get_model(app_label='app', model_name=model_name)
 
-def get_http():
-    retry_strategy = requests.packages.urllib3.util.retry.Retry(
-        total=8,
-        status_forcelist=[429, 500, 502, 503, 504],
-        method_whitelist=["HEAD", "GET", "POST", "OPTIONS"],
-        backoff_factor=2
-    )
-    adapter = requests.adapters.HTTPAdapter(max_retries=retry_strategy)
-    http = requests.Session()
-    http.mount("https://", adapter)
-    http.mount("http://", adapter)
-    return http
-
+@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(10), wait=tenacity.wait_exponential(multiplier=60, max=3600))
 @transaction.atomic
 def load_deputados():
     with connections['default'].cursor() as cursor:  
         url = 'https://dadosabertos.camara.leg.br/arquivos/deputados/json/deputados.json'
 
-        r = get_http().get(url)
+        r = requests.get(url)
         j = r.json()
 
         count = len(j['dados'])
@@ -60,12 +49,13 @@ def load_deputados():
 
         print("Loaded deputados")
 
+@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(10), wait=tenacity.wait_exponential(multiplier=60, max=3600))
 @transaction.atomic
 def load_orgaos():
     with connections['default'].cursor() as cursor:  
         url = 'https://dadosabertos.camara.leg.br/arquivos/orgaos/json/orgaos.json'
 
-        r = get_http().get(url)
+        r = requests.get(url)
         j = r.json()
 
         count = len(j['dados'])
@@ -84,6 +74,7 @@ def load_orgaos():
 
         print("Loaded orgaos")
 
+@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(10), wait=tenacity.wait_exponential(multiplier=60, max=3600))
 @transaction.atomic
 def load_proposicoes():
     with connections['default'].cursor() as cursor:  
@@ -102,7 +93,7 @@ def load_proposicoes():
         for i in range(2001, datetime.datetime.now().year+1):
             url = 'https://dadosabertos.camara.leg.br/arquivos/proposicoes/json/proposicoes-%s.json' % (i,)
 
-            r = get_http().get(url)
+            r = requests.get(url)
             j = r.json()
             
             proposicoes = []
@@ -156,6 +147,7 @@ def load_proposicoes():
 
         cursor.execute('ALTER TABLE app_proposicao ENABLE TRIGGER ALL;')
 
+@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(10), wait=tenacity.wait_exponential(multiplier=60, max=3600))
 @transaction.atomic
 def load_proposicoes_autores():
     with connections['default'].cursor() as cursor:  
@@ -165,7 +157,7 @@ def load_proposicoes_autores():
         for i in range(2001, datetime.datetime.now().year+1):
             url = 'https://dadosabertos.camara.leg.br/arquivos/proposicoesAutores/json/proposicoesAutores-%s.json' % (i,)
 
-            r = get_http().get(url)
+            r = requests.get(url)
             j = r.json()
 
             count = 0
@@ -195,6 +187,7 @@ def load_proposicoes_autores():
         cursor.execute('ALTER TABLE app_proposicao_autor ENABLE TRIGGER ALL;')
 
 
+@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(10), wait=tenacity.wait_exponential(multiplier=60, max=3600))
 @transaction.atomic
 def load_proposicoes_temas():
     with connections['default'].cursor() as cursor:  
@@ -208,7 +201,7 @@ def load_proposicoes_temas():
         for i in range(2001, datetime.datetime.now().year+1):
             url = 'https://dadosabertos.camara.leg.br/arquivos/proposicoesTemas/json/proposicoesTemas-%s.json' % (i,)
 
-            r = get_http().get(url)
+            r = requests.get(url)
             j = r.json()
 
             count = 0
@@ -253,6 +246,7 @@ def batch_qs(qs, batch_size=1000):
         end = min(start + batch_size, total)
         yield (start, end, total, qs[start:end])
 
+@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(10), wait=tenacity.wait_exponential(multiplier=60, max=3600))
 @transaction.atomic
 def load_enquetes():
     if 'enquetes' not in settings.DATABASES:
@@ -286,6 +280,7 @@ def load_enquetes():
 
             print('Loaded enquetes %s' % (table_name,))
 
+@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(10), wait=tenacity.wait_exponential(multiplier=60, max=3600))
 @transaction.atomic
 def load_analytics_proposicoes():
     proposicao_ids = set(get_model('Proposicao').objects.values_list('id', flat=True))
@@ -351,6 +346,7 @@ def load_analytics_proposicoes():
         
         print('Loaded analytics %s' % (date,))
 
+@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(10), wait=tenacity.wait_exponential(multiplier=60, max=3600))
 @transaction.atomic
 def preprocess():
     pa = defaultdict(lambda:{'pageviews': 0, 'poll_votes': 0, 'poll_comments': 0})
