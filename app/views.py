@@ -175,6 +175,7 @@ def proposicao_detail(request, id_proposicao):
     proposicao = Proposicao.objects.get(pk=id_proposicao)
 
     daily_summary_proposicao_plot = plots.daily_summary_proposicao(proposicao)
+    proposicao_heatmap = plots.proposicao_heatmap(proposicao)
 
     return render(request, 'pages/proposicao_details.html', locals())
 

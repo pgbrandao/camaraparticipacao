@@ -64,17 +64,10 @@ def daily_summary_global():
     return plot_div
     
 def daily_summary_proposicao(proposicao):
-    """[summary] Plots daily votes, comments and daily proposal pageviews as stacked bar
-    Reference: https://plotly.com/python/bar-charts/
-    
-    Returns:
-        [plotly.graph_objs] -- [plot_div compatible with Django]
-    """
     qs = ProposicaoAggregated.objects.filter(proposicao=proposicao).order_by('date').values()
     daily_data = pd.DataFrame(qs)
 
     layout = Layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', legend=dict(x=0.025, y=1), height=310, margin=dict(t=0, l=15, r=10, b=0), barmode='stack')
-    fig = go.Figure(layout=layout)
     daily_pageviews_trace = go.Bar(
         x=daily_data.date,
         y=daily_data.pageviews,
@@ -91,6 +84,7 @@ def daily_summary_proposicao(proposicao):
         name='Comentários na enquete',
         marker_color='#2dce89',)
     
+    fig = plotly.tools.make_subplots(rows=3, cols=1, shared_xaxes=True)
     fig.update_xaxes(
         rangeselector=dict(
             buttons=list([
@@ -100,16 +94,30 @@ def daily_summary_proposicao(proposicao):
                 dict(label='T', step='all')
             ]))
         )
-    
-    # d0 = datetime.date.today()
-    # dm30 = d0 - datetime.timedelta(days=31)
-
-    # fig.update_xaxes(range=[dm30, d0])
     fig.update_yaxes(gridcolor='#fff')
-    fig.add_traces([daily_pageviews_trace, daily_poll_votes_trace, daily_poll_comments_trace])
+    fig.append_trace(daily_pageviews_trace, 1, 1)
+    fig.append_trace(daily_poll_votes_trace, 2, 1)
+    fig.append_trace(daily_poll_comments_trace, 3, 1)
+    # fig.add_traces([daily_pageviews_trace, daily_poll_votes_trace, daily_poll_comments_trace])
     plot_div = plotly.io.to_html(fig, include_plotlyjs='cdn', config={'displayModeBar': False}, full_html=False)
     
     return plot_div
+
+def proposicao_heatmap(proposicao):
+    qs = ProposicaoAggregated.objects.filter(proposicao=proposicao).order_by('date').values()
+    df = pd.DataFrame(qs)
+
+    # The following two lines convert a string date to a UNIX timestamp... kludgy
+    df['date'] = pd.to_datetime(df['date'])
+    df['ts'] = (df['date'].astype(int) / 10**9).astype(int)
+
+    print(df['pageviews'].max())
+    records = df.to_dict('records')
+    values = {}
+    for record in records:
+        values[record['ts']] = record['pageviews']
+
+    return values
 
 def proposicao_tema(date_min, date_max, metric_field, plot_type):
     qs = ProposicaoAggregated.objects \
