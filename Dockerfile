@@ -1,5 +1,5 @@
 # Base Image
-FROM python:3.8.0-alpine
+FROM python:3.8.0-buster
 
 WORKDIR /usr/src/app
 
@@ -7,24 +7,23 @@ WORKDIR /usr/src/app
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONDONTWRITEBYTECODE 1
 
-RUN apk update
+RUN apt-get update
 
-# Install necessary packages
-RUN apk add g++ make
-RUN apk add gnupg
+# install psycopg2 
+RUN apt-get install -y python3-psycopg2
 
-# install psycopg2 dependencies
-RUN apk add postgresql-dev gcc python3-dev musl-dev
+# Install pyodbc requirements
+RUN apt-get install -y python3-dev
+RUN apt-get install -y unixodbc-dev
 
-# install pyodbc dependencies
-RUN apk add unixodbc unixodbc-dev
-
-# Add SQL Server ODBC Driver 17 for Ubuntu 18.04
-RUN apk add curl
-RUN curl -O https://download.microsoft.com/download/e/4/e/e4e67866-dffd-428c-aac7-8d28ddafb39b/msodbcsql17_17.5.2.2-1_amd64.apk
-RUN curl -O https://download.microsoft.com/download/e/4/e/e4e67866-dffd-428c-aac7-8d28ddafb39b/mssql-tools_17.5.2.1-1_amd64.apk
-RUN ACCEPT_EULA=Y apk add --allow-untrusted msodbcsql17_17.5.2.2-1_amd64.apk
-RUN ACCEPT_EULA=Y apk add --allow-untrusted mssql-tools_17.5.2.1-1_amd64.apk
+# Add SQL Server ODBC Driver 17
+RUN apt-get install -y curl
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
+RUN curl https://packages.microsoft.com/config/debian/10/prod.list > /etc/apt/sources.list.d/mssql-release.list
+RUN apt-get update
+RUN ACCEPT_EULA=Y apt-get install -y msodbcsql17
+RUN ACCEPT_EULA=Y apt-get install -y mssql-tools
+RUN echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bash_profile
 
 RUN pip install --upgrade pip 
 
