@@ -137,13 +137,13 @@ def raiox(date_min, date_max, metric_field, plot_type, dimension):
 
     if dimension == 'tema':
         path = ['proposicao__tema__nome', 'proposicao__nome_processado']
-    df['proposicao__tema__nome'] = df['proposicao__tema__nome'].fillna('Não classificado')
+        df['proposicao__tema__nome'] = df['proposicao__tema__nome'].fillna('Não classificado')
     elif dimension == 'autor':
         path = ['proposicao__autor__nome', 'proposicao__nome_processado']
-        df['proposicao__autor__nome'] = df['proposicao__autor__nome'].fillna('Sem autor')
+        df['proposicao__autor__nome'] = df['proposicao__autor__nome'].fillna('Sem deputado autor')
     elif dimension == 'relator':
         path = ['proposicao__ultimo_status_relator__nome', 'proposicao__nome_processado']
-        df['proposicao__ultimo_status_relator__nome'] = df['proposicao__ultimo_status_relator__nome'].fillna('Sem autor')
+        df['proposicao__ultimo_status_relator__nome'] = df['proposicao__ultimo_status_relator__nome'].fillna('Sem relator')
     elif dimension == 'proposicao':
         path = ['proposicao__nome_processado']
 
