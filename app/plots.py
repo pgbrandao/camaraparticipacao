@@ -111,7 +111,6 @@ def proposicao_heatmap(proposicao):
     df['date'] = pd.to_datetime(df['date'])
     df['ts'] = (df['date'].astype(int) / 10**9).astype(int)
 
-    print(df['pageviews'].max())
     records = df.to_dict('records')
     values = {}
     for record in records:
@@ -119,37 +118,44 @@ def proposicao_heatmap(proposicao):
 
     return values
 
-def proposicao_tema(date_min, date_max, metric_field, plot_type):
+def raiox(date_min, date_max, metric_field, plot_type, dimension):
     qs = ProposicaoAggregated.objects \
-        .filter(date__gte=date_min, date__lte=date_max, poll_votes__gt=0) \
-        .annotate(metric_total=Sum(metric_field)) \
-        .values('proposicao__pk', 'proposicao__sigla_tipo', 'proposicao__numero', 'proposicao__ano', 'metric_total', 'proposicao__tema__nome')
+        .filter(date__gte=date_min, date__lte=date_max, **{metric_field+'__gt': 0}) \
+        .annotate(metric_total=Sum(metric_field))
+    
+    if dimension == 'tema':
+        qs = qs.values('proposicao__pk', 'proposicao__nome_processado', 'metric_total', 'proposicao__tema__nome')
+    elif dimension == 'autor':
+        qs = qs.values('proposicao__pk', 'proposicao__nome_processado', 'metric_total', 'proposicao__autor__nome')
+    elif dimension == 'relator':
+        qs = qs.values('proposicao__pk', 'proposicao__nome_processado', 'metric_total', 'proposicao__ultimo_status_relator__nome')
+    elif dimension == 'proposicao':
+        qs = qs.values('proposicao__pk', 'proposicao__nome_processado', 'metric_total')
+    
     df = pd.DataFrame.from_records(qs)
-
-    df['proposicao_nome'] = df['proposicao__sigla_tipo'] + ' ' + df['proposicao__numero'].astype(str) + '/' + df['proposicao__ano'].astype(str)
-    df['proposicao__tema__nome'] = df['proposicao__tema__nome'].fillna('Não classificado')
     df['proposicao__pk'] = df['proposicao__pk'].astype(str)
 
-    # print(len(df))
-    # # Group proposicoes lower than threshold
-    # tema_totals = df.groupby('proposicao__tema__nome')['metric_total'].agg('sum')
-    # threshold=0.0025
-    # for key, value in tema_totals.items():
-    #     tema_threshold = value*threshold
-    #     tema_others_filter = (df['metric_total'] < tema_threshold) & (df['proposicao__tema__nome'] == key)
-    #     tema_others_sum = df[tema_others_filter]['metric_total'].sum()
-    #     df = df.drop(df[tema_others_filter].index)
-    #     df = df.append([{'proposicao__tema__nome': key, 'metric_total': tema_others_sum, 'proposicao_nome': '(outras)'}])
-    # print(len(df))
+    if dimension == 'tema':
+        path = ['proposicao__tema__nome', 'proposicao__nome_processado']
+    df['proposicao__tema__nome'] = df['proposicao__tema__nome'].fillna('Não classificado')
+    elif dimension == 'autor':
+        path = ['proposicao__autor__nome', 'proposicao__nome_processado']
+        df['proposicao__autor__nome'] = df['proposicao__autor__nome'].fillna('Sem autor')
+    elif dimension == 'relator':
+        path = ['proposicao__ultimo_status_relator__nome', 'proposicao__nome_processado']
+        df['proposicao__ultimo_status_relator__nome'] = df['proposicao__ultimo_status_relator__nome'].fillna('Sem autor')
+    elif dimension == 'proposicao':
+        path = ['proposicao__nome_processado']
+
 
     if plot_type=='treemap':
-        fig = px.treemap(df, path=['proposicao__tema__nome', 'proposicao_nome'], values='metric_total', custom_data=['proposicao__pk'])
+        fig = px.treemap(df, path=path, values='metric_total', custom_data=['proposicao__pk'])
         fig.update_layout(
             width=1200,
             height=900
         )
     else: # Sunburst is the fallback
-        fig = px.sunburst(df, path=['proposicao__tema__nome', 'proposicao_nome'], values='metric_total', custom_data=['proposicao__pk'])
+        fig = px.sunburst(df, path=path, values='metric_total', custom_data=['proposicao__pk'])
         fig.update_layout(
             width=900,
             height=900

@@ -37,13 +37,18 @@ def load_deputados():
         for row in j['dados']:
             id = int(re.search('/([0-9]*)$', row['uri']).group(1))
             nome = row['nome']
+            # TODO: Puxar partido e UF para incorporar aqui.
+            nome_processado = '{} (Partido/UF)'.format(nome)
+
             field_values.append(id)
             field_values.append(nome)
+            field_values.append(nome_processado)
+        
         
         cursor.execute('ALTER TABLE app_deputado DISABLE TRIGGER ALL;')
         cursor.execute('DELETE FROM app_deputado')
-        sql = 'INSERT INTO app_deputado (id, nome) VALUES %s' % \
-            ', '.join('(%s, %s)' for i in range(count))
+        sql = 'INSERT INTO app_deputado (id, nome, nome_processado) VALUES %s' % \
+            ', '.join('(%s, %s, %s)' for i in range(count))
         cursor.execute(sql, field_values)
         cursor.execute('ALTER TABLE app_deputado ENABLE TRIGGER ALL;')
 
@@ -119,8 +124,12 @@ def load_proposicoes():
                 except KeyError:
                     formulario_publicado_id = None
 
+                # TODO: Improve this for edgier cases
+                nome_processado = '{} {}/{}'.format(p['siglaTipo'], p['numero'], p['ano'])
+
                 proposicao = get_model('Proposicao')(
                     id = p['id'],
+                    nome_processado = nome_processado,
                     sigla_tipo = p['siglaTipo'],
                     numero = p['numero'],
                     ano = p['ano'],

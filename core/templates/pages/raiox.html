@@ -13,7 +13,18 @@
     <div class="container-fluid">
         <div class="header-body">
             <div class="col-lg-6 col-7">
-                <h6 class="h2 text-white d-inline-block mb-0">Raio-X dos temas</h6>
+                <h2 class="h2 text-white d-inline-block mb-0">Raio-X</h2><br />
+                <h3 class="h3 text-white d-inline-block mb-0">
+                    {% if dimension == "proposicao" %}
+                        Por proposição
+                    {% elif dimension == "tema" %}
+                        Por tema
+                    {% elif dimension == "autor" %}
+                        Por autor
+                    {% elif dimension == "relator" %}
+                        Por relator
+                    {% endif %}
+                </h3>
             </div>
         </div>
     </div>
@@ -27,15 +38,14 @@
             <div class="card shadow card-stats mb-4 mb-xl-0 fade-in-top">
                 <div class="card-body ">
                     <form method="GET" action=".">
-                        {% csrf_token %}
                         <h6 class="heading-small text-muted mb-4">parâmetros de busca</h6>
                         <div class="row">
                             <div class="col">
                                 <div class="form-group">
-                                    <label for="dimension_field">Dimensão</label>
-                                    <select class="form-control" name="dimension_field">
-                                        {% for value, text in dimension_field_choices %}
-                                            <option value="{{ value }}" {% if dimension_field == value %}selected{% endif %}>{{ text }}</option>
+                                    <label for="metric_field">Dimensão</label>
+                                    <select class="form-control" name="metric_field">
+                                        {% for value, text in metric_field_choices %}
+                                            <option value="{{ value }}" {% if metric_field == value %}selected{% endif %}>{{ text }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -55,7 +65,7 @@
                                     <label for="plot_type">Visualização</label>
                                     <select class="form-control" name="plot_type">
                                         {% for value, text in plot_type_choices %}
-                                            <option value="{{ value }}" {% if month_year == value %}selected{% endif %}>{{ text }}</option>
+                                            <option value="{{ value }}" {% if plot_type == value %}selected{% endif %}>{{ text }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -75,22 +85,13 @@
     </div>
 
 
-    {% if proposicao_tema_plot %}
+    {% if raiox_plot %}
         <div class="row mt-5">
             <div class="col-xl-12">
                 <div class="card shadow">
-                    <div class="card-header bg-transparent">
-                        <div class="row align-items-center">
-                            <div class="col">
-                                <h6 class="text-uppercase text-muted ls-1 mb-1"></h6>
-                                <h2 class="mb-0">Breakdown dos temas</h2>
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="card-body">
                         {% autoescape off %}
-                        {{ proposicao_tema_plot }}
+                        {{ raiox_plot }}
                         {% endautoescape %}
                     </div>
                 </div>

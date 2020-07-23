@@ -17,9 +17,9 @@ padding: 1.25rem 1.5rem;
     <div class="container-fluid">
         <div class="header-body">
             <div class="col-lg-6 col-7">
-                <h6 class="h2 text-white d-inline-block mb-0">{{ proposicao.nome }}</h6>
-                <a class="nav-link" href="{% url 'busca_proposicao' %}">
-                    <i class="fas fa-map-marked-alt text-warning"></i>Proposições
+                <h2 class="h2 text-white d-inline-block mb-0">{{ proposicao.nome_processado }}</h2>
+                <a href="https://www.camara.leg.br/propostas-legislativas/{{ proposicao.pk }}">
+                    <i class="fas fa-external-link-alt text-warning"></i> Acessar no portal da Câmara
                 </a>
             </div>
         </div>
@@ -38,7 +38,7 @@ padding: 1.25rem 1.5rem;
                                 <th scope="row">Autor</th>
                                 <td>
                                     {% for autor in proposicao.autor.all %}
-                                    {{ autor }}<br />
+                                    {{ autor.nome_processado }}<br />
                                     {% endfor %}
                                 </td>
                             </tr>
@@ -46,8 +46,7 @@ padding: 1.25rem 1.5rem;
                                 <th scope="row">Relator</th>
                                 <td>
                                     {% if proposicao.ultimo_status_relator %}
-                                        {{ proposicao.ultimo_status_relator.nome }}
-                                        ({{ proposicao.ultimo_status_relator.partido}}/{{ proposicao.ultimo_status_relator.uf }})
+                                    {{ proposicao.ultimo_status_relator.nome_processado }}
                                     {% endif %}
                                 </td>
                             </tr>
@@ -75,9 +74,9 @@ padding: 1.25rem 1.5rem;
                     <h3 class="mb-0">Timeline da proposição</h3>
                 </div>
                 <div class="card-body plotly">
-                        {% autoescape off %}
-                        {{ daily_summary_proposicao_plot }}
-                        {% endautoescape %}
+                    {% autoescape off %}
+                    {{ daily_summary_proposicao_plot }}
+                    {% endautoescape %}
                 </div>
             </div>
         </div>

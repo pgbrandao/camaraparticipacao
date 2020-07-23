@@ -3,7 +3,7 @@ from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, Sum, Q
 from django.shortcuts import redirect, render
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 
 import calendar
 import datetime
@@ -90,12 +90,15 @@ def index(request):
     return render(request, 'pages/index.html', locals())
 
 
-def raiox_temas(request):
-    dimension_field = request.GET.get('dimension_field')
+def raiox(request, dimension):
+    if dimension not in ('tema', 'autor', 'relator', 'proposicao'):
+        return Http404
+
+    metric_field = request.GET.get('metric_field')
     month_year = request.GET.get('month_year')
     plot_type = request.GET.get('plot_type')
 
-    if dimension_field and month_year:
+    if metric_field and month_year:
         dt = datetime.datetime.strptime(month_year, '%m-%Y')
         _, num_days = calendar.monthrange(
             int(dt.strftime('%Y')), int(dt.strftime('%m')))
@@ -103,14 +106,15 @@ def raiox_temas(request):
         date_min = dt
         date_max = dt.replace(day=num_days)
 
-        proposicao_tema_plot = plots.proposicao_tema(
-            date_min, date_max, dimension_field, plot_type)
+        raiox_plot = plots.raiox(
+            date_min, date_max, metric_field, plot_type, dimension)
+
 
     month_year_choices = [
         (x.strftime('%m-%Y'), x.strftime('%B-%Y'))
         for x in pd.date_range('2019-01-01', datetime.date.today(), freq='MS').to_series()
     ]
-    dimension_field_choices = [
+    metric_field_choices = [
         ('poll_votes', 'Por votos nas enquetes'),
         ('pageviews', 'Por visualizações na ficha de tramitação'),
     ]
@@ -119,7 +123,7 @@ def raiox_temas(request):
         ('treemap', 'Retangular'),
     ]
 
-    return render(request, 'pages/raiox_temas.html', locals())
+    return render(request, 'pages/raiox.html', locals())
 
 
 def enquetes_busca_data(request):

@@ -40,8 +40,23 @@
                 <ul class="navbar-nav">
 
                     <li class="nav-item tables-item">
-                        <a class="nav-link" href="{% url 'raiox_temas' %}">
-                            <i class="fas fa-chart-pie text-default"></i>Temas
+                        <a class="nav-link" href="{% url 'raiox' dimension='proposicao' %}">
+                            <i class="fas fa-chart-pie text-default"></i>Por proposição
+                        </a>
+                    </li>
+                    <li class="nav-item tables-item">
+                        <a class="nav-link" href="{% url 'raiox' dimension='tema' %}">
+                            <i class="fas fa-chart-pie text-default"></i>Por tema
+                        </a>
+                    </li>
+                    <li class="nav-item tables-item">
+                        <a class="nav-link" href="{% url 'raiox' dimension='autor' %}">
+                            <i class="fas fa-chart-pie text-default"></i>Por autor
+                        </a>
+                    </li>
+                    <li class="nav-item tables-item">
+                        <a class="nav-link" href="{% url 'raiox' dimension='relator' %}">
+                            <i class="fas fa-chart-pie text-default"></i>Por relator
                         </a>
                     </li>
                 </ul>

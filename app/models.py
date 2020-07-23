@@ -81,7 +81,10 @@ class PosicionamentoExtra(models.Model):
         default=ClassificationTypes.UNRATED)
 
 class Proposicao(models.Model):
+    # The following field is based on the other ones
+    nome_processado = models.TextField(blank=True, null=True)
 
+    # Original fields
     sigla_tipo = models.TextField(blank=True, null=True)
     numero = models.IntegerField(blank=True, null=True)
     ano = models.IntegerField(blank=True, null=True)
@@ -107,9 +110,6 @@ class Proposicao(models.Model):
     ultimo_status_relator = models.ForeignKey('Deputado', null=True, related_name='ultimo_status_relator', on_delete=models.SET_NULL)
     ultimo_status_orgao = models.ForeignKey('Orgao', null=True, on_delete=models.SET_NULL)
     ultimo_status_descricao_situacao = models.TextField(blank=True, null=True)
-
-    def nome(self):
-        return '%s %s/%s' % (self.sigla_tipo, self.numero, self.ano)
 
     # def enquete_votos_data(self):
     #     qs = ItemResposta.objects.filter(ide_resposta__ide_formulario_publicado=self.formulario_publicado.pk) \
@@ -186,6 +186,9 @@ class Tema(models.Model):
         return '%s' % (self.nome,)
 
 class Deputado(models.Model):
+    # The following field is based on the other ones
+    nome_processado = models.TextField(blank=True, null=True)
+
     nome = models.TextField(blank=True, null=True)
     partido = models.TextField(blank=True, null=True)
     uf = models.TextField(blank=True, null=True)
