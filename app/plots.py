@@ -129,6 +129,10 @@ def raiox(date_min, date_max, metric_field, plot_type, dimension):
         qs = qs.values('proposicao__pk', 'proposicao__nome_processado', 'metric_total', 'proposicao__autor__nome')
     elif dimension == 'relator':
         qs = qs.values('proposicao__pk', 'proposicao__nome_processado', 'metric_total', 'proposicao__ultimo_status_relator__nome')
+    elif dimension == 'situacao':
+        qs = qs.values('proposicao__pk', 'proposicao__nome_processado', 'metric_total', 'proposicao__ultimo_status_situacao_descricao')
+    elif dimension == 'indexacao':
+        qs = qs.values('proposicao__pk', 'proposicao__nome_processado', 'metric_total', 'proposicao__keywords')
     elif dimension == 'proposicao':
         qs = qs.values('proposicao__pk', 'proposicao__nome_processado', 'metric_total')
     
@@ -144,8 +148,25 @@ def raiox(date_min, date_max, metric_field, plot_type, dimension):
     elif dimension == 'relator':
         path = ['proposicao__ultimo_status_relator__nome', 'proposicao__nome_processado']
         df['proposicao__ultimo_status_relator__nome'] = df['proposicao__ultimo_status_relator__nome'].fillna('Sem relator')
+    elif dimension == 'situacao':
+        path = ['proposicao__ultimo_status_situacao_descricao', 'proposicao__nome_processado']
+        df['proposicao__ultimo_status_situacao_descricao'] = df['proposicao__ultimo_status_situacao_descricao'].replace(r'^\s*$', 'Sem situação', regex=True)
+        df['proposicao__ultimo_status_situacao_descricao'] = df['proposicao__ultimo_status_situacao_descricao'].fillna('Sem situação')
+    elif dimension == 'indexacao':
+        path = ['proposicao__keywords', 'proposicao__nome_processado']
+        df = df.assign(proposicao__keywords=df['proposicao__keywords'].str.split(',')).explode('proposicao__keywords')
     elif dimension == 'proposicao':
         path = ['proposicao__nome_processado']
+
+    # Group proposicoes lower than threshold
+
+    # TODO: Maybe this can be improved by:
+    # 1. Grouping the excluded items and showing them in the graph for precision
+    # 2. Considering the threshold inside each dimension item.
+
+    total = df['metric_total'].sum()
+    threshold = 0.0001 * total
+    df = df[df['metric_total'] >= threshold]
 
 
     if plot_type=='treemap':

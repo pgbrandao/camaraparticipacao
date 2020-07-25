@@ -34,7 +34,7 @@
                 <hr class="my-3">
 
                 <h6 class="navbar-heading p-0 text-muted">
-                    <span class="docs-normal">Raio-X</span>
+                    <span class="docs-normal">Raio-X da participação</span>
                 </h6>
 
                 <ul class="navbar-nav">
@@ -50,6 +50,11 @@
                         </a>
                     </li>
                     <li class="nav-item tables-item">
+                        <a class="nav-link" href="{% url 'raiox' dimension='indexacao' %}">
+                            <i class="fas fa-chart-pie text-default"></i>Por indexação
+                        </a>
+                    </li>
+                    <li class="nav-item tables-item">
                         <a class="nav-link" href="{% url 'raiox' dimension='autor' %}">
                             <i class="fas fa-chart-pie text-default"></i>Por autor
                         </a>
@@ -57,6 +62,11 @@
                     <li class="nav-item tables-item">
                         <a class="nav-link" href="{% url 'raiox' dimension='relator' %}">
                             <i class="fas fa-chart-pie text-default"></i>Por relator
+                        </a>
+                    </li>
+                    <li class="nav-item tables-item">
+                        <a class="nav-link" href="{% url 'raiox' dimension='situacao' %}">
+                            <i class="fas fa-chart-pie text-default"></i>Por situação
                         </a>
                     </li>
                 </ul>

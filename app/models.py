@@ -109,54 +109,6 @@ class Proposicao(models.Model):
     ultimo_status_data = models.DateField(blank=True, null=True)
     ultimo_status_relator = models.ForeignKey('Deputado', null=True, related_name='ultimo_status_relator', on_delete=models.SET_NULL)
     ultimo_status_orgao = models.ForeignKey('Orgao', null=True, on_delete=models.SET_NULL)
-    ultimo_status_descricao_situacao = models.TextField(blank=True, null=True)
-
-    # def enquete_votos_data(self):
-    #     qs = ItemResposta.objects.filter(ide_resposta__ide_formulario_publicado=self.formulario_publicado.pk) \
-    #                              .values('num_indice_opcao') \
-    #                              .annotate(votos=models.Count('num_indice_opcao'))
-
-    #     source = pd.DataFrame({
-    #         'cats': ['Concordo totalmente', 'Concordo na maior parte', 'Estou indeciso', 'Discordo na maior parte', 'Discordo totalmente'],
-    #         'votos': [qs.get(num_indice_opcao=4)['votos'],
-    #                   qs.get(num_indice_opcao=3)['votos'],
-    #                   qs.get(num_indice_opcao=2)['votos'], 
-    #                   qs.get(num_indice_opcao=1)['votos'], 
-    #                   qs.get(num_indice_opcao=0)['votos']]
-    #     })
-    #     return source
-
-    # def enquete_votos_chart_small(self):
-    #     source = self.enquete_votos_data()
-    #     chart = alt.Chart(source).mark_bar().encode(
-    #         x=alt.X('cats', axis=alt.Axis(labels=False, ticks=False), title=None, type='nominal', sort=None),
-    #         y=alt.Y('votos', axis=alt.Axis(labels=False, ticks=False), title=None),
-    #         color=alt.Color('cats', title='Escala Likert', scale=alt.Scale(
-    #             range=['rgb(89,162,74)', 'rgb(157,198,77)', 'rgb(102,143,205)', 'rgb(215,51,23)', 'rgb(155,37,17)']), sort=None),
-    #         tooltip=['cats', 'votos']
-    #     ).configure_axis(
-    #         grid=False
-    #     ).properties(
-    #         width=120,
-    #         height=80
-    #     )
-    #     return chart.to_json()
-
-    # def enquete_votos_chart_large(self):
-    #     source = self.enquete_votos_data()
-    #     chart = alt.Chart(source).mark_bar().encode(
-    #         x=alt.X('cats', axis=alt.Axis(labels=False, ticks=False), title=None, type='nominal', sort=None),
-    #         y=alt.Y('votos', axis=alt.Axis(labels=False, ticks=False), title=None),
-    #         color=alt.Color('cats', title='Escala Likert', scale=alt.Scale(
-    #             range=['rgb(89,162,74)', 'rgb(157,198,77)', 'rgb(102,143,205)', 'rgb(215,51,23)', 'rgb(155,37,17)']), sort=None),
-    #         tooltip=['cats', 'votos']
-    #     ).configure_axis(
-    #         grid=False
-    #     ).properties(
-    #         width=600,
-    #         height=200
-    #     )
-    #     return chart.to_json()
 
     def enquete_posicionamentos(self, order_by="-dat_posicionamento"):
         queryset = Posicionamento.objects.filter(ide_formulario_publicado=self.formulario_publicado)
@@ -164,18 +116,6 @@ class Proposicao(models.Model):
             queryset = queryset.order_by(order_by)
 
         return queryset
-
-    def ficha_pageviews_chart_large(self,days_ago=30):
-        queryset = ProposicaoPageview.objects.filter(proposicao=self).order_by('date')
-        source = pd.DataFrame(list(queryset.values('date', 'pageviews')))
-        chart = alt.Chart(source).mark_line().encode(
-            x=alt.X('date'),
-            y=alt.Y('pageviews')
-        ).properties(
-            width=500,
-            height=200
-        )
-        return chart.to_json()
 
     def enquete_votos_count(self):
         return self.formulario_publicado.resposta_set.count()

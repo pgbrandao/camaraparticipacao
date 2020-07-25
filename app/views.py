@@ -91,7 +91,7 @@ def index(request):
 
 
 def raiox(request, dimension):
-    if dimension not in ('tema', 'autor', 'relator', 'proposicao'):
+    if dimension not in ('tema', 'autor', 'relator', 'situacao', 'indexacao', 'proposicao'):
         return Http404
 
     metric_field = request.GET.get('metric_field')
@@ -115,12 +115,12 @@ def raiox(request, dimension):
         for x in pd.date_range('2019-01-01', datetime.date.today(), freq='MS').to_series()
     ]
     metric_field_choices = [
-        ('poll_votes', 'Por votos nas enquetes'),
-        ('pageviews', 'Por visualizações na ficha de tramitação'),
+        ('poll_votes', 'Votos nas enquetes'),
+        ('pageviews', 'Visualizações na ficha de tramitação'),
     ]
     plot_type_choices = [
-        ('sunburst', 'Circular'),
-        ('treemap', 'Retangular'),
+        ('sunburst', 'Circular (sunburst)'),
+        ('treemap', 'Retangular (treemap)'),
     ]
 
     return render(request, 'pages/raiox.html', locals())
