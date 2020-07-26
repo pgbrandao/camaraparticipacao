@@ -106,14 +106,17 @@ def raiox(request, dimension):
         date_min = dt
         date_max = dt.replace(day=num_days)
 
-        raiox_plot = plots.raiox(
+        plot_div, total, total_plot = plots.raiox(
             date_min, date_max, metric_field, plot_type, dimension)
 
+        percent_plot = total_plot / total * 100 if total else 0
 
     month_year_choices = [
         (x.strftime('%m-%Y'), x.strftime('%B-%Y'))
         for x in pd.date_range('2019-01-01', datetime.date.today(), freq='MS').to_series()
     ]
+    month_year_choices = month_year_choices[::-1]
+    
     metric_field_choices = [
         ('poll_votes', 'Votos nas enquetes'),
         ('pageviews', 'Visualizações na ficha de tramitação'),
@@ -179,7 +182,6 @@ def proposicao_detail(request, id_proposicao):
     proposicao = Proposicao.objects.get(pk=id_proposicao)
 
     daily_summary_proposicao_plot = plots.daily_summary_proposicao(proposicao)
-    proposicao_heatmap = plots.proposicao_heatmap(proposicao)
 
     return render(request, 'pages/proposicao_details.html', locals())
 

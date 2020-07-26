@@ -89,14 +89,19 @@
     </div>
 
 
-    {% if raiox_plot %}
+    {% if plot_div %}
         <div class="row mt-5">
             <div class="col-xl-12">
                 <div class="card shadow">
                     <div class="card-body">
-                        {% autoescape off %}
-                        {{ raiox_plot }}
-                        {% endautoescape %}
+                        {% if total == 0 %}
+                            Sem dados para o período.
+                        {% else %}
+                            {% autoescape off %}
+                            {{ plot_div }}
+                            {% endautoescape %}
+                            Total: {{ total|intcomma }} ({{ percent_plot|floatformat:2 }}% considerados para a geração do gráfico)
+                        {% endif %}
                     </div>
                 </div>
             </div>

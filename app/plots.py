@@ -67,7 +67,15 @@ def daily_summary_proposicao(proposicao):
     qs = ProposicaoAggregated.objects.filter(proposicao=proposicao).order_by('date').values()
     daily_data = pd.DataFrame(qs)
 
-    layout = Layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', legend=dict(x=0.025, y=1), height=310, margin=dict(t=0, l=15, r=10, b=0), barmode='stack')
+    # layout = Layout(
+    #     paper_bgcolor='rgba(0,0,0,0)',
+    #     plot_bgcolor='rgba(0,0,0,0)',
+    #     legend=dict(x=0.025, y=1),
+    #     height=310,
+    #     margin=dict(t=0, l=15, r=10, b=0),
+    #     barmode='stack',
+    #     dragmode="pan"
+    # )
     daily_pageviews_trace = go.Bar(
         x=daily_data.date,
         y=daily_data.pageviews,
@@ -86,15 +94,27 @@ def daily_summary_proposicao(proposicao):
     
     fig = plotly.tools.make_subplots(rows=3, cols=1, shared_xaxes=True)
     fig.update_xaxes(
-        rangeselector=dict(
-            buttons=list([
-                dict(count=7, label='W', step='day', stepmode='backward'),
-                dict(count=1, label='M', step='month', stepmode='backward'),
-                dict(count=3, label='3M', step='month', stepmode='backward', ),
-                dict(label='T', step='all')
-            ]))
-        )
-    fig.update_yaxes(gridcolor='#fff')
+        # rangeselector=dict(
+        #     buttons=list([
+        #         dict(count=7, label='W', step='day', stepmode='backward'),
+        #         dict(count=1, label='M', step='month', stepmode='backward'),
+        #         dict(count=3, label='3M', step='month', stepmode='backward', ),
+        #         dict(label='T', step='all')
+        #     ])
+        # )
+        # fixedrange=True,
+        # dragmode="pan"
+        # yaxis=dict(
+        #     fixedrange=True
+        # ),
+        # display_mode_bar=False,
+        # rangeslider=dict(
+        #     visible = True
+        # ),
+        range=[datetime.date.today() - datetime.timedelta(days=90), datetime.date.today()]
+    )
+    fig.update_yaxes(gridcolor='#fff', fixedrange=True)
+    fig.update_layout(dragmode='pan')
     fig.append_trace(daily_pageviews_trace, 1, 1)
     fig.append_trace(daily_poll_votes_trace, 2, 1)
     fig.append_trace(daily_poll_comments_trace, 3, 1)
@@ -137,6 +157,9 @@ def raiox(date_min, date_max, metric_field, plot_type, dimension):
         qs = qs.values('proposicao__pk', 'proposicao__nome_processado', 'metric_total')
     
     df = pd.DataFrame.from_records(qs)
+
+    if df.empty:
+        return (' ', 0, 0)
     df['proposicao__pk'] = df['proposicao__pk'].astype(str)
 
     if dimension == 'tema':
@@ -167,7 +190,7 @@ def raiox(date_min, date_max, metric_field, plot_type, dimension):
     total = df['metric_total'].sum()
     threshold = 0.0001 * total
     df = df[df['metric_total'] >= threshold]
-
+    total_plot = df['metric_total'].sum()
 
     if plot_type=='treemap':
         fig = px.treemap(df, path=path, values='metric_total', custom_data=['proposicao__pk'])
@@ -194,4 +217,4 @@ def raiox(date_min, date_max, metric_field, plot_type, dimension):
     """.replace('base_url', base_url)
     plot_div = plotly.io.to_html(fig, include_plotlyjs='cdn', full_html=False, post_script=post_script)
 
-    return plot_div
+    return (plot_div, total, total_plot)

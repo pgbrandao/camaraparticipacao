@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Sum
 from django.core.exceptions import ObjectDoesNotExist
 
 import datetime
@@ -116,6 +117,18 @@ class Proposicao(models.Model):
             queryset = queryset.order_by(order_by)
 
         return queryset
+
+    def stats(self):
+        qs = ProposicaoAggregated.objects.filter(proposicao=self)
+        qs = qs.aggregate(Sum('pageviews'), Sum('poll_votes'), Sum('poll_comments'))
+
+        return {
+            'pageviews_total': qs['pageviews__sum'],
+            'poll_votes_total': qs['poll_votes__sum'],
+            'poll_comments_total': qs['poll_comments__sum'],
+        }
+        
+        
 
     def enquete_votos_count(self):
         return self.formulario_publicado.resposta_set.count()
