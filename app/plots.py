@@ -18,7 +18,7 @@ def daily_summary_global():
     Returns:
         [plotly.graph_objs] -- [plot_div compatible with Django]
     """
-    qs = ProposicaoFichaPageviews.objects.values('date').annotate(ficha_pageviews_total=Sum('ficha_pageviews')).order_by('date').values('date', 'ficha_pageviews_total')
+    qs = ProposicaoFichaPageviews.objects.values('date').annotate(pageviews_total=Sum('pageviews')).order_by('date').values('date', 'pageviews_total')
     daily_ficha_pageviews = pd.DataFrame(qs)
     qs = Resposta.objects.extra(select={'date':'date(dat_resposta)'}).values('date').annotate(votes_total=Count('ide_resposta')).order_by('date').values('date', 'votes_total')
     daily_poll_votes = pd.DataFrame(qs)
@@ -29,7 +29,7 @@ def daily_summary_global():
     fig = go.Figure(layout=layout)
     daily_ficha_pageviews_trace = go.Bar(
         x=daily_ficha_pageviews.date if not daily_ficha_pageviews.empty else [None],
-        y=daily_ficha_pageviews.ficha_pageviews_total if not daily_ficha_pageviews.empty else [None],
+        y=daily_ficha_pageviews.pageviews_total if not daily_ficha_pageviews.empty else [None],
         name='Visualizações (ficha de tramitação)',
         marker_color='#f5365c')
     daily_poll_votes_trace = go.Bar(

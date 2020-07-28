@@ -42,9 +42,9 @@ def index(request):
             stats['posicionamentos_this_week'] / stats['posicionamentos_past_week'] - 1) * 100 if stats['posicionamentos_past_week'] else 0
 
         stats['proposicao_ficha_pageview_this_week'] = ProposicaoFichaPageviews.objects.filter(
-            date__gte=dm7, date__lt=d0).aggregate(Sum('ficha_pageviews'))['ficha_pageviews__sum'] or 0
+            date__gte=dm7, date__lt=d0).aggregate(Sum('pageviews'))['pageviews__sum'] or 0
         stats['proposicao_ficha_pageview_past_week'] = ProposicaoFichaPageviews.objects.filter(
-            date__gte=dm14, date__lt=dm7).aggregate(Sum('ficha_pageviews'))['ficha_pageviews__sum'] or 0
+            date__gte=dm14, date__lt=dm7).aggregate(Sum('pageviews'))['pageviews__sum'] or 0
         stats['proposicao_ficha_pageview_change'] = (stats['proposicao_ficha_pageview_this_week'] /
                                                stats['proposicao_ficha_pageview_past_week'] - 1) * 100 if stats['proposicao_ficha_pageview_past_week'] else 0
 

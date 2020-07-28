@@ -153,6 +153,7 @@ ANALYTICS_CREDENTIALS = os.environ['ANALYTICS_CREDENTIALS']
 CELERY_BROKER_URL = "redis://redis:6379"
 CELERY_RESULT_BACKEND = "redis://redis:6379"
 
+# TODO: This should be configured according to an environment variable
 CELERY_BEAT_SCHEDULE = {
     "dataloader": {
         "task": "core.tasks.dataloader_task",
