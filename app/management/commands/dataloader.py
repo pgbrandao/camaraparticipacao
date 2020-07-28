@@ -42,23 +42,23 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         if  not options['all'] and \
             not options['enquetes'] and \
-            not options['dados-abertos'] and \
-            not options['analytics-fichas'] and \
-            not options['analytics-noticias'] and \
+            not options['dados_abertos'] and \
+            not options['analytics_fichas'] and \
+            not options['analytics_noticias'] and \
             not options['preprocess']:
             raise CommandError('No option specified.')
 
         if options['all'] or options['enquetes']:
             dataloader.load_enquetes()
-        if options['all'] or options['dados-abertos']:
+        if options['all'] or options['dados_abertos']:
             dataloader.load_deputados()
             dataloader.load_orgaos()
             dataloader.load_proposicoes()
             dataloader.load_proposicoes_autores()
             dataloader.load_proposicoes_temas()
-        if options['all'] or options['analytics-fichas']:
+        if options['all'] or options['analytics_fichas']:
             dataloader.load_analytics_fichas()
-        if options['all'] or options['analytics-noticias']:
+        if options['all'] or options['analytics_noticias']:
             dataloader.load_analytics_noticias()
         
         dataloader.preprocess()

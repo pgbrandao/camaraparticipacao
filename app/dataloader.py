@@ -361,8 +361,8 @@ def load_noticia(id):
     r = requests.get("https://camaranews.camara.leg.br/wp-json/conteudo-portal/{}".format(str(id)))
     j = r.json()
 
-    if j.get('code') == 'not_found':
-        return
+    if not id or j.get('code') == 'not_found':
+        return False
 
     noticia_id = j.get('id')
     tipo_conteudo = j.get('tipo_conteudo')
@@ -423,6 +423,8 @@ def load_noticia(id):
     )
     noticia.proposicoes.set(proposicoes_list)
     noticia.deputados.set(deputados_list)
+
+    return True
 
 @tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_exponential(multiplier=60, max=3600))
 @transaction.atomic
@@ -496,18 +498,19 @@ def load_analytics_noticias():
         pbar = tqdm(pageviews_dict.items())
         for noticia_id, pageviews in pbar:
             pbar.set_description(str(noticia_id))
-
-            # TODO: Currently noticia is only pulled from web service the first time it's encountered
-            # It would be desirable to re-fetch every once in a while (or even every new encounter)
-            if noticia_id not in noticia_ids:
-                load_noticia(noticia_id)
-                noticia_ids.add(noticia_id)
-            
-            noticia_pageviews_list.append(get_model('NoticiaPageviews')(
-                noticia_id=noticia_id,
-                pageviews=pageviews,
-                date=date
-            ))
+            if noticia_id:
+                # TODO: Currently noticia is only pulled from web service the first time it's encountered
+                # It would be desirable to re-fetch every once in a while (or even every new encounter)
+                if noticia_id not in noticia_ids:
+                    if not load_noticia(noticia_id):
+                        continue
+                    noticia_ids.add(noticia_id)
+                
+                noticia_pageviews_list.append(get_model('NoticiaPageviews')(
+                    noticia_id=noticia_id,
+                    pageviews=pageviews,
+                    date=date
+                ))
 
 
         get_model('NoticiaPageviews').objects.bulk_create(noticia_pageviews_list)
@@ -529,7 +532,7 @@ def preprocess():
 
         pa[(proposicao_id,date)]['ficha_pageviews'] = pageviews
 
-    noticia_pageviews_qs = get_model('ProposicaoNoticiaPageviews').objects \
+    noticia_pageviews_qs = get_model('NoticiaPageviews').objects \
         .values('date', 'pageviews', 'noticia__proposicoes__pk')
 
     for row in noticia_pageviews_qs:
@@ -537,9 +540,10 @@ def preprocess():
         date = row['date']
         pageviews = row['pageviews']
 
-        # Operator += is super important here
-        # (since each proposicao has more than one noticia)
-        pa[(proposicao_id,date)]['noticia_pageviews'] += pageviews
+        if proposicao_id:
+            # Operator += is super important here
+            # (since each proposicao has more than one noticia)
+            pa[(proposicao_id,date)]['noticia_pageviews'] += pageviews
 
     votes_qs = get_model('Resposta').objects \
         .extra(select={'date':'date(dat_resposta)'}) \
@@ -579,7 +583,7 @@ def preprocess():
     with connections['default'].cursor() as cursor:  
         cursor.execute('ALTER TABLE app_proposicaoaggregated DISABLE TRIGGER ALL;')
         cursor.execute('DELETE FROM app_proposicaoaggregated')
-        pa_list = [get_model('ProposicaoAggregated')(proposicao_id=k[0], date=k[1], pageviews=v['pageviews'], poll_votes=v['poll_votes'], poll_comments=v['poll_comments']) for k, v in pa.items()]
+        pa_list = [get_model('ProposicaoAggregated')(proposicao_id=k[0], date=k[1], ficha_pageviews=v['ficha_pageviews'], noticia_pageviews=v['noticia_pageviews'], poll_votes=v['poll_votes'], poll_comments=v['poll_comments']) for k, v in pa.items()]
         get_model('ProposicaoAggregated').objects.bulk_create(pa_list)
         cursor.execute('ALTER TABLE app_proposicaoaggregated ENABLE TRIGGER ALL;')
 
