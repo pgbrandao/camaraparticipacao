@@ -494,7 +494,7 @@ def load_analytics_noticias():
         noticia_ids = set(get_model('Noticia').objects.values_list('id', flat=True))
 
         pbar = tqdm(pageviews_dict.items())
-        for noticia_id, pageviews in :
+        for noticia_id, pageviews in pbar:
             pbar.set_description(noticia_id)
 
             # TODO: Currently noticia is only pulled from web service the first time it's encountered
