@@ -16,6 +16,7 @@ from oauth2client.client import HttpAccessTokenRefreshError
 
 import requests
 import tenacity
+import tqdm
 
 from django.apps import apps
 
@@ -360,6 +361,9 @@ def load_noticia(id):
     r = requests.get("https://camaranews.camara.leg.br/wp-json/conteudo-portal/{}".format(str(id)))
     j = r.json()
 
+    if j.get('code') == 'not_found':
+        return
+
     noticia_id = j.get('id')
     tipo_conteudo = j.get('tipo_conteudo')
     link = j.get('link')
@@ -372,20 +376,20 @@ def load_noticia(id):
     # Salvar toda proposta associada à notícia
     proposicoes_ids = set()
 
-    proposicao_principal = j.get('proposicao_principal', None)
+    proposicao_principal = j.get('proposicao_principal')
     if proposicao_principal:
         proposicoes_ids.add(int(proposicao_principal))
 
-    projeto_lei_principal = j.get('projeto_lei_principal', None)
+    projeto_lei_principal = j.get('projeto_lei_principal')
     if projeto_lei_principal:
         proposicoes_ids.add(int(projeto_lei_principal))
 
-    proposicoes = j.get('proposicoes', None)
+    proposicoes = j.get('proposicoes')
     if proposicoes:
         for p in proposicoes:
             proposicoes_ids.add(int(p))
 
-    projetos_de_lei = j.get('projetos_de_lei', None)
+    projetos_de_lei = j.get('projetos_de_lei')
     if projetos_de_lei:
         for p in projetos_de_lei:
             proposicoes_ids.add(int(p))
@@ -396,6 +400,16 @@ def load_noticia(id):
             proposicoes_list.append(get_model('Proposicao').objects.get(pk=p))
         except get_model('Proposicao').DoesNotExist:
             pass
+    
+    # Salvar todo deputado associado à notícia
+    deputados_list = []
+    if j.get('deputados'):
+        for d in j.get('deputados'):
+            try:
+                deputados_list.append(get_model('Deputado').objects.get(pk=d))
+            except get_model('Deputado').DoesNotExist:
+                pass
+
 
     noticia = get_model('Noticia').objects.create(
         pk = noticia_id,
@@ -408,10 +422,13 @@ def load_noticia(id):
         resumo = resumo
     )
     noticia.proposicoes.set(proposicoes_list)
+    noticia.deputados.set(deputados_list)
 
 @tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_exponential(multiplier=60, max=3600))
 @transaction.atomic
 def load_analytics_noticias():
+    print('Loading noticias analytics')
+
     token = ServiceAccountCredentials.from_json_keyfile_dict(
         json.loads(os.environ['ANALYTICS_CREDENTIALS']), 'https://www.googleapis.com/auth/analytics.readonly').get_access_token().access_token
 
@@ -475,7 +492,11 @@ def load_analytics_noticias():
         
         noticia_pageviews_list = []
         noticia_ids = set(get_model('Noticia').objects.values_list('id', flat=True))
-        for noticia_id, pageviews in pageviews_dict.items():
+
+        pbar = tqdm(pageviews_dict.items())
+        for noticia_id, pageviews in :
+            pbar.set_description(noticia_id)
+
             # TODO: Currently noticia is only pulled from web service the first time it's encountered
             # It would be desirable to re-fetch every once in a while (or even every new encounter)
             if noticia_id not in noticia_ids:
@@ -491,7 +512,7 @@ def load_analytics_noticias():
 
         get_model('NoticiaPageviews').objects.bulk_create(noticia_pageviews_list)
         
-        print('Loaded noticia analytics %s' % (date,))
+        print('Loaded noticias analytics %s' % (date,))
 
 
 @tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_exponential(multiplier=60, max=3600))
