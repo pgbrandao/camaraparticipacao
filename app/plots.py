@@ -18,8 +18,8 @@ def daily_summary_global():
     Returns:
         [plotly.graph_objs] -- [plot_div compatible with Django]
     """
-    qs = ProposicaoPageview.objects.values('date').annotate(pageviews_total=Sum('pageviews')).order_by('date').values('date', 'pageviews_total')
-    daily_pageviews = pd.DataFrame(qs)
+    qs = ProposicaoFichaPageviews.objects.values('date').annotate(ficha_pageviews_total=Sum('ficha_pageviews')).order_by('date').values('date', 'ficha_pageviews_total')
+    daily_ficha_pageviews = pd.DataFrame(qs)
     qs = Resposta.objects.extra(select={'date':'date(dat_resposta)'}).values('date').annotate(votes_total=Count('ide_resposta')).order_by('date').values('date', 'votes_total')
     daily_poll_votes = pd.DataFrame(qs)
     qs = Posicionamento.objects.extra(select={'date':'date(dat_posicionamento)'}).values('date').annotate(comments_total=Count('ide_posicionamento')).order_by('date').values('date', 'comments_total')
@@ -27,9 +27,9 @@ def daily_summary_global():
 
     layout = Layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', legend=dict(x=0.025, y=1), height=310, margin=dict(t=0, l=15, r=10, b=0), barmode='stack')
     fig = go.Figure(layout=layout)
-    daily_pageviews_trace = go.Bar(
-        x=daily_pageviews.date if not daily_pageviews.empty else [None],
-        y=daily_pageviews.pageviews_total if not daily_pageviews.empty else [None],
+    daily_ficha_pageviews_trace = go.Bar(
+        x=daily_ficha_pageviews.date if not daily_ficha_pageviews.empty else [None],
+        y=daily_ficha_pageviews.ficha_pageviews_total if not daily_ficha_pageviews.empty else [None],
         name='Visualizações (ficha de tramitação)',
         marker_color='#f5365c')
     daily_poll_votes_trace = go.Bar(
@@ -58,7 +58,7 @@ def daily_summary_global():
 
     fig.update_xaxes(range=[dm30, d0])
     fig.update_yaxes(gridcolor='#fff')
-    fig.add_traces([daily_pageviews_trace, daily_poll_votes_trace, daily_poll_comments_trace])
+    fig.add_traces([daily_ficha_pageviews_trace, daily_poll_votes_trace, daily_poll_comments_trace])
     plot_div = plotly.io.to_html(fig, include_plotlyjs='cdn', config={'displayModeBar': False}, full_html=False)
     
     return plot_div
@@ -76,9 +76,9 @@ def daily_summary_proposicao(proposicao):
     #     barmode='stack',
     #     dragmode="pan"
     # )
-    daily_pageviews_trace = go.Bar(
+    daily_ficha_pageviews_trace = go.Bar(
         x=daily_data.date,
-        y=daily_data.pageviews,
+        y=daily_data.ficha_pageviews,
         name='Visualizações (ficha de tramitação)',
         marker_color='#f5365c')
     daily_poll_votes_trace = go.Bar(
@@ -115,7 +115,7 @@ def daily_summary_proposicao(proposicao):
     )
     fig.update_yaxes(gridcolor='#fff', fixedrange=True)
     fig.update_layout(dragmode='pan')
-    fig.append_trace(daily_pageviews_trace, 1, 1)
+    fig.append_trace(daily_ficha_pageviews_trace, 1, 1)
     fig.append_trace(daily_poll_votes_trace, 2, 1)
     fig.append_trace(daily_poll_comments_trace, 3, 1)
     # fig.add_traces([daily_pageviews_trace, daily_poll_votes_trace, daily_poll_comments_trace])
@@ -134,7 +134,7 @@ def proposicao_heatmap(proposicao):
     records = df.to_dict('records')
     values = {}
     for record in records:
-        values[record['ts']] = record['pageviews']
+        values[record['ts']] = record['ficha_pageviews']
 
     return values
 
@@ -177,7 +177,16 @@ def raiox(date_min, date_max, metric_field, plot_type, dimension):
         df['proposicao__ultimo_status_situacao_descricao'] = df['proposicao__ultimo_status_situacao_descricao'].fillna('Sem situação')
     elif dimension == 'indexacao':
         path = ['proposicao__keywords', 'proposicao__nome_processado']
-        df = df.assign(proposicao__keywords=df['proposicao__keywords'].str.split(',')).explode('proposicao__keywords')
+        # TODO: Check why this still isn't working
+        def comma_split(x):
+            x = x.split(',')
+            x = [y for y in x if not y.isspace()]
+            if not any(x):
+                x = ['Sem indexação']
+            return x
+        df['proposicao__keywords'] = df['proposicao__keywords'].apply(comma_split)
+        df = df.explode('proposicao__keywords')
+        
     elif dimension == 'proposicao':
         path = ['proposicao__nome_processado']
 

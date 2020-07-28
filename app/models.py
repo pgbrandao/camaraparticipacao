@@ -120,10 +120,10 @@ class Proposicao(models.Model):
 
     def stats(self):
         qs = ProposicaoAggregated.objects.filter(proposicao=self)
-        qs = qs.aggregate(Sum('pageviews'), Sum('poll_votes'), Sum('poll_comments'))
+        qs = qs.aggregate(Sum('ficha_pageviews'), Sum('poll_votes'), Sum('poll_comments'))
 
         return {
-            'pageviews_total': qs['pageviews__sum'],
+            'ficha_pageviews_total': qs['ficha_pageviews__sum'],
             'poll_votes_total': qs['poll_votes__sum'],
             'poll_comments_total': qs['poll_comments__sum'],
         }
@@ -153,7 +153,23 @@ class Orgao(models.Model):
     sigla = models.TextField(blank=True, null=True)
     nome = models.TextField(blank=True, null=True)
 
-class ProposicaoPageview(models.Model):
+class Noticia(models.Model):
+    tipo_conteudo = models.TextField(blank=True, null=True)
+    link = models.TextField(blank=True, null=True)
+    titulo = models.TextField(blank=True, null=True)
+    conteudo = models.TextField(blank=True, null=True)
+    resumo = models.TextField(blank=True, null=True)
+    data = models.DateTimeField(blank=True, null=True)
+    data_atualizacao = models.DateTimeField(blank=True, null=True)
+    deputados = models.ManyToManyField('Deputado')
+    proposicoes = models.ManyToManyField('Proposicao')
+
+class NoticiaPageviews(models.Model):
+    noticia = models.ForeignKey('Noticia', on_delete=models.CASCADE)
+    date = models.DateField()
+    pageviews = models.IntegerField()
+
+class ProposicaoFichaPageviews(models.Model):
     proposicao = models.ForeignKey('Proposicao', on_delete=models.CASCADE)
     date = models.DateField()
     pageviews = models.IntegerField()
@@ -161,7 +177,8 @@ class ProposicaoPageview(models.Model):
 class ProposicaoAggregated(models.Model):
     proposicao = models.ForeignKey('Proposicao', on_delete=models.CASCADE)
     date = models.DateField(db_index=True)
-    pageviews = models.IntegerField(default=0)
+    ficha_pageviews = models.IntegerField(default=0)
+    noticia_pageviews = models.IntegerField(default=0)
     poll_votes = models.IntegerField(default=0)
     poll_comments = models.IntegerField(default=0)
     class Meta:

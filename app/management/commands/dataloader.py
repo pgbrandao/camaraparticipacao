@@ -24,9 +24,14 @@ class Command(BaseCommand):
             help='Syncs dados abertos'
         )
         parser.add_argument(
-            '--analytics',
+            '--analytics_fichas',
             action='store_true',
-            help='Syncs analytics'
+            help='Syncs analytics (fichas)'
+        )
+        parser.add_argument(
+            '--analytics_noticias',
+            action='store_true',
+            help='Syncs analytics (noticias)'
         )
         parser.add_argument(
             '--preprocess',
@@ -50,8 +55,10 @@ class Command(BaseCommand):
             dataloader.load_proposicoes()
             dataloader.load_proposicoes_autores()
             dataloader.load_proposicoes_temas()
-        if options['all'] or options['analytics']:
-            dataloader.load_analytics_proposicoes()
+        if options['all'] or options['analytics_fichas']:
+            dataloader.load_analytics_fichas()
+        if options['all'] or options['analytics_noticias']:
+            dataloader.load_analytics_noticias()
         
         dataloader.preprocess()
 

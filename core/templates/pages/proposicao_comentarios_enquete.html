@@ -1,0 +1,133 @@
+{% extends 'layouts/base.html' %}
+{% load humanize %}
+
+
+{% block title %} Dashboard da participação {% endblock title %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+.datatable-container {
+padding: 1.25rem 1.5rem;
+}
+{% endblock stylesheets %}
+
+{% block content %}
+
+<div class="header pb-8 pt-5 bg-primary">
+    <div class="container-fluid">
+        <div class="header-body">
+            <div class="col-6">
+                <h2 class="h2 text-white d-inline-block mb-0">{{ proposicao.nome_processado }}</h2>
+            </div>
+            <div class="col-6">
+                <a href="https://www.camara.leg.br/propostas-legislativas/{{ proposicao.pk }}" class="btn btn-sm btn-neutral">
+                    <i class="fas fa-external-link-alt"></i> Acessar no portal da Câmara
+                </a>
+                <a href="{% url 'proposicao_detail' id_proposicao=proposicao.pk %}" class="btn btn-sm btn-neutral">
+                    Ver dados da proposição
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid mt--7 bg-secondary">
+
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <!-- Card header -->
+                <div class="card-header border-0">
+                    <h3 class="mb-0">Comentários da enquete</h3>
+                </div>
+                <!-- Light table -->
+                <div class="card-body">
+                    <div class="datatable-container">
+                        <table class="align-items-center table-flush" id="posicionamentos_table">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th scope="col" width="150px">Posicionamento</th>
+                                    <th scope="col" width="700px">Conteúdo</th>
+                                    <th scope="col" width="100px">Data</th>
+                                    <th scope="col" width="150px">Moderado?</th>
+                                    <th scope="col" width="150px">Curtidas</th>
+                                    <th scope="col" width="150px">Descurtidas</th>
+
+                                </tr>
+                            </thead>
+                            <tbody class="list">
+                                {% for posicionamento in proposicao.enquete_posicionamentos %}
+                                <tr>
+                                    <td>
+                                        {% if posicionamento.ind_positivo == 1 %}
+                                        Favorável
+                                        {% elif posicionamento.ind_positivo == 0 %}
+                                        Contrário
+                                        {% endif %}
+                                    </td>
+                                    <td class="overflow: hidden;">
+                                        {{ posicionamento.des_conteudo }}
+                                    </td>
+                                    <td data-sort="{{ posicionamento.dat_posicionamento.timestamp }}">
+                                        {{ posicionamento.dat_posicionamento|date:"SHORT_DATE_FORMAT" }}
+                                    </td>
+                                    <td>
+                                        {% if posicionamento.cod_autorizado == 0 %}
+                                        Não moderado
+                                        {% elif posicionamento.cod_autorizado == 1 %}
+                                        Autorizado
+                                        {% elif posicionamento.cod_autorizado == 2 %}
+                                        Não autorizado
+                                        {% endif %}
+                                    </td>
+                                    <td class="overflow: hidden;">
+                                        {{ posicionamento.qtd_curtidas }}
+                                    </td>
+                                    <td class="overflow: hidden;">
+                                        {{ posicionamento.qtd_descurtidas }}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4">
+                                        Vazio
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include "includes/footer.html" %}
+
+</div>
+
+{% endblock content %}
+
+<!-- Specific JS goes HERE -->
+{% block javascripts %}
+<script>
+    $('.nav-item a').removeClass('active');
+    $('.home-item a').addClass('active');
+    $(document).ready(function () {
+        $('#posicionamentos_table').DataTable({
+            columns: [
+                { name: 'posicionamento' },
+                { name: 'conteudo' },
+                { name: 'data' },
+                { name: 'moderado' },
+                { name: 'curtidas' },
+                { name: 'descurtidas' },
+            ],
+            searchPane: {
+                columns: ['posicionamento:name', 'moderado:name']
+            }
+        });
+    });
+
+</script>
+{% endblock javascripts %}

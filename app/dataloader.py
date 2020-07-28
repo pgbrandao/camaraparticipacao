@@ -23,7 +23,7 @@ from django.apps import apps
 def get_model(model_name):
     return apps.get_model(app_label='app', model_name=model_name)
 
-@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(10), wait=tenacity.wait_exponential(multiplier=60, max=3600))
+@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_exponential(multiplier=60, max=3600))
 @transaction.atomic
 def load_deputados():
     with connections['default'].cursor() as cursor:  
@@ -54,7 +54,7 @@ def load_deputados():
 
         print("Loaded deputados")
 
-@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(10), wait=tenacity.wait_exponential(multiplier=60, max=3600))
+@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_exponential(multiplier=60, max=3600))
 @transaction.atomic
 def load_orgaos():
     with connections['default'].cursor() as cursor:  
@@ -79,7 +79,7 @@ def load_orgaos():
 
         print("Loaded orgaos")
 
-@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(10), wait=tenacity.wait_exponential(multiplier=60, max=3600))
+@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_exponential(multiplier=60, max=3600))
 @transaction.atomic
 def load_proposicoes():
     with connections['default'].cursor() as cursor:  
@@ -156,7 +156,7 @@ def load_proposicoes():
 
         cursor.execute('ALTER TABLE app_proposicao ENABLE TRIGGER ALL;')
 
-@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(10), wait=tenacity.wait_exponential(multiplier=60, max=3600))
+@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_exponential(multiplier=60, max=3600))
 @transaction.atomic
 def load_proposicoes_autores():
     with connections['default'].cursor() as cursor:  
@@ -196,7 +196,7 @@ def load_proposicoes_autores():
         cursor.execute('ALTER TABLE app_proposicao_autor ENABLE TRIGGER ALL;')
 
 
-@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(10), wait=tenacity.wait_exponential(multiplier=60, max=3600))
+@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_exponential(multiplier=60, max=3600))
 @transaction.atomic
 def load_proposicoes_temas():
     with connections['default'].cursor() as cursor:  
@@ -255,7 +255,7 @@ def batch_qs(qs, batch_size=1000):
         end = min(start + batch_size, total)
         yield (start, end, total, qs[start:end])
 
-@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(10), wait=tenacity.wait_exponential(multiplier=60, max=3600))
+@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_exponential(multiplier=60, max=3600))
 @transaction.atomic
 def load_enquetes():
     if 'enquetes' not in settings.DATABASES:
@@ -289,9 +289,9 @@ def load_enquetes():
 
             print('Loaded enquetes %s' % (table_name,))
 
-@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(10), wait=tenacity.wait_exponential(multiplier=60, max=3600))
+@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_exponential(multiplier=60, max=3600))
 @transaction.atomic
-def load_analytics_proposicoes():
+def load_analytics_fichas():
     proposicao_ids = set(get_model('Proposicao').objects.values_list('id', flat=True))
 
     token = ServiceAccountCredentials.from_json_keyfile_dict(
@@ -299,7 +299,7 @@ def load_analytics_proposicoes():
 
     daterange = [datetime.date.today() - datetime.timedelta(days=i) for i in range(1,93)]
     for date in daterange:
-        if get_model('ProposicaoPageview').objects.filter(date=date).count() > 0:
+        if get_model('ProposicaoFichaPageviews').objects.filter(date=date).count() > 0:
             continue
 
         pageviews_dict = {}
@@ -307,7 +307,7 @@ def load_analytics_proposicoes():
         i = 1
         while (True):
             url = ('https://www.googleapis.com/analytics/v3/data/ga'
-                +'?ids=ga%3A35624691'
+                +'?ids=ga%3A48889682'
                 +'&start-date='+date.strftime("%Y-%m-%d")
                 +'&end-date='+date.strftime("%Y-%m-%d")
                 +'&metrics=ga%3Apageviews'
@@ -342,32 +342,187 @@ def load_analytics_proposicoes():
                 i += 10000
             except KeyError:
                 break
-        proposicao_pageview_list = []
+        proposicao_ficha_pageview_list = []
         for proposicao_id, pageviews in pageviews_dict.items():
             if proposicao_id in proposicao_ids:
-                proposicao_pageview_list.append(get_model('ProposicaoPageview')(
+                proposicao_ficha_pageview_list.append(get_model('ProposicaoFichaPageviews')(
                     proposicao_id=proposicao_id,
                     pageviews=pageviews,
                     date=date
                 ))
 
-        get_model('ProposicaoPageview').objects.bulk_create(proposicao_pageview_list)
+        get_model('ProposicaoFichaPageviews').objects.bulk_create(proposicao_ficha_pageview_list)
         
-        print('Loaded analytics %s' % (date,))
+        print('Loaded ficha analytics %s' % (date,))
 
-@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(10), wait=tenacity.wait_exponential(multiplier=60, max=3600))
+
+def load_noticia(id):
+    r = requests.get("https://camaranews.camara.leg.br/wp-json/conteudo-portal/{}".format(str(id)))
+    j = r.json()
+
+    noticia_id = j.get('id')
+    tipo_conteudo = j.get('tipo_conteudo')
+    link = j.get('link')
+    titulo = j.get('titulo')
+    data = j.get('data')
+    data_atualizacao = j.get('data_atualizacao')
+    conteudo = j.get('conteudo')
+    resumo = j.get('resumo')
+
+    # Salvar toda proposta associada à notícia
+    proposicoes_ids = set()
+
+    proposicao_principal = j.get('proposicao_principal', None)
+    if proposicao_principal:
+        proposicoes_ids.add(int(proposicao_principal))
+
+    projeto_lei_principal = j.get('projeto_lei_principal', None)
+    if projeto_lei_principal:
+        proposicoes_ids.add(int(projeto_lei_principal))
+
+    proposicoes = j.get('proposicoes', None)
+    if proposicoes:
+        for p in proposicoes:
+            proposicoes_ids.add(int(p))
+
+    projetos_de_lei = j.get('projetos_de_lei', None)
+    if projetos_de_lei:
+        for p in projetos_de_lei:
+            proposicoes_ids.add(int(p))
+
+    proposicoes_list = []
+    for p in proposicoes_ids:
+        try:
+            proposicoes_list.append(get_model('Proposicao').objects.get(pk=p))
+        except get_model('Proposicao').DoesNotExist:
+            pass
+
+    noticia = get_model('Noticia').objects.create(
+        pk = noticia_id,
+        defaults = {
+            tipo_conteudo: tipo_conteudo,
+            link: link,
+            titulo: titulo,
+            data: data,
+            data_atualizacao: data_atualizacao,
+            conteudo: conteudo,
+            resumo: resumo
+        }
+    )
+    noticia.proposicoes = proposicoes_list
+
+
+
+@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_exponential(multiplier=60, max=3600))
+@transaction.atomic
+def load_analytics_noticias():
+    token = ServiceAccountCredentials.from_json_keyfile_dict(
+        json.loads(os.environ['ANALYTICS_CREDENTIALS']), 'https://www.googleapis.com/auth/analytics.readonly').get_access_token().access_token
+
+    daterange = [datetime.date.today() - datetime.timedelta(days=i) for i in range(1,93)]
+
+    updated_noticias = set()
+
+    for date in daterange:
+        if get_model('NoticiaPageviews').objects.filter(date=date).count() > 0:
+            continue
+
+        pageviews_dict = {}
+        
+        i = 1
+        while (True):
+            url = ('https://www.googleapis.com/analytics/v3/data/ga'
+                +'?ids=ga%3A48889682'
+                +'&start-date='+date.strftime("%Y-%m-%d")
+                +'&end-date='+date.strftime("%Y-%m-%d")
+                +'&metrics=ga%3Apageviews'
+                +'&dimensions=ga%3ApagePath%2Cga%3Adate'
+                +'&sort=-ga%3Apageviews'
+                +'&filters=ga%3ApagePath%3D%7E%5E%2Fnoticias%2F%5B0-9%5D%2Cga%3ApagePath%3D%7E%5E%2Fradio%2Fprogramas%2F%5B0-9%5D%2Cga%3ApagePath%3D%7E%5E%2Fradio%2Fradioagencia%2F%5B0-9%5D%2Cga%3ApagePath%3D%7E%5E%2Ftv%2F%5B0-9%5D'
+                +'&start-index='+str(i)
+                +'&max-results=10000'
+                +'&access_token='+token)
+
+            r = requests.get(url)
+            data = r.json()
+
+            for row in data['rows']:
+                page_path = row[0]
+                date = datetime.datetime.strptime(row[1], "%Y%m%d").date()
+                pageviews = int(row[2])
+
+                id_noticia = None
+
+                r = re.search('^/noticias/([0-9]+).*', page_path)
+                if r:
+                    id_noticia = int(r.group(1))
+
+                r = re.search('^/radio/programas/([0-9]+).*', page_path)
+                if r:
+                    id_noticia = int(r.group(1))
+
+                r = re.search('^/radio/radioagencia/([0-9]+).*', page_path)
+                if r:
+                    id_noticia = int(r.group(1))
+
+                r = re.search('^/tv/([0-9]+).*', page_path)
+                if r:
+                    id_noticia = int(r.group(1))
+
+                pageviews_dict[id_noticia] = pageviews_dict.get(id_noticia, 0) + pageviews
+
+            try:
+                data['nextLink']
+                i += 10000
+            except KeyError:
+                break
+        
+        noticia_pageviews_list = []
+        noticia_ids = set(get_model('Noticia').objects.values_list('id', flat=True))
+        for noticia_id, pageviews in pageviews_dict.items():
+            # TODO: Currently noticia is only pulled from web service the first time it's encountered
+            # It would be desirable to re-fetch every once in a while (or even every new encounter)
+            if noticia_id not in noticia_ids:
+                load_noticia(noticia_id)
+                noticia_ids.add(noticia_id)
+            
+            noticia_pageviews_list.append(get_model('NoticiaPageviews')(
+                noticia_id=noticia_id,
+                pageviews=pageviews,
+                date=date
+            ))
+
+
+        get_model('NoticiaPageviews').objects.bulk_create(noticia_pageviews_list)
+        
+        print('Loaded noticia analytics %s' % (date,))
+
+
+@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_exponential(multiplier=60, max=3600))
 @transaction.atomic
 def preprocess():
-    pa = defaultdict(lambda:{'pageviews': 0, 'poll_votes': 0, 'poll_comments': 0})
+    pa = defaultdict(lambda:{'ficha_pageviews': 0, 'noticia_pageviews': 0, 'poll_votes': 0, 'poll_comments': 0})
 
-    pageviews_qs = get_model('ProposicaoPageview').objects.all()
+    ficha_pageviews_qs = get_model('ProposicaoFichaPageviews').objects.all()
 
-    for row in pageviews_qs:
+    for row in ficha_pageviews_qs:
         proposicao_id = row.proposicao_id
         date = row.date
         pageviews = row.pageviews
 
-        pa[(proposicao_id,date)]['pageviews'] = pageviews
+        pa[(proposicao_id,date)]['ficha_pageviews'] = pageviews
+
+    noticia_pageviews_qs = get_model('ProposicaoNoticiaPageviews').objects \
+        .values('date', 'pageviews', 'noticia__proposicoes__pk')
+
+    for row in noticia_pageviews_qs:
+        proposicao_id = row['noticia__proposicoes__pk']
+        date = row['date']
+        pageviews = row['pageviews']
+
+        # Operator += is super important here
+        # (since each proposicao has more than one noticia)
+        pa[(proposicao_id,date)]['noticia_pageviews'] += pageviews
 
     votes_qs = get_model('Resposta').objects \
         .extra(select={'date':'date(dat_resposta)'}) \

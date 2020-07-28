@@ -41,12 +41,12 @@ def index(request):
         stats['posicionamentos_change'] = (
             stats['posicionamentos_this_week'] / stats['posicionamentos_past_week'] - 1) * 100 if stats['posicionamentos_past_week'] else 0
 
-        stats['proposicao_pageview_this_week'] = ProposicaoPageview.objects.filter(
-            date__gte=dm7, date__lt=d0).aggregate(Sum('pageviews'))['pageviews__sum'] or 0
-        stats['proposicao_pageview_past_week'] = ProposicaoPageview.objects.filter(
-            date__gte=dm14, date__lt=dm7).aggregate(Sum('pageviews'))['pageviews__sum'] or 0
-        stats['proposicao_pageview_change'] = (stats['proposicao_pageview_this_week'] /
-                                               stats['proposicao_pageview_past_week'] - 1) * 100 if stats['proposicao_pageview_past_week'] else 0
+        stats['proposicao_ficha_pageview_this_week'] = ProposicaoFichaPageviews.objects.filter(
+            date__gte=dm7, date__lt=d0).aggregate(Sum('ficha_pageviews'))['ficha_pageviews__sum'] or 0
+        stats['proposicao_ficha_pageview_past_week'] = ProposicaoFichaPageviews.objects.filter(
+            date__gte=dm14, date__lt=dm7).aggregate(Sum('ficha_pageviews'))['ficha_pageviews__sum'] or 0
+        stats['proposicao_ficha_pageview_change'] = (stats['proposicao_ficha_pageview_this_week'] /
+                                               stats['proposicao_ficha_pageview_past_week'] - 1) * 100 if stats['proposicao_ficha_pageview_past_week'] else 0
 
         cache.set('index_stats', stats, 3600)
 
@@ -64,9 +64,9 @@ def index(request):
         qs = ProposicaoAggregated.objects.values('proposicao') \
             .annotate(poll_votes_total=Sum('poll_votes'), poll_votes_period=Sum('poll_votes', filter=Q(date__gte=dm7, date__lt=d0)),
                     poll_comments_total=Sum('poll_comments'), poll_comments_period=Sum('poll_comments', filter=Q(date__gte=dm7, date__lt=d0)),
-                    pageviews_period=Sum('pageviews', filter=Q(date__gte=dm7, date__lt=d0)))
+                    ficha_pageviews_period=Sum('ficha_pageviews', filter=Q(date__gte=dm7, date__lt=d0)))
         fields_list = {'proposicao__id', 'proposicao__sigla_tipo', 'proposicao__numero', 'proposicao__ano',
-                       'poll_votes_total', 'poll_votes_period', 'poll_comments_total', 'poll_comments_period', 'pageviews_period'}
+                       'poll_votes_total', 'poll_votes_period', 'poll_comments_total', 'poll_comments_period', 'ficha_pageviews_period'}
         non_count = {'proposicao__id', 'proposicao__sigla_tipo',
                      'proposicao__numero', 'proposicao__ano'}
         records = list(qs.values(*fields_list))
@@ -80,7 +80,7 @@ def index(request):
         if not proposicoes.empty:
             proposicoes['p_score'] = proposicoes['poll_votes_period'] + \
                 proposicoes['poll_comments_period'] + \
-                proposicoes['pageviews_period']
+                proposicoes['ficha_pageviews_period']
             proposicoes.sort_values(
                 by=['p_score'], ascending=False, inplace=True)
             proposicoes = proposicoes[:50]
@@ -119,7 +119,7 @@ def raiox(request, dimension):
     
     metric_field_choices = [
         ('poll_votes', 'Votos nas enquetes'),
-        ('pageviews', 'Visualizações na ficha de tramitação'),
+        ('ficha_pageviews', 'Visualizações na ficha de tramitação'),
     ]
     plot_type_choices = [
         ('sunburst', 'Circular (sunburst)'),
@@ -184,4 +184,9 @@ def proposicao_detail(request, id_proposicao):
     daily_summary_proposicao_plot = plots.daily_summary_proposicao(proposicao)
 
     return render(request, 'pages/proposicao_details.html', locals())
+
+def proposicao_comentarios_enquete(request, id_proposicao):
+    proposicao = Proposicao.objects.get(pk=id_proposicao)
+
+    return render(request, 'pages/proposicao_comentarios_enquete.html', locals())
 

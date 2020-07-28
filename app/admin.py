@@ -75,7 +75,7 @@ class PosicionamentoAdmin(admin.ModelAdmin):
 class ItemRespostaAdmin(admin.ModelAdmin):
     list_display = ('ide_resposta','num_indice_opcao')
     raw_id_fields = ('ide_resposta',)
-class ProposicaoPageviewAdmin(admin.ModelAdmin):
+class ProposicaoFichaPageviewsAdmin(admin.ModelAdmin):
     list_display = ('proposicao', 'date', 'pageviews')
 
 admin.site.register(Orgao, OrgaoAdmin)
@@ -86,4 +86,4 @@ admin.site.register(FormularioPublicado, FormularioPublicadoAdmin)
 admin.site.register(Resposta, RespostaAdmin)
 admin.site.register(ItemResposta, ItemRespostaAdmin)
 admin.site.register(Posicionamento, PosicionamentoAdmin)
-admin.site.register(ProposicaoPageview, ProposicaoPageviewAdmin)
+admin.site.register(ProposicaoFichaPageviews, ProposicaoFichaPageviewsAdmin)
