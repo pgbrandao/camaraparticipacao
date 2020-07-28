@@ -16,7 +16,7 @@ from oauth2client.client import HttpAccessTokenRefreshError
 
 import requests
 import tenacity
-import tqdm
+from tqdm import tqdm
 
 from django.apps import apps
 
@@ -495,7 +495,7 @@ def load_analytics_noticias():
 
         pbar = tqdm(pageviews_dict.items())
         for noticia_id, pageviews in pbar:
-            pbar.set_description(noticia_id)
+            pbar.set_description(str(noticia_id))
 
             # TODO: Currently noticia is only pulled from web service the first time it's encountered
             # It would be desirable to re-fetch every once in a while (or even every new encounter)
