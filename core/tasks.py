@@ -9,5 +9,6 @@ def dataloader_task():
     dataloader.load_proposicoes()
     dataloader.load_proposicoes_autores()
     dataloader.load_proposicoes_temas()
-    dataloader.load_analytics_proposicoes()
+    dataloader.load_analytics_fichas()
+    dataloader.load_analytics_noticias()
     dataloader.preprocess()

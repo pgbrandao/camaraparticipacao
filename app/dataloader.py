@@ -399,19 +399,15 @@ def load_noticia(id):
 
     noticia = get_model('Noticia').objects.create(
         pk = noticia_id,
-        defaults = {
-            tipo_conteudo: tipo_conteudo,
-            link: link,
-            titulo: titulo,
-            data: data,
-            data_atualizacao: data_atualizacao,
-            conteudo: conteudo,
-            resumo: resumo
-        }
+        tipo_conteudo = tipo_conteudo,
+        link = link,
+        titulo = titulo,
+        data = datetime.datetime.utcfromtimestamp(data) if data else None,
+        data_atualizacao = datetime.datetime.utcfromtimestamp(data_atualizacao) if data_atualizacao else None,
+        conteudo = conteudo,
+        resumo = resumo
     )
-    noticia.proposicoes = proposicoes_list
-
-
+    noticia.proposicoes.set(proposicoes_list)
 
 @tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_exponential(multiplier=60, max=3600))
 @transaction.atomic
