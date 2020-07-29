@@ -1,9 +1,15 @@
 import boto3
 import datetime
 import json
+import logging
 import os
 import re
+import requests
+import sys
+import tenacity
 import zipfile
+
+import urllib.parse
 
 from collections import defaultdict
 
@@ -14,17 +20,31 @@ from django.db.models import Count, Sum
 from oauth2client.service_account import ServiceAccountCredentials
 from oauth2client.client import HttpAccessTokenRefreshError
 
-import requests
-import tenacity
-from tqdm import tqdm
-
 from django.apps import apps
 
 # Models need to be imported like this in order to avoid cyclic import issues with celery
 def get_model(model_name):
     return apps.get_model(app_label='app', model_name=model_name)
 
-@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_exponential(multiplier=60, max=3600))
+
+logging.basicConfig(stream=sys.stderr, level=logging.ERROR)
+
+logger = logging.getLogger(__name__)
+
+TENACITY_ARGUMENTS = {
+    'reraise': True,
+    'stop': tenacity.stop_after_attempt(5),
+    'wait': tenacity.wait_exponential(multiplier=60),
+    'before_sleep': tenacity.before_sleep_log(logger, logging.ERROR, exc_info=True)
+}
+TENACITY_ARGUMENTS_FAST = {
+    'reraise': True,
+    'stop': tenacity.stop_after_attempt(3),
+    'wait': tenacity.wait_exponential(),
+    'before_sleep': tenacity.before_sleep_log(logger, logging.ERROR, exc_info=True)
+}
+
+@tenacity.retry(**TENACITY_ARGUMENTS)
 @transaction.atomic
 def load_deputados():
     with connections['default'].cursor() as cursor:  
@@ -55,7 +75,7 @@ def load_deputados():
 
         print("Loaded deputados")
 
-@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_exponential(multiplier=60, max=3600))
+@tenacity.retry(**TENACITY_ARGUMENTS)
 @transaction.atomic
 def load_orgaos():
     with connections['default'].cursor() as cursor:  
@@ -80,7 +100,7 @@ def load_orgaos():
 
         print("Loaded orgaos")
 
-@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_exponential(multiplier=60, max=3600))
+@tenacity.retry(**TENACITY_ARGUMENTS)
 @transaction.atomic
 def load_proposicoes():
     with connections['default'].cursor() as cursor:  
@@ -157,7 +177,7 @@ def load_proposicoes():
 
         cursor.execute('ALTER TABLE app_proposicao ENABLE TRIGGER ALL;')
 
-@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_exponential(multiplier=60, max=3600))
+@tenacity.retry(**TENACITY_ARGUMENTS)
 @transaction.atomic
 def load_proposicoes_autores():
     with connections['default'].cursor() as cursor:  
@@ -197,7 +217,7 @@ def load_proposicoes_autores():
         cursor.execute('ALTER TABLE app_proposicao_autor ENABLE TRIGGER ALL;')
 
 
-@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_exponential(multiplier=60, max=3600))
+@tenacity.retry(**TENACITY_ARGUMENTS)
 @transaction.atomic
 def load_proposicoes_temas():
     with connections['default'].cursor() as cursor:  
@@ -256,7 +276,7 @@ def batch_qs(qs, batch_size=1000):
         end = min(start + batch_size, total)
         yield (start, end, total, qs[start:end])
 
-@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_exponential(multiplier=60, max=3600))
+@tenacity.retry(**TENACITY_ARGUMENTS)
 @transaction.atomic
 def load_enquetes():
     if 'enquetes' not in settings.DATABASES:
@@ -290,73 +310,99 @@ def load_enquetes():
 
             print('Loaded enquetes %s' % (table_name,))
 
-@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_exponential(multiplier=60, max=3600))
-@transaction.atomic
-def load_analytics_fichas():
+@tenacity.retry(**TENACITY_ARGUMENTS)
+def get_analytics(access_token, date, metrics, dimensions, sort, filters, start_index, max_results):
+    url = ('https://www.googleapis.com/analytics/v3/data/ga'
+        +'?ids=ga%3A48889682'
+        +'&start-date='+date.strftime("%Y-%m-%d")
+        +'&end-date='+date.strftime("%Y-%m-%d")
+        +'&metrics='+urllib.parse.quote(metrics)
+        +'&dimensions='+urllib.parse.quote(dimensions)
+        +'&sort='+urllib.parse.quote(sort)
+        +'&filters='+urllib.parse.quote(filters)
+        +'&start-index='+str(start_index)
+        +'&max-results='+str(max_results)
+        +'&access_token='+access_token)
+
+    r = requests.get(url)
+    data = r.json()
+
+    # There should always be rows. Otherwise something went wrong.
+    try:
+        data['rows']
+    except KeyError:
+        raise
+
+    return data
+
+@tenacity.retry(**TENACITY_ARGUMENTS)
+def load_analytics_fichas(initial_date=None):
     proposicao_ids = set(get_model('Proposicao').objects.values_list('id', flat=True))
 
-    token = ServiceAccountCredentials.from_json_keyfile_dict(
+    access_token = ServiceAccountCredentials.from_json_keyfile_dict(
         json.loads(os.environ['ANALYTICS_CREDENTIALS']), 'https://www.googleapis.com/auth/analytics.readonly').get_access_token().access_token
 
-    daterange = [datetime.date.today() - datetime.timedelta(days=i) for i in range(1,93)]
+    if not initial_date:
+        # By default the last 3 months
+        daterange = [datetime.date.today() - datetime.timedelta(days=i) for i in range(1,93)]
+    else:
+        daterange = [datetime.date.today() - datetime.timedelta(days=i) for i in range(1,(datetime.date.today() - initial_date).days + 1)]
+
     for date in daterange:
-        if get_model('ProposicaoFichaPageviews').objects.filter(date=date).count() > 0:
-            continue
+        with transaction.atomic():
+            if get_model('ProposicaoFichaPageviews').objects.filter(date=date).count() > 0:
+                continue
 
-        pageviews_dict = {}
-        
-        i = 1
-        while (True):
-            url = ('https://www.googleapis.com/analytics/v3/data/ga'
-                +'?ids=ga%3A48889682'
-                +'&start-date='+date.strftime("%Y-%m-%d")
-                +'&end-date='+date.strftime("%Y-%m-%d")
-                +'&metrics=ga%3Apageviews'
-                +'&dimensions=ga%3ApagePath%2Cga%3Adate'
-                +'&sort=-ga%3Apageviews'
-                +'&filters=ga%3ApagePath%3D~%5E%2FproposicoesWeb%2Ffichadetramitacao%2Cga%3ApagePath%3D~%5E%2Fpropostas-legislativas%2F'
-                +'&start-index='+str(i)
-                +'&max-results=10000'
-                +'&access_token='+token)
+            pageviews_dict = {}
+            
+            i = 1
+            while (True):
+                data = get_analytics(
+                    date=date,
+                    metrics='ga:pageviews',
+                    dimensions='ga:pagePath,ga:date',
+                    sort='-ga:pageviews',
+                    filters='ga:pagePath=~^/proposicoesWeb/fichadetramitacao,ga:pagePath=~^/propostas-legislativas/',
+                    start_index=i,
+                    max_results=10000,
+                    access_token=access_token
+                )
 
-            r = requests.get(url)
-            data = r.json()
+                for row in data['rows']:
+                    page_path = row[0]
+                    date = datetime.datetime.strptime(row[1], "%Y%m%d").date()
+                    pageviews = int(row[2])
 
-            for row in data['rows']:
-                page_path = row[0]
-                date = datetime.datetime.strptime(row[1], "%Y%m%d").date()
-                pageviews = int(row[2])
+                    id_proposicao = None
 
-                id_proposicao = None
+                    r = re.search('^/proposicoesWeb/fichadetramitacao\?.*idProposicao=([0-9]+)', page_path)
+                    if r:
+                        id_proposicao = int(r.group(1))
 
-                r = re.search('^/proposicoesWeb/fichadetramitacao\?.*idProposicao=([0-9]+)', page_path)
-                if r:
-                    id_proposicao = int(r.group(1))
+                    r = re.search('^/propostas-legislativas/([0-9]+)', page_path)
+                    if r:
+                        id_proposicao = int(r.group(1))
+                    pageviews_dict[id_proposicao] = pageviews_dict.get(id_proposicao, 0) + pageviews
 
-                r = re.search('^/propostas-legislativas/([0-9]+)', page_path)
-                if r:
-                    id_proposicao = int(r.group(1))
-                pageviews_dict[id_proposicao] = pageviews_dict.get(id_proposicao, 0) + pageviews
+                try:
+                    data['nextLink']
+                    i += 10000
+                except KeyError:
+                    break
+            proposicao_ficha_pageview_list = []
+            for proposicao_id, pageviews in pageviews_dict.items():
+                if proposicao_id in proposicao_ids:
+                    proposicao_ficha_pageview_list.append(get_model('ProposicaoFichaPageviews')(
+                        proposicao_id=proposicao_id,
+                        pageviews=pageviews,
+                        date=date
+                    ))
 
-            try:
-                data['nextLink']
-                i += 10000
-            except KeyError:
-                break
-        proposicao_ficha_pageview_list = []
-        for proposicao_id, pageviews in pageviews_dict.items():
-            if proposicao_id in proposicao_ids:
-                proposicao_ficha_pageview_list.append(get_model('ProposicaoFichaPageviews')(
-                    proposicao_id=proposicao_id,
-                    pageviews=pageviews,
-                    date=date
-                ))
+            get_model('ProposicaoFichaPageviews').objects.bulk_create(proposicao_ficha_pageview_list)
+            
+            print('Loaded ficha analytics %s' % (date,))
 
-        get_model('ProposicaoFichaPageviews').objects.bulk_create(proposicao_ficha_pageview_list)
-        
-        print('Loaded ficha analytics %s' % (date,))
-
-
+@tenacity.retry(**TENACITY_ARGUMENTS_FAST)
 def load_noticia(id):
     r = requests.get("https://camaranews.camara.leg.br/wp-json/conteudo-portal/{}".format(str(id)))
     j = r.json()
@@ -427,14 +473,19 @@ def load_noticia(id):
 
     return True
 
-@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_exponential(multiplier=60, max=3600))
-def load_analytics_noticias():
+
+@tenacity.retry(**TENACITY_ARGUMENTS)
+def load_analytics_noticias(initial_date=None):
     print('Loading noticias analytics')
 
-    token = ServiceAccountCredentials.from_json_keyfile_dict(
+    access_token = ServiceAccountCredentials.from_json_keyfile_dict(
         json.loads(os.environ['ANALYTICS_CREDENTIALS']), 'https://www.googleapis.com/auth/analytics.readonly').get_access_token().access_token
 
-    daterange = [datetime.date.today() - datetime.timedelta(days=i) for i in range(1,93)]
+    if not initial_date:
+        # By default the last 3 months
+        daterange = [datetime.date.today() - datetime.timedelta(days=i) for i in range(1,93)]
+    else:
+        daterange = [datetime.date.today() - datetime.timedelta(days=i) for i in range(1,(datetime.date.today() - initial_date).days + 1)]
 
     updated_noticias = set()
 
@@ -447,20 +498,16 @@ def load_analytics_noticias():
             
             i = 1
             while (True):
-                url = ('https://www.googleapis.com/analytics/v3/data/ga'
-                    +'?ids=ga%3A48889682'
-                    +'&start-date='+date.strftime("%Y-%m-%d")
-                    +'&end-date='+date.strftime("%Y-%m-%d")
-                    +'&metrics=ga%3Apageviews'
-                    +'&dimensions=ga%3ApagePath%2Cga%3Adate'
-                    +'&sort=-ga%3Apageviews'
-                    +'&filters=ga%3ApagePath%3D%7E%5E%2Fnoticias%2F%5B0-9%5D%2Cga%3ApagePath%3D%7E%5E%2Fradio%2Fprogramas%2F%5B0-9%5D%2Cga%3ApagePath%3D%7E%5E%2Fradio%2Fradioagencia%2F%5B0-9%5D%2Cga%3ApagePath%3D%7E%5E%2Ftv%2F%5B0-9%5D'
-                    +'&start-index='+str(i)
-                    +'&max-results=10000'
-                    +'&access_token='+token)
-
-                r = requests.get(url)
-                data = r.json()
+                data = get_analytics(
+                    date=date,
+                    metrics='ga:pageviews',
+                    dimensions='ga:pagePath,ga:date',
+                    sort='-ga:pageviews',
+                    filters='ga:pagePath=~^/noticias/[0-9],ga:pagePath=~^/radio/programas/[0-9],ga:pagePath=~^/radio/radioagencia/[0-9],ga:pagePath=~^/tv/[0-9]',
+                    start_index=i,
+                    max_results=10000,
+                    access_token=access_token
+                )
 
                 for row in data['rows']:
                     page_path = row[0]
@@ -496,9 +543,7 @@ def load_analytics_noticias():
             noticia_pageviews_list = []
             noticia_ids = set(get_model('Noticia').objects.values_list('id', flat=True))
 
-            pbar = tqdm(pageviews_dict.items())
-            for noticia_id, pageviews in pbar:
-                pbar.set_description(str(noticia_id))
+            for noticia_id, pageviews in pageviews_dict.items():
                 if noticia_id:
                     # TODO: Currently noticia is only pulled from web service the first time it's encountered
                     # It would be desirable to re-fetch every once in a while (or even every new encounter)
@@ -518,8 +563,6 @@ def load_analytics_noticias():
         
         print('Loaded noticias analytics %s' % (date,))
 
-
-@tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_exponential(multiplier=60, max=3600))
 @transaction.atomic
 def preprocess():
     pa = defaultdict(lambda:{'ficha_pageviews': 0, 'noticia_pageviews': 0, 'poll_votes': 0, 'poll_comments': 0})

@@ -38,6 +38,12 @@ class Command(BaseCommand):
             action='store_true',
             help='Pre-processes data'
         )
+        parser.add_argument(
+            '--initial-date',
+            nargs=1,
+            type=str,
+            help='Initial date (used exclusively for Google Analytics queries) (format: DD/MM/YYYY)'
+        )
 
     def handle(self, *args, **options):
         if  not options['all'] and \
@@ -48,6 +54,11 @@ class Command(BaseCommand):
             not options['preprocess']:
             raise CommandError('No option specified.')
 
+        if options['initial_date']:
+            initial_date = datetime.datetime.strptime(options['initial_date'][0], '%d/%m/%Y').date()
+        else:
+            initial_date = None
+        
         if options['all'] or options['enquetes']:
             dataloader.load_enquetes()
         if options['all'] or options['dados_abertos']:
@@ -57,9 +68,9 @@ class Command(BaseCommand):
             dataloader.load_proposicoes_autores()
             dataloader.load_proposicoes_temas()
         if options['all'] or options['analytics_fichas']:
-            dataloader.load_analytics_fichas()
+            dataloader.load_analytics_fichas(initial_date=initial_date)
         if options['all'] or options['analytics_noticias']:
-            dataloader.load_analytics_noticias()
+            dataloader.load_analytics_noticias(initial_date=initial_date)
         
         dataloader.preprocess()
 
