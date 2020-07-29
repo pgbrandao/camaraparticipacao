@@ -1,6 +1,7 @@
+from django.contrib.postgres.fields import JSONField
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import Sum
-from django.core.exceptions import ObjectDoesNotExist
 
 import datetime
 
@@ -163,6 +164,8 @@ class Noticia(models.Model):
     data_atualizacao = models.DateTimeField(blank=True, null=True)
     deputados = models.ManyToManyField('Deputado')
     proposicoes = models.ManyToManyField('Proposicao')
+
+    raw_data = JSONField(blank=True, null=True)
 
 class NoticiaPageviews(models.Model):
     noticia = models.ForeignKey('Noticia', on_delete=models.CASCADE)

@@ -419,7 +419,8 @@ def load_noticia(id):
         data = datetime.datetime.utcfromtimestamp(data) if data else None,
         data_atualizacao = datetime.datetime.utcfromtimestamp(data_atualizacao) if data_atualizacao else None,
         conteudo = conteudo,
-        resumo = resumo
+        resumo = resumo,
+        raw_data = j
     )
     noticia.proposicoes.set(proposicoes_list)
     noticia.deputados.set(deputados_list)
@@ -427,7 +428,6 @@ def load_noticia(id):
     return True
 
 @tenacity.retry(reraise=True, stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_exponential(multiplier=60, max=3600))
-@transaction.atomic
 def load_analytics_noticias():
     print('Loading noticias analytics')
 
@@ -439,78 +439,79 @@ def load_analytics_noticias():
     updated_noticias = set()
 
     for date in daterange:
-        if get_model('NoticiaPageviews').objects.filter(date=date).count() > 0:
-            continue
+        with transaction.atomic():
+            if get_model('NoticiaPageviews').objects.filter(date=date).count() > 0:
+                continue
 
-        pageviews_dict = {}
-        
-        i = 1
-        while (True):
-            url = ('https://www.googleapis.com/analytics/v3/data/ga'
-                +'?ids=ga%3A48889682'
-                +'&start-date='+date.strftime("%Y-%m-%d")
-                +'&end-date='+date.strftime("%Y-%m-%d")
-                +'&metrics=ga%3Apageviews'
-                +'&dimensions=ga%3ApagePath%2Cga%3Adate'
-                +'&sort=-ga%3Apageviews'
-                +'&filters=ga%3ApagePath%3D%7E%5E%2Fnoticias%2F%5B0-9%5D%2Cga%3ApagePath%3D%7E%5E%2Fradio%2Fprogramas%2F%5B0-9%5D%2Cga%3ApagePath%3D%7E%5E%2Fradio%2Fradioagencia%2F%5B0-9%5D%2Cga%3ApagePath%3D%7E%5E%2Ftv%2F%5B0-9%5D'
-                +'&start-index='+str(i)
-                +'&max-results=10000'
-                +'&access_token='+token)
+            pageviews_dict = {}
+            
+            i = 1
+            while (True):
+                url = ('https://www.googleapis.com/analytics/v3/data/ga'
+                    +'?ids=ga%3A48889682'
+                    +'&start-date='+date.strftime("%Y-%m-%d")
+                    +'&end-date='+date.strftime("%Y-%m-%d")
+                    +'&metrics=ga%3Apageviews'
+                    +'&dimensions=ga%3ApagePath%2Cga%3Adate'
+                    +'&sort=-ga%3Apageviews'
+                    +'&filters=ga%3ApagePath%3D%7E%5E%2Fnoticias%2F%5B0-9%5D%2Cga%3ApagePath%3D%7E%5E%2Fradio%2Fprogramas%2F%5B0-9%5D%2Cga%3ApagePath%3D%7E%5E%2Fradio%2Fradioagencia%2F%5B0-9%5D%2Cga%3ApagePath%3D%7E%5E%2Ftv%2F%5B0-9%5D'
+                    +'&start-index='+str(i)
+                    +'&max-results=10000'
+                    +'&access_token='+token)
 
-            r = requests.get(url)
-            data = r.json()
+                r = requests.get(url)
+                data = r.json()
 
-            for row in data['rows']:
-                page_path = row[0]
-                date = datetime.datetime.strptime(row[1], "%Y%m%d").date()
-                pageviews = int(row[2])
+                for row in data['rows']:
+                    page_path = row[0]
+                    # date = datetime.datetime.strptime(row[1], "%Y%m%d").date()
+                    pageviews = int(row[2])
 
-                id_noticia = None
+                    id_noticia = None
 
-                r = re.search('^/noticias/([0-9]+).*', page_path)
-                if r:
-                    id_noticia = int(r.group(1))
+                    r = re.search('^/noticias/([0-9]+).*', page_path)
+                    if r:
+                        id_noticia = int(r.group(1))
 
-                r = re.search('^/radio/programas/([0-9]+).*', page_path)
-                if r:
-                    id_noticia = int(r.group(1))
+                    r = re.search('^/radio/programas/([0-9]+).*', page_path)
+                    if r:
+                        id_noticia = int(r.group(1))
 
-                r = re.search('^/radio/radioagencia/([0-9]+).*', page_path)
-                if r:
-                    id_noticia = int(r.group(1))
+                    r = re.search('^/radio/radioagencia/([0-9]+).*', page_path)
+                    if r:
+                        id_noticia = int(r.group(1))
 
-                r = re.search('^/tv/([0-9]+).*', page_path)
-                if r:
-                    id_noticia = int(r.group(1))
+                    r = re.search('^/tv/([0-9]+).*', page_path)
+                    if r:
+                        id_noticia = int(r.group(1))
 
-                pageviews_dict[id_noticia] = pageviews_dict.get(id_noticia, 0) + pageviews
+                    pageviews_dict[id_noticia] = pageviews_dict.get(id_noticia, 0) + pageviews
 
-            try:
-                data['nextLink']
-                i += 10000
-            except KeyError:
-                break
-        
-        noticia_pageviews_list = []
-        noticia_ids = set(get_model('Noticia').objects.values_list('id', flat=True))
+                try:
+                    data['nextLink']
+                    i += 10000
+                except KeyError:
+                    break
+            
+            noticia_pageviews_list = []
+            noticia_ids = set(get_model('Noticia').objects.values_list('id', flat=True))
 
-        pbar = tqdm(pageviews_dict.items())
-        for noticia_id, pageviews in pbar:
-            pbar.set_description(str(noticia_id))
-            if noticia_id:
-                # TODO: Currently noticia is only pulled from web service the first time it's encountered
-                # It would be desirable to re-fetch every once in a while (or even every new encounter)
-                if noticia_id not in noticia_ids:
-                    if not load_noticia(noticia_id):
-                        continue
-                    noticia_ids.add(noticia_id)
-                
-                noticia_pageviews_list.append(get_model('NoticiaPageviews')(
-                    noticia_id=noticia_id,
-                    pageviews=pageviews,
-                    date=date
-                ))
+            pbar = tqdm(pageviews_dict.items())
+            for noticia_id, pageviews in pbar:
+                pbar.set_description(str(noticia_id))
+                if noticia_id:
+                    # TODO: Currently noticia is only pulled from web service the first time it's encountered
+                    # It would be desirable to re-fetch every once in a while (or even every new encounter)
+                    if noticia_id not in noticia_ids:
+                        if not load_noticia(noticia_id):
+                            continue
+                        noticia_ids.add(noticia_id)
+                    
+                    noticia_pageviews_list.append(get_model('NoticiaPageviews')(
+                        noticia_id=noticia_id,
+                        pageviews=pageviews,
+                        date=date
+                    ))
 
 
         get_model('NoticiaPageviews').objects.bulk_create(noticia_pageviews_list)
