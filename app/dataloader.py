@@ -33,14 +33,13 @@ logger = logging.getLogger(__name__)
 
 TENACITY_ARGUMENTS = {
     'reraise': True,
-    'stop': tenacity.stop_after_attempt(5),
-    'wait': tenacity.wait_exponential(multiplier=60),
+    'wait': tenacity.wait_exponential(multiplier=60, max=600),
     'before_sleep': tenacity.before_sleep_log(logger, logging.ERROR, exc_info=True)
 }
 TENACITY_ARGUMENTS_FAST = {
     'reraise': True,
-    'stop': tenacity.stop_after_attempt(3),
-    'wait': tenacity.wait_exponential(),
+    'stop': tenacity.stop_after_attempt(5),
+    'wait': tenacity.wait_exponential(multiplier=30),
     'before_sleep': tenacity.before_sleep_log(logger, logging.ERROR, exc_info=True)
 }
 

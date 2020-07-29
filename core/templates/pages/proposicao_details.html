@@ -75,9 +75,72 @@ padding: 1.25rem 1.5rem;
             </div>
         </div>
     </div>
-    {% with stats=proposicao.stats %}
     <div class="row">
-        <div class="col-xl-4 col-lg-6">
+        <div class="col-xl-12 mb-5 mb-xl-0">
+            <div class="card shadow">
+                <div class="card-body">
+                    <table class="table">
+                        <tbody>
+                            {% for noticia in proposicao.noticia_set.all %}
+                                <tr>
+                                    <td>
+                                        {{ noticia.tipo_conteudo }}
+                                    </td>
+                                    <td>
+                                        {{ noticia.data }}
+                                    </td>
+                                    <td>
+                                        <a href="{{ noticia.link }}">{{ noticia.titulo }}</a>
+                                    </td>
+                                    <td>
+                                        {{ noticia.pageviews }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>    {% with stats=proposicao.stats %}
+    <div class="row">
+        <div class="col-xl-3 col-lg-6">
+            <div class="card shadow card-stats">
+                <div class="card-body ">
+                    <div class="row">
+                        <div class="col">
+                            <h5 class="card-title text-uppercase text-muted mb-0">Acessos à ficha</h5>
+                            <span
+                                class="h2 font-weight-bold mb-0">{{ stats.ficha_pageviews_total | intcomma }}</span>
+                        </div>
+                        <div class="col-auto">
+                            <div class="icon icon-shape bg-danger text-white rounded-circle shadow">
+                                <i class="fa fa-chart-line"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-6">
+            <div class="card shadow card-stats">
+                <div class="card-body ">
+                    <div class="row">
+                        <div class="col">
+                            <h5 class="card-title text-uppercase text-muted mb-0">Acessos às notícias</h5>
+                            <span
+                                class="h2 font-weight-bold mb-0">{{ stats.noticia_pageviews_total | intcomma }}</span>
+                        </div>
+                        <div class="col-auto">
+                            <div class="icon icon-shape bg-warning text-white rounded-circle shadow">
+                                <i class="fa fa-chart-line"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-6">
             <div class="card shadow card-stats">
                 <div class="card-body ">
                     <div class="row">
@@ -94,7 +157,7 @@ padding: 1.25rem 1.5rem;
                 </div>
             </div>
         </div>
-        <div class="col-xl-4 col-lg-6">
+        <div class="col-xl-3 col-lg-6">
             <div class="card shadow card-stats">
                 <div class="card-body ">
                     <div class="row">
@@ -106,24 +169,6 @@ padding: 1.25rem 1.5rem;
                         <div class="col-auto">
                             <div class="icon icon-shape bg-green text-white rounded-circle shadow">
                                 <i class="fas fa-pencil-alt"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-4 col-lg-6">
-            <div class="card shadow card-stats">
-                <div class="card-body ">
-                    <div class="row">
-                        <div class="col">
-                            <h5 class="card-title text-uppercase text-muted mb-0">Acessos à ficha</h5>
-                            <span
-                                class="h2 font-weight-bold mb-0">{{ stats.pageviews_total | intcomma }}</span>
-                        </div>
-                        <div class="col-auto">
-                            <div class="icon icon-shape bg-warning text-white rounded-circle shadow">
-                                <i class="fa fa-chart-line"></i>
                             </div>
                         </div>
                     </div>

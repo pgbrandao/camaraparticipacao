@@ -121,10 +121,11 @@ class Proposicao(models.Model):
 
     def stats(self):
         qs = ProposicaoAggregated.objects.filter(proposicao=self)
-        qs = qs.aggregate(Sum('ficha_pageviews'), Sum('poll_votes'), Sum('poll_comments'))
+        qs = qs.aggregate(Sum('ficha_pageviews'), Sum('noticia_pageviews'), Sum('poll_votes'), Sum('poll_comments'))
 
         return {
             'ficha_pageviews_total': qs['ficha_pageviews__sum'],
+            'noticia_pageviews_total': qs['noticia_pageviews__sum'],
             'poll_votes_total': qs['poll_votes__sum'],
             'poll_comments_total': qs['poll_comments__sum'],
         }
@@ -166,6 +167,12 @@ class Noticia(models.Model):
     proposicoes = models.ManyToManyField('Proposicao')
 
     raw_data = JSONField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['-data']
+
+    def pageviews(self):
+        return self.noticiapageviews_set.all().aggregate(Sum('pageviews'))['pageviews__sum']
 
 class NoticiaPageviews(models.Model):
     noticia = models.ForeignKey('Noticia', on_delete=models.CASCADE)
