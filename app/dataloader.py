@@ -43,6 +43,9 @@ TENACITY_ARGUMENTS_FAST = {
     'before_sleep': tenacity.before_sleep_log(logger, logging.ERROR, exc_info=True)
 }
 
+# Google Analytics access token
+access_token = None
+
 @tenacity.retry(**TENACITY_ARGUMENTS)
 @transaction.atomic
 def load_deputados():
@@ -310,7 +313,13 @@ def load_enquetes():
             print('Loaded enquetes %s' % (table_name,))
 
 @tenacity.retry(**TENACITY_ARGUMENTS)
-def get_analytics(access_token, date, metrics, dimensions, sort, filters, start_index, max_results):
+def get_analytics(date, metrics, dimensions, sort, filters, start_index, max_results):
+    global access_token
+
+    if not access_token:
+        access_token = ServiceAccountCredentials.from_json_keyfile_dict(
+            json.loads(os.environ['ANALYTICS_CREDENTIALS']), 'https://www.googleapis.com/auth/analytics.readonly').get_access_token().access_token
+    
     url = ('https://www.googleapis.com/analytics/v3/data/ga'
         +'?ids=ga%3A48889682'
         +'&start-date='+date.strftime("%Y-%m-%d")
@@ -330,6 +339,11 @@ def get_analytics(access_token, date, metrics, dimensions, sort, filters, start_
     try:
         data['rows']
     except KeyError:
+        if data['error']['code'] == 401:
+            # 401: Unauthorized (most likely invalid credentials)
+            access_token = None
+            print('New access token probably needed. Will be tried next time.')
+
         print(data)
         raise
 
@@ -338,9 +352,6 @@ def get_analytics(access_token, date, metrics, dimensions, sort, filters, start_
 @tenacity.retry(**TENACITY_ARGUMENTS)
 def load_analytics_fichas(initial_date=None):
     proposicao_ids = set(get_model('Proposicao').objects.values_list('id', flat=True))
-
-    access_token = ServiceAccountCredentials.from_json_keyfile_dict(
-        json.loads(os.environ['ANALYTICS_CREDENTIALS']), 'https://www.googleapis.com/auth/analytics.readonly').get_access_token().access_token
 
     if not initial_date:
         # By default the last 3 months
@@ -364,8 +375,7 @@ def load_analytics_fichas(initial_date=None):
                     sort='-ga:pageviews',
                     filters='ga:pagePath=~^/proposicoesWeb/fichadetramitacao,ga:pagePath=~^/propostas-legislativas/',
                     start_index=i,
-                    max_results=10000,
-                    access_token=access_token
+                    max_results=10000
                 )
 
                 for row in data['rows']:
@@ -482,9 +492,6 @@ def load_noticia(id):
 def load_analytics_noticias(initial_date=None):
     print('Loading noticias analytics')
 
-    access_token = ServiceAccountCredentials.from_json_keyfile_dict(
-        json.loads(os.environ['ANALYTICS_CREDENTIALS']), 'https://www.googleapis.com/auth/analytics.readonly').get_access_token().access_token
-
     if not initial_date:
         # By default the last 3 months
         daterange = [datetime.date.today() - datetime.timedelta(days=i) for i in range(1,93)]
@@ -509,8 +516,7 @@ def load_analytics_noticias(initial_date=None):
                     sort='-ga:pageviews',
                     filters='ga:pagePath=~^/noticias/[0-9],ga:pagePath=~^/radio/programas/[0-9],ga:pagePath=~^/radio/radioagencia/[0-9],ga:pagePath=~^/tv/[0-9]',
                     start_index=i,
-                    max_results=10000,
-                    access_token=access_token
+                    max_results=10000
                 )
 
                 for row in data['rows']:
