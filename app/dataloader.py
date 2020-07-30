@@ -404,7 +404,11 @@ def load_analytics_fichas(initial_date=None):
 @tenacity.retry(**TENACITY_ARGUMENTS_FAST)
 def load_noticia(id):
     r = requests.get("https://camaranews.camara.leg.br/wp-json/conteudo-portal/{}".format(str(id)))
-    j = r.json()
+
+    # This is a huge kludge because the \u0000 character is invalid in JSON strings.
+    # requests .json() will let this slip by.
+    c = r.content.replace(b'\u0000', b'')
+    j = json.loads(c)
 
     if not id or j.get('code') == 'not_found':
         return False
