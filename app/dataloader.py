@@ -568,70 +568,72 @@ def load_analytics_noticias(initial_date=None):
 
 @transaction.atomic
 def preprocess():
-    pa = defaultdict(lambda:{'ficha_pageviews': 0, 'noticia_pageviews': 0, 'poll_votes': 0, 'poll_comments': 0})
-
-    ficha_pageviews_qs = get_model('ProposicaoFichaPageviews').objects.all()
-
-    for row in ficha_pageviews_qs:
-        proposicao_id = row.proposicao_id
-        date = row.date
-        pageviews = row.pageviews
-
-        pa[(proposicao_id,date)]['ficha_pageviews'] = pageviews
-
-    noticia_pageviews_qs = get_model('NoticiaPageviews').objects \
-        .values('date', 'pageviews', 'noticia__proposicoes__pk')
-
-    for row in noticia_pageviews_qs:
-        proposicao_id = row['noticia__proposicoes__pk']
-        date = row['date']
-        pageviews = row['pageviews']
-
-        if proposicao_id:
-            # Operator += is super important here
-            # (since each proposicao has more than one noticia)
-            pa[(proposicao_id,date)]['noticia_pageviews'] += pageviews
-
-    votes_qs = get_model('Resposta').objects \
-        .extra(select={'date':'date(dat_resposta)'}) \
-        .values('ide_formulario_publicado__proposicao', 'date') \
-        .annotate(votes_count=Count('ide_resposta')) \
-        .values('ide_formulario_publicado__proposicao','date','votes_count')
-
-    for row in votes_qs:
-        if not row['ide_formulario_publicado__proposicao'] or \
-            not row['date']:
-            continue
-
-        proposicao_id = row['ide_formulario_publicado__proposicao']
-        date = row['date']
-        poll_votes = row['votes_count']
-
-        pa[(proposicao_id,date)]['poll_votes'] = poll_votes
-
-
-    comments_qs = get_model('Posicionamento').objects \
-        .extra(select={'date':'date(dat_posicionamento)'}) \
-        .values('ide_formulario_publicado__proposicao', 'date') \
-        .annotate(comments_count=Count('ide_posicionamento')) \
-        .values('ide_formulario_publicado__proposicao','date','comments_count')
-
-    for row in comments_qs:
-        if not row['ide_formulario_publicado__proposicao'] or \
-            not row['date']:
-            continue
-
-        proposicao_id = row['ide_formulario_publicado__proposicao']
-        date = row['date']
-        poll_comments = row['comments_count']
-
-        pa[(proposicao_id,date)]['poll_comments'] = poll_comments
-
     with connections['default'].cursor() as cursor:  
         cursor.execute('ALTER TABLE app_proposicaoaggregated DISABLE TRIGGER ALL;')
         cursor.execute('DELETE FROM app_proposicaoaggregated')
-        pa_list = [get_model('ProposicaoAggregated')(proposicao_id=k[0], date=k[1], ficha_pageviews=v['ficha_pageviews'], noticia_pageviews=v['noticia_pageviews'], poll_votes=v['poll_votes'], poll_comments=v['poll_comments']) for k, v in pa.items()]
-        get_model('ProposicaoAggregated').objects.bulk_create(pa_list)
+
+        initial_date = datetime.date(year=2019, month=1, day=1)
+        daterange = [datetime.date.today() - datetime.timedelta(days=i) for i in range(1, (datetime.date.today() - initial_date).days + 1)]
+        for date in daterange:
+
+            pa = defaultdict(lambda:{'ficha_pageviews': 0, 'noticia_pageviews': 0, 'poll_votes': 0, 'poll_comments': 0})
+
+            ficha_pageviews_qs = get_model('ProposicaoFichaPageviews').objects.filter(date=date)
+
+            for row in ficha_pageviews_qs:
+                pa[row.proposicao_id]['ficha_pageviews'] = row.pageviews
+
+            noticia_pageviews_qs = get_model('NoticiaPageviews').objects \
+                .filter(date=date) \
+                .values('date', 'pageviews', 'noticia__proposicoes__pk')
+
+            for row in noticia_pageviews_qs:
+                proposicao_id = row['noticia__proposicoes__pk']
+                pageviews = row['pageviews']
+
+                if proposicao_id:
+                    # Operator += is super important here
+                    # (since each proposicao has more than one noticia)
+                    pa[proposicao_id]['noticia_pageviews'] += pageviews
+
+            votes_qs = get_model('Resposta').objects \
+                .filter(dat_resposta__year=date.year) \
+                .filter(dat_resposta__month=date.month) \
+                .filter(dat_resposta__day=date.day) \
+                .values('ide_formulario_publicado__proposicao') \
+                .annotate(votes_count=Count('ide_resposta')) \
+                .values('ide_formulario_publicado__proposicao','votes_count')
+
+            for row in votes_qs:
+                if not row['ide_formulario_publicado__proposicao']:
+                    continue
+
+                proposicao_id = row['ide_formulario_publicado__proposicao']
+                poll_votes = row['votes_count']
+
+                pa[proposicao_id]['poll_votes'] = poll_votes
+
+
+            comments_qs = get_model('Posicionamento').objects \
+                .filter(dat_posicionamento__year=date.year) \
+                .filter(dat_posicionamento__month=date.month) \
+                .filter(dat_posicionamento__day=date.day) \
+                .values('ide_formulario_publicado__proposicao') \
+                .annotate(comments_count=Count('ide_posicionamento')) \
+                .values('ide_formulario_publicado__proposicao','comments_count')
+
+            for row in comments_qs:
+                if not row['ide_formulario_publicado__proposicao']:
+                    continue
+
+                proposicao_id = row['ide_formulario_publicado__proposicao']
+                poll_comments = row['comments_count']
+
+                pa[proposicao_id]['poll_comments'] = poll_comments
+
+            pa_list = [get_model('ProposicaoAggregated')(proposicao_id=k, date=date, ficha_pageviews=v['ficha_pageviews'], noticia_pageviews=v['noticia_pageviews'], poll_votes=v['poll_votes'], poll_comments=v['poll_comments']) for k, v in pa.items()]
+            get_model('ProposicaoAggregated').objects.bulk_create(pa_list)
+
         cursor.execute('ALTER TABLE app_proposicaoaggregated ENABLE TRIGGER ALL;')
 
-    print('Finished preprocess')
+        print('Finished preprocess')

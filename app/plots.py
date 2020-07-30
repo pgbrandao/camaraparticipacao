@@ -81,6 +81,11 @@ def daily_summary_proposicao(proposicao):
         y=daily_data.ficha_pageviews,
         name='Visualizações (ficha de tramitação)',
         marker_color='#f5365c')
+    daily_noticia_pageviews_trace = go.Bar(
+        x=daily_data.date,
+        y=daily_data.noticia_pageviews,
+        name='Visualizações (notícias)',
+        marker_color='#fb6340')
     daily_poll_votes_trace = go.Bar(
         x=daily_data.date,
         y=daily_data.poll_votes,
@@ -92,7 +97,7 @@ def daily_summary_proposicao(proposicao):
         name='Comentários na enquete',
         marker_color='#2dce89',)
     
-    fig = plotly.tools.make_subplots(rows=3, cols=1, shared_xaxes=True)
+    fig = plotly.tools.make_subplots(rows=4, cols=1, shared_xaxes=True)
     fig.update_xaxes(
         # rangeselector=dict(
         #     buttons=list([
@@ -116,8 +121,9 @@ def daily_summary_proposicao(proposicao):
     fig.update_yaxes(gridcolor='#fff', fixedrange=True)
     fig.update_layout(dragmode='pan')
     fig.append_trace(daily_ficha_pageviews_trace, 1, 1)
-    fig.append_trace(daily_poll_votes_trace, 2, 1)
-    fig.append_trace(daily_poll_comments_trace, 3, 1)
+    fig.append_trace(daily_noticia_pageviews_trace, 2, 1)
+    fig.append_trace(daily_poll_votes_trace, 3, 1)
+    fig.append_trace(daily_poll_comments_trace, 4, 1)
     # fig.add_traces([daily_pageviews_trace, daily_poll_votes_trace, daily_poll_comments_trace])
     plot_div = plotly.io.to_html(fig, include_plotlyjs='cdn', config={'displayModeBar': False}, full_html=False)
     
