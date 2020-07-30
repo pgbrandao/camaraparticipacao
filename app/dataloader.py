@@ -330,6 +330,7 @@ def get_analytics(access_token, date, metrics, dimensions, sort, filters, start_
     try:
         data['rows']
     except KeyError:
+        print(data)
         raise
 
     return data
