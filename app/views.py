@@ -90,6 +90,7 @@ def index(request):
     return render(request, 'pages/index.html', locals())
 
 
+
 def raiox(request, dimension):
     if dimension not in ('tema', 'autor', 'relator', 'situacao', 'indexacao', 'proposicao'):
         return Http404
