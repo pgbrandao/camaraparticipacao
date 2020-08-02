@@ -339,12 +339,16 @@ def get_analytics(date, metrics, dimensions, sort, filters, start_index, max_res
     try:
         data['rows']
     except KeyError:
-        if data['error']['code'] == 401:
-            # 401: Unauthorized (most likely invalid credentials)
-            access_token = None
-            print('New access token probably needed. Will be tried next time.')
-
         print(data)
+
+        try:
+            if data['error']['code'] == 401:
+                # 401: Unauthorized (most likely invalid credentials)
+                access_token = None
+                print('New access token probably needed. Will be tried next time.')
+        except KeyError:
+            pass
+
         raise
 
     return data

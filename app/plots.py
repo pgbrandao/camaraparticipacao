@@ -18,51 +18,47 @@ def daily_summary_global():
     Returns:
         [plotly.graph_objs] -- [plot_div compatible with Django]
     """
-    qs = ProposicaoFichaPageviews.objects.values('date').annotate(pageviews_total=Sum('pageviews')).order_by('date').values('date', 'pageviews_total')
-    daily_ficha_pageviews = pd.DataFrame(qs)
-    qs = Resposta.objects.extra(select={'date':'date(dat_resposta)'}).values('date').annotate(votes_total=Count('ide_resposta')).order_by('date').values('date', 'votes_total')
-    daily_poll_votes = pd.DataFrame(qs)
-    qs = Posicionamento.objects.extra(select={'date':'date(dat_posicionamento)'}).values('date').annotate(comments_total=Count('ide_posicionamento')).order_by('date').values('date', 'comments_total')
-    daily_poll_comments = pd.DataFrame(qs)
+    qs1 = ProposicaoAggregated.objects.values('date') \
+        .annotate(ficha_pageviews_total=Sum('ficha_pageviews'), poll_votes_total=Sum('poll_votes'), poll_comments_total=Sum('poll_comments'))
+    qs2 = NoticiaPageviews.objects.values('date') \
+        .annotate(noticia_pageviews_total=Sum('pageviews'))
+    df = pd.DataFrame(qs1).merge(pd.DataFrame(qs2), how='outer')
 
-    layout = Layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', legend=dict(x=0.025, y=1), height=310, margin=dict(t=0, l=15, r=10, b=0), barmode='stack')
-    fig = go.Figure(layout=layout)
     daily_ficha_pageviews_trace = go.Bar(
-        x=daily_ficha_pageviews.date if not daily_ficha_pageviews.empty else [None],
-        y=daily_ficha_pageviews.pageviews_total if not daily_ficha_pageviews.empty else [None],
+        x=df.date,
+        y=df.ficha_pageviews_total,
         name='Visualizações (ficha de tramitação)',
         marker_color='#f5365c')
+    daily_noticia_pageviews_trace = go.Bar(
+        x=df.date,
+        y=df.noticia_pageviews_total,
+        name='Visualizações (notícias)',
+        marker_color='#fb6340')
     daily_poll_votes_trace = go.Bar(
-        x=daily_poll_votes.date if not daily_poll_votes.empty else [None],
-        y=daily_poll_votes.votes_total if not daily_poll_votes.empty else [None],
+        x=df.date,
+        y=df.poll_votes_total,
         name='Votos na enquete',
         marker_color='#6236FF')
     daily_poll_comments_trace = go.Bar(
-        x=daily_poll_comments.date if not daily_poll_comments.empty else [None],
-        y=daily_poll_comments.comments_total if not daily_poll_comments.empty else [None],
+        x=df.date,
+        y=df.poll_comments_total,
         name='Comentários na enquete',
         marker_color='#2dce89',)
     
+    fig = plotly.tools.make_subplots(rows=4, cols=1, shared_xaxes=True)
     fig.update_xaxes(
-        rangeselector=dict(
-            buttons=list([
-                dict(count=7, label='W', step='day', stepmode='backward'),
-                dict(count=1, label='M', step='month', stepmode='backward'),
-                dict(count=3, label='3M', step='month', stepmode='backward', ),
-                # dict(label='T', step='all')
-            ]))
-        )
-    
-    d0 = datetime.date.today()
-    dm30 = d0 - datetime.timedelta(days=31)
-
-    fig.update_xaxes(range=[dm30, d0])
-    fig.update_yaxes(gridcolor='#fff')
-    fig.add_traces([daily_ficha_pageviews_trace, daily_poll_votes_trace, daily_poll_comments_trace])
+        range=[datetime.date.today() - datetime.timedelta(days=90), datetime.date.today()]
+    )
+    fig.update_yaxes(gridcolor='#fff', fixedrange=True)
+    fig.update_layout(dragmode='pan')
+    fig.append_trace(daily_ficha_pageviews_trace, 1, 1)
+    fig.append_trace(daily_noticia_pageviews_trace, 2, 1)
+    fig.append_trace(daily_poll_votes_trace, 3, 1)
+    fig.append_trace(daily_poll_comments_trace, 4, 1)
     plot_div = plotly.io.to_html(fig, include_plotlyjs='cdn', config={'displayModeBar': False}, full_html=False)
     
     return plot_div
-    
+
 def daily_summary_proposicao(proposicao):
     qs = ProposicaoAggregated.objects.filter(proposicao=proposicao).order_by('date').values()
     daily_data = pd.DataFrame(qs)
