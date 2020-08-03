@@ -53,11 +53,12 @@ def daily_summary_global():
         spikedash="dot",
         spikecolor="#999999",
         spikemode="across",
+        spikesnap="data",
     )
     fig.update_yaxes(gridcolor='#fff', fixedrange=True)
     fig.update_layout(
         dragmode='pan',
-        hovermode='x',
+        hovermode='x unified',
         hoverdistance=100,
         spikedistance=1000, # Distance to show spike
         margin={
@@ -71,7 +72,7 @@ def daily_summary_global():
     fig.append_trace(daily_noticia_pageviews_trace, 2, 1)
     fig.append_trace(daily_poll_votes_trace, 3, 1)
     fig.append_trace(daily_poll_comments_trace, 4, 1)
-    # fig.update_traces(xaxis='x1')
+    fig.update_traces(xaxis='x4')
 
     post_script = """
         document.getElementById('{plot_id}').on('plotly_click', function(data){
@@ -154,6 +155,15 @@ def proposicao_heatmap(proposicao):
         values[record['ts']] = record['ficha_pageviews']
 
     return values
+
+def raiox_anual():
+    qs = ProposicaoAggregated.objects.filter(date__gte=initial, date__lte=final, ficha_pageviews__gt=0).values('ficha_pageviews', 'date', 'proposicao__tema__nome')
+    df = pd.DataFrame.from_records(qs)
+    df['date'] = pd.to_datetime(df['date'])
+    dfg = df.groupby(pd.Grouper(key='date', freq='M')).ficha_pageviews.agg('sum')
+    dfg = dfg.reset_index()
+
+    # TODO: All the rest
 
 def raiox(date_min, date_max, metric_field, plot_type, dimension):
     qs = ProposicaoAggregated.objects \
