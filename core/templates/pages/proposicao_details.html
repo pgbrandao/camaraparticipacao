@@ -75,42 +75,6 @@ padding: 1.25rem 1.5rem;
             </div>
         </div>
     </div>
-    <div class="row">
-        <div class="col-xl-12 mb-5 mb-xl-0">
-            <div class="card shadow">
-                <div class="card-body">
-                    <h3>Notícias sobre esta proposição</h3>
-                    <table class="table">
-                        <tbody>
-                            {% for noticia in proposicao.noticia_set.all %}
-                                <tr>
-                                    <td>
-                                        {{ noticia.tipo_conteudo }}
-                                    </td>
-                                    <td>
-                                        {{ noticia.data }}
-                                    </td>
-                                    <td>
-                                        <a href="{{ noticia.link }}">{{ noticia.titulo }}</a>
-                                    </td>
-                                    <td>
-                                        {{ noticia.pageviews }}
-                                    </td>
-                                </tr>
-                            {% empty %}
-                            <tr>
-                                <td>
-                                    Não há notícias associadas a esta proposição.
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
     {% with stats=proposicao.stats %}
     <div class="row">
         <div class="col-xl-3 col-lg-6">
@@ -190,11 +154,8 @@ padding: 1.25rem 1.5rem;
     <div class="row">
         <div class="col">
             <div class="card">
-                <!-- Card header -->
-                <div class="card-header">
-                    <h3 class="mb-0">Timeline da proposição</h3>
-                </div>
                 <div class="card-body plotly">
+                    <h2 class="card-title">Timeline da proposição</h2>
                     {% autoescape off %}
                     {{ daily_summary_proposicao_plot }}
                     {% endautoescape %}
@@ -203,20 +164,42 @@ padding: 1.25rem 1.5rem;
         </div>
     </div>
 
-    <!-- <div class="row">
-        <div class="col">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="mb-0">Heatmap de atividade</h3>
-                </div>
+    <div class="row">
+        <div class="col-xl-12 mb-5 mb-xl-0">
+            <div class="card shadow">
                 <div class="card-body">
-                    <button class="btn btn-primary" id="example-g-PreviousDomain-selector">Anterior</button>
-                    <button class="btn btn-primary" id="example-g-NextDomain-selector">Próximo</button>
-                    <div id="example-g"></div>
+                    <h2 class="card-title">Notícias sobre esta proposição</h2>
+                    <table class="table">
+                        <tbody>
+                            {% for noticia in proposicao.noticia_set.all %}
+                                <tr>
+                                    <td>
+                                        {{ noticia.tipo_conteudo }}
+                                    </td>
+                                    <td>
+                                        {{ noticia.data }}
+                                    </td>
+                                    <td>
+                                        <a href="{{ noticia.link }}">{{ noticia.titulo }}</a>
+                                    </td>
+                                    <td>
+                                        {{ noticia.pageviews }}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                            <tr>
+                                <td>
+                                    Não há notícias associadas a esta proposição.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
-    </div> -->
+    </div>
+
 
 
     {% include "includes/footer.html" %}
@@ -227,24 +210,4 @@ padding: 1.25rem 1.5rem;
 
 <!-- Specific JS goes HERE -->
 {% block javascripts %}
-<script>
-    $('.nav-item a').removeClass('active');
-    $('.home-item a').addClass('active');
-    $(document).ready(function () {
-        $('#posicionamentos_table').DataTable({
-            columns: [
-                { name: 'posicionamento' },
-                { name: 'conteudo' },
-                { name: 'data' },
-                { name: 'moderado' },
-                { name: 'curtidas' },
-                { name: 'descurtidas' },
-            ],
-            searchPane: {
-                columns: ['posicionamento:name', 'moderado:name']
-            }
-        });
-    });
-
-</script>
 {% endblock javascripts %}
