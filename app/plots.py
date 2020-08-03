@@ -27,7 +27,7 @@ def daily_summary_global():
     daily_ficha_pageviews_trace = go.Bar(
         x=df.date,
         y=df.ficha_pageviews_total,
-        name='Visualizações (ficha de tramitação)',
+        name='Visualizações (fichas de tramitação)',
         marker_color='#f5365c')
     daily_noticia_pageviews_trace = go.Bar(
         x=df.date,
@@ -37,25 +37,49 @@ def daily_summary_global():
     daily_poll_votes_trace = go.Bar(
         x=df.date,
         y=df.poll_votes_total,
-        name='Votos na enquete',
+        name='Votos nas enquetes',
         marker_color='#6236FF')
     daily_poll_comments_trace = go.Bar(
         x=df.date,
         y=df.poll_comments_total,
-        name='Comentários na enquete',
+        name='Comentários nas enquetes',
         marker_color='#2dce89',)
     
     fig = plotly.tools.make_subplots(rows=4, cols=1, shared_xaxes=True)
     fig.update_xaxes(
-        range=[datetime.date.today() - datetime.timedelta(days=90), datetime.date.today()]
+        range=[datetime.date.today() - datetime.timedelta(days=90), datetime.date.today()],
+        showspikes=True,
+        spikethickness=2,
+        spikedash="dot",
+        spikecolor="#999999",
+        spikemode="across",
     )
     fig.update_yaxes(gridcolor='#fff', fixedrange=True)
-    fig.update_layout(dragmode='pan')
+    fig.update_layout(
+        dragmode='pan',
+        hovermode='x',
+        hoverdistance=100,
+        spikedistance=1000, # Distance to show spike
+        margin={
+            'l': 0,
+            'r': 0,
+            'b': 0,
+            't': 0,
+        },
+    )
     fig.append_trace(daily_ficha_pageviews_trace, 1, 1)
     fig.append_trace(daily_noticia_pageviews_trace, 2, 1)
     fig.append_trace(daily_poll_votes_trace, 3, 1)
     fig.append_trace(daily_poll_comments_trace, 4, 1)
-    plot_div = plotly.io.to_html(fig, include_plotlyjs='cdn', config={'displayModeBar': False}, full_html=False)
+    # fig.update_traces(xaxis='x1')
+
+    post_script = """
+        document.getElementById('{plot_id}').on('plotly_click', function(data){
+            app.date = data.points[0]['x'];
+        });
+    """
+
+    plot_div = plotly.io.to_html(fig, include_plotlyjs='cdn', config={'displayModeBar': False}, full_html=False, post_script=post_script)
     
     return plot_div
 
@@ -95,27 +119,18 @@ def daily_summary_proposicao(proposicao):
     
     fig = plotly.tools.make_subplots(rows=4, cols=1, shared_xaxes=True)
     fig.update_xaxes(
-        # rangeselector=dict(
-        #     buttons=list([
-        #         dict(count=7, label='W', step='day', stepmode='backward'),
-        #         dict(count=1, label='M', step='month', stepmode='backward'),
-        #         dict(count=3, label='3M', step='month', stepmode='backward', ),
-        #         dict(label='T', step='all')
-        #     ])
-        # )
-        # fixedrange=True,
-        # dragmode="pan"
-        # yaxis=dict(
-        #     fixedrange=True
-        # ),
-        # display_mode_bar=False,
-        # rangeslider=dict(
-        #     visible = True
-        # ),
         range=[datetime.date.today() - datetime.timedelta(days=90), datetime.date.today()]
     )
     fig.update_yaxes(gridcolor='#fff', fixedrange=True)
-    fig.update_layout(dragmode='pan')
+    fig.update_layout(
+        dragmode='pan',
+        margin={
+            'l': 0,
+            'r': 0,
+            'b': 0,
+            't': 0,
+        },
+    )
     fig.append_trace(daily_ficha_pageviews_trace, 1, 1)
     fig.append_trace(daily_noticia_pageviews_trace, 2, 1)
     fig.append_trace(daily_poll_votes_trace, 3, 1)

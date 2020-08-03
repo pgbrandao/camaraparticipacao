@@ -3,7 +3,8 @@ from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, Sum, Q
 from django.shortcuts import redirect, render
-from django.http import Http404, HttpResponse
+from django.urls import reverse
+from django.http import Http404, HttpResponse, JsonResponse
 
 import calendar
 import datetime
@@ -14,15 +15,50 @@ from .models import *
 
 
 def index(request):
-    if 'index_daily_summary_global_plot' in cache:
-        daily_summary_global_plot = cache.get(
-            'index_daily_summary_global_plot')
-    else:
-        daily_summary_global_plot = plots.daily_summary_global()
-        cache.set('index_daily_summary_global_plot',
-                  daily_summary_global_plot, 3600)
+    daily_summary_global_plot = plots.daily_summary_global()
     
     return render(request, 'pages/index.html', locals())
+
+def api_top_noticias(request):
+    date = datetime.datetime.strptime(request.GET['date'], "%Y-%m-%d").date()
+
+    top_noticias = NoticiaPageviews.objects.filter(date=date).order_by('-pageviews').values('noticia__titulo', 'noticia__link', 'noticia__tipo_conteudo', 'pageviews')[:5]
+
+    return JsonResponse({
+        'noticias': [{
+            'titulo': t['noticia__titulo'],
+            'link': t['noticia__link'],
+            'pageviews': t['pageviews'],
+            'tipo_conteudo': t['noticia__tipo_conteudo']
+        } for t in top_noticias]
+    })
+
+def api_top_enquetes(request):
+    date = datetime.datetime.strptime(request.GET['date'], "%Y-%m-%d").date()
+
+    top_enquetes = ProposicaoAggregated.objects.filter(date=date).order_by('-poll_votes').values('proposicao__nome_processado', 'proposicao__id', 'poll_votes', 'poll_comments')[:5]
+
+    return JsonResponse({
+        'enquetes': [{
+            'nome_processado': t['proposicao__nome_processado'],
+            'link': reverse('proposicao_detail', args=[t['proposicao__id']]),
+            'poll_votes': t['poll_votes'],
+            'poll_comments': t['poll_comments']
+        } for t in top_enquetes]
+    })
+
+def api_top_proposicoes_ficha(request):
+    date = datetime.datetime.strptime(request.GET['date'], "%Y-%m-%d").date()
+
+    top_proposicoes_ficha = ProposicaoAggregated.objects.filter(date=date).order_by('-ficha_pageviews').values('proposicao__nome_processado', 'proposicao__id', 'ficha_pageviews')[:5]
+
+    return JsonResponse({
+        'proposicoes_ficha': [{
+            'nome_processado': t['proposicao__nome_processado'],
+            'link': reverse('proposicao_detail', args=[t['proposicao__id']]),
+            'ficha_pageviews': t['ficha_pageviews'],
+        } for t in top_proposicoes_ficha]
+    })
 
 
 

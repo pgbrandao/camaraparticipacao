@@ -79,6 +79,7 @@ padding: 1.25rem 1.5rem;
         <div class="col-xl-12 mb-5 mb-xl-0">
             <div class="card shadow">
                 <div class="card-body">
+                    <h3>Notícias sobre esta proposição</h3>
                     <table class="table">
                         <tbody>
                             {% for noticia in proposicao.noticia_set.all %}
@@ -96,13 +97,21 @@ padding: 1.25rem 1.5rem;
                                         {{ noticia.pageviews }}
                                     </td>
                                 </tr>
+                            {% empty %}
+                            <tr>
+                                <td>
+                                    Não há notícias associadas a esta proposição.
+                                </td>
+                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
-    </div>    {% with stats=proposicao.stats %}
+    </div>
+
+    {% with stats=proposicao.stats %}
     <div class="row">
         <div class="col-xl-3 col-lg-6">
             <div class="card shadow card-stats">
