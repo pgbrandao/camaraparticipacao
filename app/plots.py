@@ -104,6 +104,11 @@ def daily_summary_proposicao(proposicao):
     #     barmode='stack',
     #     dragmode="pan"
     # )
+    daily_ficha_pageviews_trace = go.Bar(
+        x=daily_data.date,
+        y=daily_data.ficha_pageviews,
+        name='Visualizações (ficha de tramitação)',
+        marker_color='#f5365c')
     daily_noticia_pageviews_trace = go.Bar(
         x=daily_data.date,
         y=daily_data.noticia_pageviews,
