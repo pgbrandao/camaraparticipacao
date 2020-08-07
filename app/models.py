@@ -104,7 +104,7 @@ class Proposicao(models.Model):
     url_inteiro_teor = models.TextField(blank=True, null=True)
 
     formulario_publicado = models.OneToOneField('FormularioPublicado', null=True, on_delete=models.SET_NULL)
-    autor = models.ManyToManyField('Deputado', related_name='autor_set')
+    autor = models.ManyToManyField('Autor')
     tema = models.ManyToManyField('Tema')
     descricao = models.TextField(blank=True, null=True)
     ultimo_status_situacao_descricao = models.TextField(blank=True, null=True)
@@ -139,6 +139,13 @@ class Tema(models.Model):
     nome = models.TextField(blank=True, null=True)
     def __str__(self):
         return '%s' % (self.nome,)
+
+class Autor(models.Model):
+    # Based on what it is
+    nome_processado = models.TextField(blank=True, null=True)
+
+    deputado = models.ForeignKey('Deputado', null=True, on_delete=models.CASCADE)
+    orgao = models.ForeignKey('Orgao', null=True, on_delete=models.CASCADE)
 
 class Deputado(models.Model):
     # The following field is based on the other ones

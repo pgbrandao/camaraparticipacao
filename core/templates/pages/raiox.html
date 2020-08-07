@@ -37,13 +37,23 @@
 
 <div class="container-fluid mt--7 bg-secondary">
 
-    <div class="row">
+    <div class="row" id="app">
         <div class="col-xl-12">
             <div class="card shadow card-stats mb-4 mb-xl-0 fade-in-top">
                 <div class="card-body ">
                     <form method="GET" action=".">
                         <h6 class="heading-small text-muted mb-4">parâmetros de busca</h6>
                         <div class="row">
+                            <div class="col">
+                                <div class="form-group">
+                                    <label for="dimension">Dimensão</label>
+                                    <select class="form-control" name="dimension" v-model="dimension">
+                                        {% for value, text in dimension_choices %}
+                                            <option value="{{ value }}">{{ text }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
                             <div class="col">
                                 <div class="form-group">
                                     <label for="metric_field">Métrica</label>
@@ -57,19 +67,22 @@
                             <div class="col">
                                 <div class="form-group">
                                     <label for="month_year">Período</label>
-                                    <select class="form-control" name="month_year">
+                                    <div class="custom-control custom-radio custom-control-inline">
+                                        <input type="radio" id="month" name="period_type" value="month" class="custom-control-input" v-model="period_type">
+                                        <label for="month" class="custom-control-label">Mensal</label>
+                                    </div>
+                                    <div class="custom-control custom-radio custom-control-inline">
+                                        <input type="radio" id="year" name="period_type" value="year" class="custom-control-input" v-model="period_type">
+                                        <label for="year" class="custom-control-label">Anual</label>    
+                                    </div>
+                                    <select class="form-control" name="month_year" v-show="period_type == 'month'">
                                         {% for value, text in month_year_choices %}
                                             <option value="{{ value }}" {% if month_year == value %}selected{% endif %}>{{ text }}</option>
                                         {% endfor %}
                                     </select>
-                                </div>
-                            </div>
-                            <div class="col">
-                                <div class="form-group">
-                                    <label for="plot_type">Visualização</label>
-                                    <select class="form-control" name="plot_type">
-                                        {% for value, text in plot_type_choices %}
-                                            <option value="{{ value }}" {% if plot_type == value %}selected{% endif %}>{{ text }}</option>
+                                    <select class="form-control" name="year" v-show="period_type == 'year'">
+                                        {% for value, text in year_choices %}
+                                            <option value="{{ value }}" {% if year == value %}selected{% endif %}>{{ text }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -100,7 +113,9 @@
                             {% autoescape off %}
                             {{ plot_div }}
                             {% endautoescape %}
-                            Total: {{ total|intcomma }} ({{ percent_plot|floatformat:2 }}% considerados para a geração do gráfico)
+                            {% if period_type == 'month' %}
+                                Total: {{ total|intcomma }} ({{ percent_plot|floatformat:2 }}% considerados para a geração do gráfico)
+                            {% endif %}
                         {% endif %}
                     </div>
                 </div>
@@ -116,5 +131,14 @@
 
 <!-- Specific JS goes HERE -->
 {% block javascripts %}
-
+<script>
+    var app = new Vue({
+        delimiters: ['[[', ']]'],
+        el: '#app',
+        data: {
+            period_type: '{{ period_type|escapejs }}',
+            dimension: '{{ dimension|escapejs }}',
+        }
+    });
+</script>
 {% endblock javascripts %}

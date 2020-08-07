@@ -60,42 +60,57 @@ def api_top_proposicoes_ficha(request):
         } for t in top_proposicoes_ficha]
     })
 
+def raiox(request):
+    # if dimension not in ('tema', 'autor', 'relator', 'situacao', 'indexacao', 'proposicao'):
+    #     return Http404
 
-
-def raiox(request, dimension):
-    if dimension not in ('tema', 'autor', 'relator', 'situacao', 'indexacao', 'proposicao'):
-        return Http404
-
+    dimension = request.GET.get('dimension')
     metric_field = request.GET.get('metric_field')
+    period_type = request.GET.get('period_type') or 'month'
+    year = request.GET.get('year')
     month_year = request.GET.get('month_year')
     plot_type = request.GET.get('plot_type')
 
-    if metric_field and month_year:
-        dt = datetime.datetime.strptime(month_year, '%m-%Y')
-        _, num_days = calendar.monthrange(
-            int(dt.strftime('%Y')), int(dt.strftime('%m')))
+    if metric_field and period_type:
+        if period_type == 'month' and month_year:
+            dt = datetime.datetime.strptime(month_year, '%m-%Y')
+            _, num_days = calendar.monthrange(
+                int(dt.strftime('%Y')), int(dt.strftime('%m')))
 
-        date_min = dt
-        date_max = dt.replace(day=num_days)
+            date_min = dt
+            date_max = dt.replace(day=num_days)
 
-        plot_div, total, total_plot = plots.raiox(
-            date_min, date_max, metric_field, plot_type, dimension)
+            plot_div, total, total_plot = plots.raiox_mensal(
+                date_min, date_max, metric_field, dimension)
 
-        percent_plot = total_plot / total * 100 if total else 0
+            percent_plot = total_plot / total * 100 if total else 0
+        elif period_type == 'year' and year:
+            plot_div = plots.raiox_anual(
+                year, metric_field, dimension)
 
     month_year_choices = [
         (x.strftime('%m-%Y'), x.strftime('%B-%Y'))
         for x in pd.date_range('2019-01-01', datetime.date.today(), freq='MS').to_series()
     ]
     month_year_choices = month_year_choices[::-1]
-    
+
+    year_choices = [
+        (x.strftime('%Y'), x.strftime('%Y'))
+        for x in pd.date_range('2019-01-01', datetime.date.today(), freq='YS').to_series()
+    ]
+    year_choices = year_choices[::-1]
+
+    dimension_choices = [
+        ('tema', 'Tema'),
+        ('autor', 'Autor'),
+        ('relator', 'Relator'),
+        ('situacao', 'Situação'),
+        ('indexacao', 'Indexação (apenas mensal)'),
+        ('proposicao', 'Proposição (apenas mensal)'),
+    ]
     metric_field_choices = [
         ('poll_votes', 'Votos nas enquetes'),
         ('ficha_pageviews', 'Visualizações na ficha de tramitação'),
-    ]
-    plot_type_choices = [
-        ('sunburst', 'Circular (sunburst)'),
-        ('treemap', 'Retangular (treemap)'),
     ]
 
     return render(request, 'pages/raiox.html', locals())

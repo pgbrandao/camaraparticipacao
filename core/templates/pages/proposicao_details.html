@@ -49,7 +49,9 @@ padding: 1.25rem 1.5rem;
                                 <th scope="row">Autor</th>
                                 <td>
                                     {% for autor in proposicao.autor.all %}
-                                    {{ autor.nome_processado }}<br />
+                                        {{ autor.nome_processado }}<br />
+                                    {% empty %}
+                                        Acesse a <a href="https://www.camara.leg.br/propostas-legislativas/{{ proposicao.pk }}">ficha de tramitação</a> para consultar a autoria<br />
                                     {% endfor %}
                                 </td>
                             </tr>

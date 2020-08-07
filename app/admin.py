@@ -6,7 +6,7 @@ class ProposicaoAdmin(admin.ModelAdmin):
     list_display = ('sigla_tipo', 'numero', 'ano', 'data_apresentacao', 'ultimo_status_data')
     list_filter = ('sigla_tipo',)
     filter_vertical = ('tema',)
-    raw_id_fields = ("orgao_numerador","formulario_publicado","autor","ultimo_status_relator","ultimo_status_orgao")
+    raw_id_fields = ("orgao_numerador","formulario_publicado","ultimo_status_relator","ultimo_status_orgao")
 class DeputadoAdmin(admin.ModelAdmin):
     list_display = ('nome','partido', 'uf')
 class OrgaoAdmin(admin.ModelAdmin):
