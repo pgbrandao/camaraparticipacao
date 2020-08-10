@@ -51,77 +51,41 @@
     </div>
     <div v-else class="container-fluid bg-secondary">
         <div class="row">
-            <div class="col-12">
-                <h1>Destaques para [[ date ]]</h1>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-xl-6 col-12">
+            <div class="col">
                 <div class="card">
                     <div class="card-body">
-                        <h2 class="card-title">Fichas de tramitação em destaque</h2>
-                        <table class="table">
-                            <thead>
-                              <tr>
-                                <th>Proposição</th>
-                                <th>Pageviews</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                            <tr v-for="p in proposicoes_ficha">
-                                <td><a v-bind:href="p.link">[[p.nome_processado]]</a></td>
-                                <td>[[p.ficha_pageviews]]</td>
-                            </tr>
-                            </tbody>
-                          </table>
-                        
+                        <h2 class="card-title">Proposições em destaque em [[ date ]]</h2>
+                            <template>
+                                <v-data-table :headers="proposicoes_headers" :items="top_proposicoes" :items-per-page="5" :must-sort="true"
+                                    class="elevation-1">
+                                    <template #item.nome_processado="{ item }">
+                                        <a :href="item.link">
+                                          [[ item.nome_processado ]]
+                                        </a>
+                                    </template>
+                            
+                                </v-data-table>
+
+                            </template>
+
                     </div>
                 </div>
             </div>
-            <div class="col-xl-6 col-12">
+            <div class="col">
                 <div class="card">
                     <div class="card-body">
-                        <h2 class="card-title">Enquetes em destaque</h2>
-                        <table class="table">
-                            <thead>
-                              <tr>
-                                <th>Proposição</th>
-                                <th>Votos</th>
-                                <th>Comentários</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                            <tr v-for="e in enquetes">
-                                <td><a v-bind:href="e.link">[[e.nome_processado]]</a></td>
-                                <td>[[e.poll_votes]]</td>
-                                <td>[[e.poll_comments]]</td>
-                            </tr>
-                            </tbody>
-                          </table>
-                        
-                    </div>
+                        <h2 class="card-title">Notícias em destaque em [[ date ]]</h2>
+                        <template>
+                            <v-data-table :headers="noticias_headers" :items="top_noticias" :items-per-page="5"
+                                class="elevation-1">
+                                <template #item.titulo="{ item }">
+                                    <a :href="item.link">
+                                      [[ item.titulo ]]
+                                    </a>
+                                </template>
+                            </v-data-table>
+                        </template>
                 </div>
-            </div>
-            <div class="col-xl-6 col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <h2 class="card-title">Notícias em destaque</h2>
-                        <table class="table">
-                            <thead>
-                              <tr>
-                                <th>Título</th>
-                                <th>Visualizações</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                            <tr v-for="n in noticias">
-                                <td class="text-wrap"><a v-bind:href="n.link">[[n.titulo]]</a></td>
-                                <td>[[n.pageviews]]</td>
-                            </tr>
-                            </tbody>
-                          </table>
-                        
-                    </div>
                 </div>
             </div>
         </div>
@@ -129,8 +93,8 @@
 </div>
 
 
-    
-    {% include "includes/footer.html" %}
+
+{% include "includes/footer.html" %}
 
 </div>
 
@@ -142,31 +106,36 @@
     var app = new Vue({
         delimiters: ['[[', ']]'],
         el: '#app',
+        vuetify: new Vuetify(),
         data: {
             date: '',
-            noticias: [],
-            enquetes: [],
-            proposicoes_ficha: [],
+            top_noticias: [],
+            top_proposicoes: [],
+            noticias_headers: [
+                { text: 'Título', align: 'start', sortable: false, value: 'titulo', },
+                { text: 'Visualizações', value: 'pageviews' },
+            ],
+            proposicoes_headers: [
+                { text: 'Proposição', align: 'start', sortable: false, value: 'nome_processado', },
+                { text: 'Votos (enquete)', value: 'poll_votes' },
+                { text: 'Comentários (enquete)', value: 'poll_comments' },
+                { text: 'Visualizações (ficha)', value: 'ficha_pageviews' },
+                { text: 'Visualizações (notícias)', value: 'noticia_pageviews' },
+            ],
         },
         watch: {
-            date: function(val) {
-                fetch('{% url "api_top_noticias" %}?date='+val, {
+            date: function (val) {
+                fetch('{% url "api_top_noticias" %}?date=' + val, {
                     method: 'GET'
                 }).then((res) => res.json())
-                .then((data) => app.noticias = data['noticias'])
-                .catch((err)=>console.error(err));
+                    .then((data) => app.top_noticias = data['top_noticias'])
+                    .catch((err) => console.error(err));
 
-                fetch('{% url "api_top_enquetes" %}?date='+val, {
+                fetch('{% url "api_top_proposicoes" %}?date=' + val, {
                     method: 'GET'
                 }).then((res) => res.json())
-                .then((data) => app.enquetes = data['enquetes'])
-                .catch((err)=>console.error(err))
-
-                fetch('{% url "api_top_proposicoes_ficha" %}?date='+val, {
-                    method: 'GET'
-                }).then((res) => res.json())
-                .then((data) => app.proposicoes_ficha = data['proposicoes_ficha'])
-                .catch((err)=>console.error(err))
+                    .then((data) => app.top_proposicoes = data['top_proposicoes'])
+                    .catch((err) => console.error(err))
             }
         },
         methods: {

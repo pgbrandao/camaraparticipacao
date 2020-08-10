@@ -22,10 +22,10 @@ def index(request):
 def api_top_noticias(request):
     date = datetime.datetime.strptime(request.GET['date'], "%Y-%m-%d").date()
 
-    top_noticias = NoticiaPageviews.objects.filter(date=date).order_by('-pageviews').values('noticia__titulo', 'noticia__link', 'noticia__tipo_conteudo', 'pageviews')[:5]
+    top_noticias = NoticiaPageviews.objects.filter(date=date).order_by('-pageviews').values('noticia__titulo', 'noticia__link', 'noticia__tipo_conteudo', 'pageviews')[:100]
 
     return JsonResponse({
-        'noticias': [{
+        'top_noticias': [{
             'titulo': t['noticia__titulo'],
             'link': t['noticia__link'],
             'pageviews': t['pageviews'],
@@ -33,31 +33,26 @@ def api_top_noticias(request):
         } for t in top_noticias]
     })
 
-def api_top_enquetes(request):
+def api_top_proposicoes(request):
     date = datetime.datetime.strptime(request.GET['date'], "%Y-%m-%d").date()
 
-    top_enquetes = ProposicaoAggregated.objects.filter(date=date).order_by('-poll_votes').values('proposicao__nome_processado', 'proposicao__id', 'poll_votes', 'poll_comments')[:5]
+    top_ficha_pageviews = ProposicaoAggregated.objects.filter(date=date).order_by('-ficha_pageviews')[:100]
+    top_noticia_pageviews = ProposicaoAggregated.objects.filter(date=date).order_by('-noticia_pageviews')[:100]
+    top_poll_votes = ProposicaoAggregated.objects.filter(date=date).order_by('-poll_votes')[:100]
+    top_poll_comments = ProposicaoAggregated.objects.filter(date=date).order_by('-poll_comments')[:100]
+
+    top_proposicoes = top_ficha_pageviews | top_noticia_pageviews | top_poll_votes | top_poll_comments
+    top_proposicoes.select_related('proposicao')
 
     return JsonResponse({
-        'enquetes': [{
-            'nome_processado': t['proposicao__nome_processado'],
-            'link': reverse('proposicao_detail', args=[t['proposicao__id']]),
-            'poll_votes': t['poll_votes'],
-            'poll_comments': t['poll_comments']
-        } for t in top_enquetes]
-    })
-
-def api_top_proposicoes_ficha(request):
-    date = datetime.datetime.strptime(request.GET['date'], "%Y-%m-%d").date()
-
-    top_proposicoes_ficha = ProposicaoAggregated.objects.filter(date=date).order_by('-ficha_pageviews').values('proposicao__nome_processado', 'proposicao__id', 'ficha_pageviews')[:5]
-
-    return JsonResponse({
-        'proposicoes_ficha': [{
-            'nome_processado': t['proposicao__nome_processado'],
-            'link': reverse('proposicao_detail', args=[t['proposicao__id']]),
-            'ficha_pageviews': t['ficha_pageviews'],
-        } for t in top_proposicoes_ficha]
+        'top_proposicoes': [{
+            'nome_processado': t.proposicao.nome_processado,
+            'link': reverse('proposicao_detail', args=[t.proposicao.id]),
+            'ficha_pageviews': t.ficha_pageviews,
+            'noticia_pageviews': t.noticia_pageviews,
+            'poll_votes': t.poll_votes,
+            'poll_comments': t.poll_comments,
+        } for t in top_proposicoes]
     })
 
 def raiox(request):
