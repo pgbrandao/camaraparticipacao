@@ -15,14 +15,32 @@ from .models import *
 
 
 def index(request):
-    daily_summary_global_plot = plots.daily_summary_global()
-    
+    group_by = request.GET.get('group_by') or 'day'
+    if group_by not in ('day', 'month'):
+        return Http404
+
+    summary_global_plot = plots.summary_global(group_by)
+
+    # last_updated = AppSettings.get_instance().last_updated
+
     return render(request, 'pages/index.html', locals())
 
 def api_top_noticias(request):
-    date = datetime.datetime.strptime(request.GET['date'], "%Y-%m-%d").date()
+    group_by = request.GET['group_by']
 
-    top_noticias = NoticiaPageviews.objects.filter(date=date).order_by('-pageviews').values('noticia__titulo', 'noticia__link', 'noticia__tipo_conteudo', 'pageviews')[:100]
+    if group_by == 'day':
+        date = datetime.datetime.strptime(request.GET['date'], "%Y-%m-%d").date()
+        filter_params = {
+            'date': date
+        }
+    elif group_by == 'month':
+        date = datetime.datetime.strptime(request.GET['date'], "%B %Y").date()
+        filter_params = {
+            'date__year': date.year,
+            'date__month': date.month,
+        }
+
+    top_noticias = NoticiaPageviews.objects.filter(**filter_params).order_by('-pageviews').values('noticia__titulo', 'noticia__link', 'noticia__tipo_conteudo', 'pageviews')[:100]
 
     return JsonResponse({
         'top_noticias': [{
@@ -34,25 +52,47 @@ def api_top_noticias(request):
     })
 
 def api_top_proposicoes(request):
-    date = datetime.datetime.strptime(request.GET['date'], "%Y-%m-%d").date()
+    group_by = request.GET['group_by']
 
-    top_ficha_pageviews = ProposicaoAggregated.objects.filter(date=date).order_by('-ficha_pageviews')[:100]
-    top_noticia_pageviews = ProposicaoAggregated.objects.filter(date=date).order_by('-noticia_pageviews')[:100]
-    top_poll_votes = ProposicaoAggregated.objects.filter(date=date).order_by('-poll_votes')[:100]
-    top_poll_comments = ProposicaoAggregated.objects.filter(date=date).order_by('-poll_comments')[:100]
+    if group_by == 'day':
+        date = datetime.datetime.strptime(request.GET['date'], "%Y-%m-%d").date()
+        filter_params = {
+            'date': date
+        }
+    elif group_by == 'month':
+        date = datetime.datetime.strptime(request.GET['date'], "%B %Y").date()
+        filter_params = {
+            'date__year': date.year,
+            'date__month': date.month,
+        }
+
+    top_ficha_pageviews = ProposicaoAggregated.objects.filter(**filter_params).order_by('-ficha_pageviews')[:100]
+    top_noticia_pageviews = ProposicaoAggregated.objects.filter(**filter_params).order_by('-noticia_pageviews')[:100]
+    top_poll_votes = ProposicaoAggregated.objects.filter(**filter_params).order_by('-poll_votes')[:100]
+    top_poll_comments = ProposicaoAggregated.objects.filter(**filter_params).order_by('-poll_comments')[:100]
 
     top_proposicoes = top_ficha_pageviews | top_noticia_pageviews | top_poll_votes | top_poll_comments
-    top_proposicoes.select_related('proposicao')
+    top_proposicoes = top_proposicoes.values('proposicao__nome_processado', 'proposicao__id', 'ficha_pageviews', 'noticia_pageviews', 'poll_votes', 'poll_comments')
+
+    df = pd.DataFrame(top_proposicoes)
+    df['score'] = (df.ficha_pageviews / df.ficha_pageviews.max()).fillna(0) + \
+        (df.noticia_pageviews / df.noticia_pageviews.max()).fillna(0) + \
+        (df.poll_votes / df.poll_votes.max()).fillna(0) + \
+        (df.poll_comments / df.poll_comments.max()).fillna(0)
+    df['score'] = df['score'].map('{:,.2f}'.format)
+
+    df.sort_values('score', ascending=False, inplace=True)
 
     return JsonResponse({
         'top_proposicoes': [{
-            'nome_processado': t.proposicao.nome_processado,
-            'link': reverse('proposicao_detail', args=[t.proposicao.id]),
-            'ficha_pageviews': t.ficha_pageviews,
-            'noticia_pageviews': t.noticia_pageviews,
-            'poll_votes': t.poll_votes,
-            'poll_comments': t.poll_comments,
-        } for t in top_proposicoes]
+            'nome_processado': row.proposicao__nome_processado,
+            'link': reverse('proposicao_detail', args=[row.proposicao__id]),
+            'ficha_pageviews': row.ficha_pageviews,
+            'noticia_pageviews': row.noticia_pageviews,
+            'poll_votes': row.poll_votes,
+            'poll_comments': row.poll_comments,
+            'score': row.score,
+        } for _, row in df.iterrows()]
     })
 
 def raiox(request):

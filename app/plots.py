@@ -11,19 +11,27 @@ import datetime
 from .models import *
 
 
-def daily_summary_global():
-    """[summary] Plots daily votes, comments and daily proposal pageviews as stacked bar
-    Reference: https://plotly.com/python/bar-charts/
-    
-    Returns:
-        [plotly.graph_objs] -- [plot_div compatible with Django]
-    """
+def summary_global(group_by):
     qs1 = ProposicaoAggregated.objects.values('date') \
         .annotate(ficha_pageviews_total=Sum('ficha_pageviews'), poll_votes_total=Sum('poll_votes'), poll_comments_total=Sum('poll_comments'))
     qs2 = NoticiaPageviews.objects.values('date') \
         .annotate(noticia_pageviews_total=Sum('pageviews'))
     df = pd.DataFrame(qs1).merge(pd.DataFrame(qs2), how='outer')
 
+    df['date'] = pd.to_datetime(df['date'])
+    if group_by == 'month':
+        df = df.groupby(pd.Grouper(key='date', freq='M')) \
+            .agg({
+                'ficha_pageviews_total': 'sum',
+                'poll_votes_total': 'sum',
+                'poll_comments_total': 'sum',
+                'noticia_pageviews_total': 'sum'
+            }) \
+            .reset_index()
+        df['date'] = df['date'].dt.strftime('%B %Y')
+    if group_by == 'day':
+        pass
+    
     daily_ficha_pageviews_trace = go.Bar(
         x=df.date,
         y=df.ficha_pageviews_total,
@@ -57,9 +65,15 @@ def daily_summary_global():
         spikedash="dot",
         spikecolor="#999999",
         spikemode="across+marker",
-        spikesnap="data"
+        spikesnap="data",
+        type='category' if group_by == 'month' else 'date',
+        tickformat='%b/%Y' if group_by == 'month' else '%d/%b/%Y',
     )
-    fig.update_yaxes(gridcolor='#fff', fixedrange=True)
+    fig.update_yaxes(
+        gridcolor='#fff',
+        fixedrange=True,
+        rangemode='tozero',
+    )
     fig.update_layout(
         dragmode='pan',
         hovermode='x unified',

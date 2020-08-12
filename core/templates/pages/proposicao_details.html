@@ -1,17 +1,7 @@
 {% extends 'layouts/base.html' %}
 {% load humanize %}
 
-
-{% block title %} Dashboard da participação {% endblock title %}
-
-<!-- Specific CSS goes HERE -->
-{% block stylesheets %}
-.datatable-container {
-padding: 1.25rem 1.5rem;
-}
-{% endblock stylesheets %}
-
-{% block content %}
+{% block title %}{{ proposicao.nome_processado }}{% endblock title %}
 
 <div class="header pb-8 pt-5 bg-primary">
     <div class="container-fluid">

@@ -1,11 +1,7 @@
 {% extends 'layouts/base.html' %}
 {% load humanize %}
 
-
-{% block title %} Dashboard da participação {% endblock title %}
-
-
-{% block stylesheets %}{% endblock stylesheets %}
+{% block title %}Página inicial{% endblock title %}
 
 {% block content %}
 
@@ -28,13 +24,29 @@
                     <div class="row">
                         <div class="col">
                             <h2>Linha do tempo</h2>
+
+                            <div class="nav-wrapper">
+                                <ul class="nav nav-pills nav-fill flex-column flex-md-row" id="tabs-icons-text" role="tablist">
+                                    <li class="nav-item">
+                                        <a class="nav-link mb-sm-3 mb-md-0
+                                        {% if group_by == 'day' %}active{% endif %}
+                                        " href="{% url 'index' %}?group_by=day">Por dia</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link mb-sm-3 mb-md-0
+                                        {% if group_by == 'month' %}active{% endif %}
+                                        " href="{% url 'index' %}?group_by=month">Por mês</a>
+                                    </li>
+                                </ul>
+                            </div>                    
+                                    
                         </div>
                     </div>
                 </div>
 
                 <div class="card-body">
                     {% autoescape off %}
-                    {{ daily_summary_global_plot }}
+                    {{ summary_global_plot }}
                     {% endautoescape %}
                 </div>
             </div>
@@ -56,8 +68,7 @@
                     <div class="card-body">
                         <h2 class="card-title">Proposições em destaque em [[ date ]]</h2>
                             <template>
-                                <v-data-table :headers="proposicoes_headers" :items="top_proposicoes" :items-per-page="5" :must-sort="true"
-                                    class="elevation-1">
+                                <v-data-table :headers="proposicoes_headers" :items="top_proposicoes" :items-per-page="10">
                                     <template #item.nome_processado="{ item }">
                                         <a :href="item.link">
                                           [[ item.nome_processado ]]
@@ -76,8 +87,7 @@
                     <div class="card-body">
                         <h2 class="card-title">Notícias em destaque em [[ date ]]</h2>
                         <template>
-                            <v-data-table :headers="noticias_headers" :items="top_noticias" :items-per-page="5"
-                                class="elevation-1">
+                            <v-data-table :headers="noticias_headers" :items="top_noticias" :items-per-page="10">
                                 <template #item.titulo="{ item }">
                                     <a :href="item.link">
                                       [[ item.titulo ]]
@@ -92,7 +102,7 @@
     </div>
 </div>
 
-
+Última atualização dos dados: {{ last_updated}}
 
 {% include "includes/footer.html" %}
 
@@ -121,17 +131,18 @@
                 { text: 'Comentários (enquete)', value: 'poll_comments' },
                 { text: 'Visualizações (ficha)', value: 'ficha_pageviews' },
                 { text: 'Visualizações (notícias)', value: 'noticia_pageviews' },
+                { text: 'Score', value: 'score' },
             ],
         },
         watch: {
             date: function (val) {
-                fetch('{% url "api_top_noticias" %}?date=' + val, {
+                fetch('{% url "api_top_noticias" %}?group_by={{ group_by }}&date=' + val, {
                     method: 'GET'
                 }).then((res) => res.json())
                     .then((data) => app.top_noticias = data['top_noticias'])
                     .catch((err) => console.error(err));
 
-                fetch('{% url "api_top_proposicoes" %}?date=' + val, {
+                fetch('{% url "api_top_proposicoes" %}?group_by={{ group_by }}&date=' + val, {
                     method: 'GET'
                 }).then((res) => res.json())
                     .then((data) => app.top_proposicoes = data['top_proposicoes'])
