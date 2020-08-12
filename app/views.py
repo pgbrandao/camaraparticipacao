@@ -40,16 +40,27 @@ def api_top_noticias(request):
             'date__month': date.month,
         }
 
-    top_noticias = NoticiaPageviews.objects.filter(**filter_params).order_by('-pageviews').values('noticia__titulo', 'noticia__link', 'noticia__tipo_conteudo', 'pageviews')[:100]
+    qs = NoticiaPageviews.objects.filter(**filter_params).values('noticia__titulo', 'noticia__link', 'noticia__tipo_conteudo', 'pageviews')
+    df = pd.DataFrame(qs)
+
+    if group_by == 'month':
+        df = df.groupby(['noticia__titulo', 'noticia__link', 'noticia__tipo_conteudo']) \
+            .agg({
+                'pageviews': 'sum',
+            }) \
+            .reset_index()
+
+    df.sort_values('pageviews', ascending=False, inplace=True)
+    df = df[:100]
 
     return JsonResponse({
         'date': date,
         'top_noticias': [{
-            'titulo': t['noticia__titulo'],
-            'link': t['noticia__link'],
-            'pageviews': t['pageviews'],
-            'tipo_conteudo': t['noticia__tipo_conteudo']
-        } for t in top_noticias]
+            'titulo': row['noticia__titulo'],
+            'link': row['noticia__link'],
+            'pageviews': row['pageviews'],
+            'tipo_conteudo': row['noticia__tipo_conteudo']
+        } for _, row in df.iterrows()]
     })
 
 def api_top_proposicoes(request):
@@ -67,15 +78,20 @@ def api_top_proposicoes(request):
             'date__month': date.month,
         }
 
-    top_ficha_pageviews = ProposicaoAggregated.objects.filter(**filter_params).order_by('-ficha_pageviews')[:100]
-    top_noticia_pageviews = ProposicaoAggregated.objects.filter(**filter_params).order_by('-noticia_pageviews')[:100]
-    top_poll_votes = ProposicaoAggregated.objects.filter(**filter_params).order_by('-poll_votes')[:100]
-    top_poll_comments = ProposicaoAggregated.objects.filter(**filter_params).order_by('-poll_comments')[:100]
+    qs = ProposicaoAggregated.objects.filter(**filter_params).values('proposicao__nome_processado', 'proposicao__id', 'ficha_pageviews', 'noticia_pageviews', 'poll_votes', 'poll_comments')
 
-    top_proposicoes = top_ficha_pageviews | top_noticia_pageviews | top_poll_votes | top_poll_comments
-    top_proposicoes = top_proposicoes.values('proposicao__nome_processado', 'proposicao__id', 'ficha_pageviews', 'noticia_pageviews', 'poll_votes', 'poll_comments')
+    df = pd.DataFrame(qs)
 
-    df = pd.DataFrame(top_proposicoes)
+    if group_by == 'month':
+        df = df.groupby(['proposicao__nome_processado', 'proposicao__id']) \
+            .agg({
+                'ficha_pageviews': 'sum',
+                'noticia_pageviews': 'sum',
+                'poll_votes': 'sum',
+                'poll_comments': 'sum',
+            }) \
+            .reset_index()
+    
     df['score'] = (df.ficha_pageviews / df.ficha_pageviews.max()).fillna(0) + \
         (df.noticia_pageviews / df.noticia_pageviews.max()).fillna(0) + \
         (df.poll_votes / df.poll_votes.max()).fillna(0) + \
@@ -83,6 +99,8 @@ def api_top_proposicoes(request):
     df['score'] = df['score'].map('{:,.2f}'.format)
 
     df.sort_values('score', ascending=False, inplace=True)
+
+    df = df[:100]
 
     return JsonResponse({
         'date': date,
