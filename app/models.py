@@ -10,6 +10,13 @@ import pandas as pd
 
 from bs4 import BeautifulSoup
 
+class AppSettings(models.Model):
+    # Single-row model just to store some settings
+    last_updated = models.DateTimeField(blank=True, null=True)
+
+    def get_instance():
+        return AppSettings.objects.get_or_create(pk=1)[0]
+
 class FormularioPublicado(models.Model):
     ide_formulario_publicado = models.AutoField(primary_key=True)
     ide_usuario = models.TextField()  # This field type is a guess.

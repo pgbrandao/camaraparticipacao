@@ -43,6 +43,7 @@ def api_top_noticias(request):
     top_noticias = NoticiaPageviews.objects.filter(**filter_params).order_by('-pageviews').values('noticia__titulo', 'noticia__link', 'noticia__tipo_conteudo', 'pageviews')[:100]
 
     return JsonResponse({
+        'date': date,
         'top_noticias': [{
             'titulo': t['noticia__titulo'],
             'link': t['noticia__link'],
@@ -84,6 +85,7 @@ def api_top_proposicoes(request):
     df.sort_values('score', ascending=False, inplace=True)
 
     return JsonResponse({
+        'date': date,
         'top_proposicoes': [{
             'nome_processado': row.proposicao__nome_processado,
             'link': reverse('proposicao_detail', args=[row.proposicao__id]),

@@ -54,55 +54,85 @@
     </div>
 </div>
 <div id="app">
-    <div v-if="!date">
-        <div class="container-fluid bg-secondary">
-            <div class="row">
-                Selecione uma data
-            </div>
-        </div>
-    </div>
-    <div v-else class="container-fluid bg-secondary">
+    <div class="container-fluid bg-secondary">
         <div class="row">
             <div class="col">
                 <div class="card">
                     <div class="card-body">
-                        <h2 class="card-title">Proposições em destaque em [[ date ]]</h2>
-                            <template>
-                                <v-data-table :headers="proposicoes_headers" :items="top_proposicoes" :items-per-page="10">
-                                    <template #item.nome_processado="{ item }">
-                                        <a :href="item.link">
-                                          [[ item.nome_processado ]]
-                                        </a>
-                                    </template>
-                            
-                                </v-data-table>
-
-                            </template>
-
+                        <h2 class="card-title">Proposições em destaque</h2>
+                        <div v-if="!date">
+                            <p>Selecione uma data</p>
+                        </div>
+                        <div v-else>
+                            <div v-if="loading_proposicoes" class="text-center">
+                                <v-progress-circular
+                                indeterminate
+                                color="primary"
+                              >
+                            </div>
+                            <div v-else>
+                                <template>
+                                    <v-data-table :headers="proposicoes_headers" :items="top_proposicoes.top_proposicoes" :items-per-page="10">
+                                        <template #item.nome_processado="{ item }">
+                                            <a :href="item.link">
+                                              [[ item.nome_processado ]]
+                                            </a>
+                                        </template>
+                                        <template v-slot:footer>
+                                            Dados para [[ top_proposicoes.date ]]
+                                        </template>
+                                    
+                                    </v-data-table>
+                                </template>
+                            </div>    
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="col">
                 <div class="card">
                     <div class="card-body">
-                        <h2 class="card-title">Notícias em destaque em [[ date ]]</h2>
-                        <template>
-                            <v-data-table :headers="noticias_headers" :items="top_noticias" :items-per-page="10">
-                                <template #item.titulo="{ item }">
-                                    <a :href="item.link">
-                                      [[ item.titulo ]]
-                                    </a>
+                        <h2 class="card-title">Notícias em destaque</h2>
+                        <div v-if="!date">
+                            <p>Selecione uma data</p>
+                        </div>
+                        <div v-else>
+                            <div v-if="loading_proposicoes" class="text-center">
+                                <v-progress-circular
+                                indeterminate
+                                color="primary">
+                            </div>
+                            <div v-else>
+                                <template>
+                                    <v-data-table :headers="noticias_headers" :items="top_noticias.top_noticias" :items-per-page="10">
+                                        <template #item.titulo="{ item }">
+                                            <a :href="item.link">
+                                            [[ item.titulo ]]
+                                            </a>
+                                        </template>
+                                        <template v-slot:footer>
+                                            Dados para [[ top_noticias.date ]]
+                                        </template>
+                                    </v-data-table>
                                 </template>
-                            </v-data-table>
-                        </template>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        Última atualização dos dados: {{ last_updated }}
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-Última atualização dos dados: {{ last_updated}}
 
 {% include "includes/footer.html" %}
 
@@ -118,6 +148,8 @@
         el: '#app',
         vuetify: new Vuetify(),
         data: {
+            loading_noticias: false,
+            loading_proposicoes: false,
             date: '',
             top_noticias: [],
             top_proposicoes: [],
@@ -136,16 +168,21 @@
         },
         watch: {
             date: function (val) {
+                app.loading_proposicoes = true;
+                app.loading_noticias = true;
+
                 fetch('{% url "api_top_noticias" %}?group_by={{ group_by }}&date=' + val, {
                     method: 'GET'
                 }).then((res) => res.json())
-                    .then((data) => app.top_noticias = data['top_noticias'])
+                    .then((data) => app.top_noticias = data)
+                    .then(() => app.loading_noticias = false)
                     .catch((err) => console.error(err));
 
                 fetch('{% url "api_top_proposicoes" %}?group_by={{ group_by }}&date=' + val, {
                     method: 'GET'
                 }).then((res) => res.json())
-                    .then((data) => app.top_proposicoes = data['top_proposicoes'])
+                    .then((data) => app.top_proposicoes = data)
+                    .then(() => app.loading_proposicoes = false)
                     .catch((err) => console.error(err))
             }
         },
