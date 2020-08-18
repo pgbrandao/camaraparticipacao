@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db.models import Count, Sum
 
 import pandas as pd 
@@ -11,12 +12,33 @@ import datetime
 from .models import *
 
 
-def summary_global(group_by):
-    qs1 = ProposicaoAggregated.objects.values('date') \
-        .annotate(ficha_pageviews_total=Sum('ficha_pageviews'), poll_votes_total=Sum('poll_votes'), poll_comments_total=Sum('poll_comments'))
-    qs2 = NoticiaPageviews.objects.values('date') \
-        .annotate(noticia_pageviews_total=Sum('pageviews'))
-    df = pd.DataFrame(qs1).merge(pd.DataFrame(qs2), how='outer')
+def summary_plot(group_by, proposicao=None):
+    """
+    group_by: 'day' or 'month'
+    proposicao: Proposicao object or None
+    """
+    if not proposicao:
+        qs1 = ProposicaoAggregated.objects.values('date') \
+            .annotate(
+                ficha_pageviews_total=Sum('ficha_pageviews'),
+                poll_votes_total=Sum('poll_votes'),
+                poll_comments_unchecked_total=Sum('poll_comments_unchecked'),
+                poll_comments_authorized_total=Sum('poll_comments_authorized')
+            )
+        qs2 = NoticiaPageviews.objects.values('date') \
+            .annotate(noticia_pageviews_total=Sum('pageviews'))
+        df = pd.DataFrame(qs1).merge(pd.DataFrame(qs2), how='outer')
+    else:
+        # Grouping is strictly speaking not necessary here. But we do it this way for consistency.
+        qs = ProposicaoAggregated.objects.filter(proposicao=proposicao).values('date') \
+            .annotate(
+                ficha_pageviews_total=Sum('ficha_pageviews'),
+                poll_votes_total=Sum('poll_votes'),
+                poll_comments_unchecked_total=Sum('poll_comments_unchecked'),
+                poll_comments_authorized_total=Sum('poll_comments_authorized'),
+                noticia_pageviews_total=Sum('noticia_pageviews')
+            )
+        df = pd.DataFrame(qs)
 
     df['date'] = pd.to_datetime(df['date'])
     if group_by == 'month':
@@ -24,34 +46,57 @@ def summary_global(group_by):
             .agg({
                 'ficha_pageviews_total': 'sum',
                 'poll_votes_total': 'sum',
-                'poll_comments_total': 'sum',
+                'poll_comments_unchecked_total': 'sum',
+                'poll_comments_authorized_total': 'sum',
                 'noticia_pageviews_total': 'sum'
             }) \
             .reset_index()
+        
+        df['api_params'] = df.apply(lambda x:
+            'initial_date={}&final_date={}'.format(
+                x['date'].replace(day=1).strftime(settings.STRFTIME_SHORT_DATE_FORMAT),
+                x['date'].strftime(settings.STRFTIME_SHORT_DATE_FORMAT)
+            ),
+            axis=1)
+
         df['date'] = df['date'].dt.strftime('%B %Y')
-    if group_by == 'day':
-        pass
-    
-    daily_ficha_pageviews_trace = go.Bar(
+    elif group_by == 'day':
+        df['api_params'] = df.apply(lambda x:
+            'date={}'.format(
+                x['date'].strftime(settings.STRFTIME_SHORT_DATE_FORMAT)
+            ),
+            axis=1)
+
+    ficha_pageviews_trace = go.Bar(
         x=df.date,
         y=df.ficha_pageviews_total,
+        customdata=df.api_params,
         name='Visualizações (fichas de tramitação)',
         marker_color='#f5365c',)
-    daily_noticia_pageviews_trace = go.Bar(
+    noticia_pageviews_trace = go.Bar(
         x=df.date,
         y=df.noticia_pageviews_total,
+        customdata=df.api_params,
         name='Visualizações (notícias)',
         marker_color='#fb6340')
-    daily_poll_votes_trace = go.Bar(
+    poll_votes_trace = go.Bar(
         x=df.date,
         y=df.poll_votes_total,
+        customdata=df.api_params,
         name='Votos nas enquetes',
         marker_color='#6236FF')
-    daily_poll_comments_trace = go.Bar(
+    poll_comments_authorized_trace = go.Bar(
         x=df.date,
-        y=df.poll_comments_total,
-        name='Comentários nas enquetes',
+        y=df.poll_comments_authorized_total,
+        customdata=df.api_params,
+        name='Comentários aprovados nas enquetes',
         marker_color='#2dce89',)
+    poll_comments_unchecked_trace = go.Bar(
+        x=df.date,
+        y=df.poll_comments_unchecked_total,
+        customdata=df.api_params,
+        name='Comentários não moderados nas enquetes',
+        marker_color='red',)
     
     fig = plotly.tools.make_subplots(
         rows=4,
@@ -67,12 +112,13 @@ def summary_global(group_by):
         spikemode="across+marker",
         spikesnap="data",
         type='category' if group_by == 'month' else 'date',
-        tickformat='%b/%Y' if group_by == 'month' else '%d/%b/%Y',
+        tickformat='%d/%m/%Y',
     )
     fig.update_yaxes(
         gridcolor='#fff',
         fixedrange=True,
         rangemode='tozero',
+        hoverformat=',d'
     )
     fig.update_layout(
         dragmode='pan',
@@ -87,17 +133,19 @@ def summary_global(group_by):
         },
         hoverlabel=dict(
             namelength=-1,
-         )
+        ),
+        barmode='stack'
     )
-    fig.append_trace(daily_ficha_pageviews_trace, 1, 1)
-    fig.append_trace(daily_noticia_pageviews_trace, 2, 1)
-    fig.append_trace(daily_poll_votes_trace, 3, 1)
-    fig.append_trace(daily_poll_comments_trace, 4, 1)
+    fig.append_trace(ficha_pageviews_trace, 1, 1)
+    fig.append_trace(noticia_pageviews_trace, 2, 1)
+    fig.append_trace(poll_votes_trace, 3, 1)
+    fig.append_trace(poll_comments_authorized_trace, 4, 1)
+    fig.append_trace(poll_comments_unchecked_trace, 4, 1)
     fig.update_traces(xaxis='x4')
 
     post_script = """
         document.getElementById('{plot_id}').on('plotly_click', function(data){
-            app.date = data.points[0]['x'];
+            app.api_params = data.points[0]['customdata'];
         });
     """
 
@@ -105,47 +153,53 @@ def summary_global(group_by):
     
     return plot_div
 
-def daily_summary_proposicao(proposicao):
-    qs = ProposicaoAggregated.objects.filter(proposicao=proposicao).order_by('date').values()
-    daily_data = pd.DataFrame(qs)
+def poll_votes(proposicao):
+    """
+    proposicao: Proposicao object
+    """
+    qs = qs = ItemResposta.objects.filter(ide_resposta__ide_formulario_publicado__proposicao=proposicao).values('num_indice_opcao')
 
-    # layout = Layout(
-    #     paper_bgcolor='rgba(0,0,0,0)',
-    #     plot_bgcolor='rgba(0,0,0,0)',
-    #     legend=dict(x=0.025, y=1),
-    #     height=310,
-    #     margin=dict(t=0, l=15, r=10, b=0),
-    #     barmode='stack',
-    #     dragmode="pan"
-    # )
-    daily_ficha_pageviews_trace = go.Bar(
-        x=daily_data.date,
-        y=daily_data.ficha_pageviews,
-        name='Visualizações (ficha de tramitação)',
-        marker_color='#f5365c')
-    daily_noticia_pageviews_trace = go.Bar(
-        x=daily_data.date,
-        y=daily_data.noticia_pageviews,
-        name='Visualizações (notícias)',
-        marker_color='#fb6340')
-    daily_poll_votes_trace = go.Bar(
-        x=daily_data.date,
-        y=daily_data.poll_votes,
-        name='Votos na enquete',
-        marker_color='#6236FF')
-    daily_poll_comments_trace = go.Bar(
-        x=daily_data.date,
-        y=daily_data.poll_comments,
-        name='Comentários na enquete',
-        marker_color='#2dce89',)
-    
-    fig = plotly.tools.make_subplots(rows=4, cols=1, shared_xaxes=True)
-    fig.update_xaxes(
-        range=[datetime.date.today() - datetime.timedelta(days=90), datetime.date.today()]
+    df = pd.DataFrame(qs)
+    df = df['num_indice_opcao'].value_counts().reset_index().sort_values('index')
+    df = df.rename(columns={'index': 'num_indice_opcao', 'num_indice_opcao': 'votes_count'})
+    df['votes_count_normalized'] = df['votes_count'] / df['votes_count'].sum()
+    df.set_index('num_indice_opcao', inplace=True)
+
+    poll_choices = [
+        (0, 'Discordo totalmente', px.colors.sequential.Reds[7]),
+        (1, 'Discordo na maior parte', px.colors.sequential.Reds[4]),
+        (2, 'Estou indeciso', px.colors.sequential.Blues[4]),
+        (3, 'Concordo na maior parte', px.colors.sequential.Greens[4]),
+        (4, 'Concordo totalmente', px.colors.sequential.Greens[7])
+    ]
+    fig = go.Figure()
+    for i, label, color in poll_choices:
+        votes_count = df.loc[i, 'votes_count']
+        fig.add_trace(
+            go.Bar(
+                x=[votes_count],
+                name=label,
+                marker_color=color,
+                orientation='h',
+                text=[votes_count]
+            )
+        )
+    fig.update_traces(
+        texttemplate='%{text:,d}',
+        textposition='auto'
     )
-    fig.update_yaxes(gridcolor='#fff', fixedrange=True)
+    fig.update_xaxes(
+        showticklabels=False,
+        hoverformat=',d',
+    )
+    fig.update_yaxes(
+        showticklabels=False
+    )
     fig.update_layout(
-        dragmode='pan',
+        barmode='stack',
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        hovermode=None,
         margin={
             'l': 0,
             'r': 0,
@@ -153,16 +207,15 @@ def daily_summary_proposicao(proposicao):
             't': 0,
         },
     )
-    fig.append_trace(daily_ficha_pageviews_trace, 1, 1)
-    fig.append_trace(daily_noticia_pageviews_trace, 2, 1)
-    fig.append_trace(daily_poll_votes_trace, 3, 1)
-    fig.append_trace(daily_poll_comments_trace, 4, 1)
-    # fig.add_traces([daily_pageviews_trace, daily_poll_votes_trace, daily_poll_comments_trace])
     plot_div = plotly.io.to_html(fig, include_plotlyjs='cdn', config={'displayModeBar': False}, full_html=False)
     
     return plot_div
 
+
 def proposicao_heatmap(proposicao):
+    """
+    NOT FULLY IMPLEMENTED
+    """
     qs = ProposicaoAggregated.objects.filter(proposicao=proposicao).order_by('date').values()
     df = pd.DataFrame(qs)
 
@@ -178,6 +231,12 @@ def proposicao_heatmap(proposicao):
     return values
 
 def raiox_anual(year, metric_field, dimension):
+    """
+    year: int
+    metric_field: any metric field in ProposicaoAggregated
+    dimension: 'tema', 'autor', 'relator', 'situacao', 'indexacao' or 'proposicao'
+    """
+
     if dimension == 'tema':
         dimension_field = 'proposicao__tema__nome'
     elif dimension == 'autor':
@@ -322,10 +381,13 @@ def raiox_anual(year, metric_field, dimension):
 
     return plot_div
     
-
 def raiox_mensal(date_min, date_max, metric_field, dimension, plot_type="sunburst"):
     """
-    plot_type: "sunburst" or "treemap"
+    date_min: date
+    date_max: date
+    metric_field: any metric field in ProposicaoAggregated
+    dimension: 'tema', 'autor', 'relator', 'situacao', 'indexacao' or 'proposicao'
+    plot_type: 'sunburst' or 'treemap'
     """
     qs = ProposicaoAggregated.objects \
         .filter(date__gte=date_min, date__lte=date_max, **{metric_field+'__gt': 0}) \

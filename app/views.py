@@ -19,31 +19,33 @@ def index(request):
     if group_by not in ('day', 'month'):
         return Http404
 
-    summary_global_plot = plots.summary_global(group_by)
+    summary_plot = plots.summary_plot(group_by=group_by)
 
     # last_updated = AppSettings.get_instance().last_updated
 
     return render(request, 'pages/index.html', locals())
 
 def api_top_noticias(request):
-    group_by = request.GET['group_by']
+    date = datetime.datetime.strptime(request.GET['date'], settings.STRFTIME_SHORT_DATE_FORMAT).date() if request.GET.get('date') else None
+    initial_date = datetime.datetime.strptime(request.GET['initial_date'], settings.STRFTIME_SHORT_DATE_FORMAT).date() if request.GET.get('initial_date') else None
+    final_date = datetime.datetime.strptime(request.GET['final_date'], settings.STRFTIME_SHORT_DATE_FORMAT).date() if request.GET.get('final_date') else None
 
-    if group_by == 'day':
-        date = datetime.datetime.strptime(request.GET['date'], "%Y-%m-%d").date()
+    if date:
         filter_params = {
             'date': date
         }
-    elif group_by == 'month':
-        date = datetime.datetime.strptime(request.GET['date'], "%B %Y").date()
+        requires_grouping = False
+    elif initial_date and final_date:
         filter_params = {
-            'date__year': date.year,
-            'date__month': date.month,
+            'date__gte': initial_date,
+            'date__lte': final_date,
         }
+        requires_grouping = True
 
     qs = NoticiaPageviews.objects.filter(**filter_params).values('noticia__titulo', 'noticia__link', 'noticia__tipo_conteudo', 'pageviews')
     df = pd.DataFrame(qs)
 
-    if group_by == 'month':
+    if requires_grouping:
         df = df.groupby(['noticia__titulo', 'noticia__link', 'noticia__tipo_conteudo']) \
             .agg({
                 'pageviews': 'sum',
@@ -54,7 +56,7 @@ def api_top_noticias(request):
     df = df[:100]
 
     return JsonResponse({
-        'date': date,
+        **filter_params,
         'top_noticias': [{
             'titulo': row['noticia__titulo'],
             'link': row['noticia__link'],
@@ -64,25 +66,27 @@ def api_top_noticias(request):
     })
 
 def api_top_proposicoes(request):
-    group_by = request.GET['group_by']
+    date = datetime.datetime.strptime(request.GET['date'], settings.STRFTIME_SHORT_DATE_FORMAT).date() if request.GET.get('date') else None
+    initial_date = datetime.datetime.strptime(request.GET['initial_date'], settings.STRFTIME_SHORT_DATE_FORMAT).date() if request.GET.get('initial_date') else None
+    final_date = datetime.datetime.strptime(request.GET['final_date'], settings.STRFTIME_SHORT_DATE_FORMAT).date() if request.GET.get('final_date') else None
 
-    if group_by == 'day':
-        date = datetime.datetime.strptime(request.GET['date'], "%Y-%m-%d").date()
+    if date:
         filter_params = {
             'date': date
         }
-    elif group_by == 'month':
-        date = datetime.datetime.strptime(request.GET['date'], "%B %Y").date()
+        requires_grouping = False
+    elif initial_date and final_date:
         filter_params = {
-            'date__year': date.year,
-            'date__month': date.month,
+            'date__gte': initial_date,
+            'date__lte': final_date,
         }
+        requires_grouping = True
 
     qs = ProposicaoAggregated.objects.filter(**filter_params).values('proposicao__nome_processado', 'proposicao__id', 'ficha_pageviews', 'noticia_pageviews', 'poll_votes', 'poll_comments')
 
     df = pd.DataFrame(qs)
 
-    if group_by == 'month':
+    if requires_grouping:
         df = df.groupby(['proposicao__nome_processado', 'proposicao__id']) \
             .agg({
                 'ficha_pageviews': 'sum',
@@ -103,7 +107,7 @@ def api_top_proposicoes(request):
     df = df[:100]
 
     return JsonResponse({
-        'date': date,
+        **filter_params,
         'top_proposicoes': [{
             'nome_processado': row.proposicao__nome_processado,
             'link': reverse('proposicao_detail', args=[row.proposicao__id]),
@@ -223,7 +227,8 @@ def busca_proposicao(request,):
 def proposicao_detail(request, id_proposicao):
     proposicao = Proposicao.objects.get(pk=id_proposicao)
 
-    daily_summary_proposicao_plot = plots.daily_summary_proposicao(proposicao)
+    summary_plot = plots.summary_plot(group_by='day', proposicao=proposicao)
+    poll_votes_plot = plots.poll_votes(proposicao)
 
     return render(request, 'pages/proposicao_details.html', locals())
 

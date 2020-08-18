@@ -46,7 +46,7 @@
 
                 <div class="card-body">
                     {% autoescape off %}
-                    {{ summary_global_plot }}
+                    {{ summary_plot }}
                     {% endautoescape %}
                 </div>
             </div>
@@ -60,7 +60,7 @@
                 <div class="card">
                     <div class="card-body">
                         <h2 class="card-title">Proposições em destaque</h2>
-                        <div v-if="!date">
+                        <div v-if="!api_params">
                             <p>Selecione uma data</p>
                         </div>
                         <div v-else>
@@ -79,7 +79,12 @@
                                             </a>
                                         </template>
                                         <template v-slot:footer>
-                                            Dados para [[ top_proposicoes.date ]]
+                                            <div v-if="top_proposicoes.date">
+                                                Dados para [[ top_proposicoes.date ]]
+                                            </div>
+                                            <div v-else>
+                                                Dados para [[ top_proposicoes.date__gte ]] - [[ top_proposicoes.date__lte ]]
+                                            </div>
                                         </template>
                                     
                                     </v-data-table>
@@ -93,7 +98,7 @@
                 <div class="card">
                     <div class="card-body">
                         <h2 class="card-title">Notícias em destaque</h2>
-                        <div v-if="!date">
+                        <div v-if="!api_params">
                             <p>Selecione uma data</p>
                         </div>
                         <div v-else>
@@ -111,7 +116,12 @@
                                             </a>
                                         </template>
                                         <template v-slot:footer>
-                                            Dados para [[ top_noticias.date ]]
+                                            <div v-if="top_proposicoes.date">
+                                                Dados para [[ top_proposicoes.date ]]
+                                            </div>
+                                            <div v-else>
+                                                Dados para [[ top_proposicoes.date__gte ]] - [[ top_proposicoes.date__lte ]]
+                                            </div>
                                         </template>
                                     </v-data-table>
                                 </template>
@@ -150,7 +160,7 @@
         data: {
             loading_noticias: false,
             loading_proposicoes: false,
-            date: '',
+            api_params: '',
             top_noticias: [],
             top_proposicoes: [],
             noticias_headers: [
@@ -167,18 +177,18 @@
             ],
         },
         watch: {
-            date: function (val) {
+            api_params: function (val) {
                 app.loading_proposicoes = true;
                 app.loading_noticias = true;
 
-                fetch('{% url "api_top_noticias" %}?group_by={{ group_by }}&date=' + val, {
+                fetch('{% url "api_top_noticias" %}?' + val, {
                     method: 'GET'
                 }).then((res) => res.json())
                     .then((data) => app.top_noticias = data)
                     .then(() => app.loading_noticias = false)
                     .catch((err) => console.error(err));
 
-                fetch('{% url "api_top_proposicoes" %}?group_by={{ group_by }}&date=' + val, {
+                fetch('{% url "api_top_proposicoes" %}?' + val, {
                     method: 'GET'
                 }).then((res) => res.json())
                     .then((data) => app.top_proposicoes = data)

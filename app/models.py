@@ -205,5 +205,9 @@ class ProposicaoAggregated(models.Model):
     noticia_pageviews = models.IntegerField(default=0)
     poll_votes = models.IntegerField(default=0)
     poll_comments = models.IntegerField(default=0)
+    poll_comments_unchecked = models.IntegerField(default=0)
+    poll_comments_checked = models.IntegerField(default=0)
+    poll_comments_authorized = models.IntegerField(default=0)
+    poll_comments_unauthorized = models.IntegerField(default=0)
     class Meta:
         unique_together = ('proposicao', 'date')

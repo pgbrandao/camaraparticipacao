@@ -9,6 +9,9 @@ ENV PYTHONDONTWRITEBYTECODE 1
 
 RUN apt-get update
 
+# install locales
+RUN apt-get install -y locales locales-all
+
 # install psycopg2 
 RUN apt-get install -y python3-psycopg2
 

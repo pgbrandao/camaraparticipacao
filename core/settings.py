@@ -148,6 +148,11 @@ USE_L10N = True
 
 USE_TZ = False
 
+# import locale
+# locale.setlocale(locale.LC_ALL, 'pt_BR')
+
+STRFTIME_SHORT_DATE_FORMAT = '%d/%m/%Y'
+
 ANALYTICS_CREDENTIALS = os.environ['ANALYTICS_CREDENTIALS']
 
 CELERY_BROKER_URL = "redis://redis:6379"

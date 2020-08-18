@@ -631,7 +631,15 @@ def preprocess():
         daterange = [datetime.date.today() - datetime.timedelta(days=i) for i in range(1, (datetime.date.today() - initial_date).days + 1)]
         for date in daterange:
 
-            pa = defaultdict(lambda:{'ficha_pageviews': 0, 'noticia_pageviews': 0, 'poll_votes': 0, 'poll_comments': 0})
+            pa = defaultdict(lambda:{
+                'ficha_pageviews': 0, 
+                'noticia_pageviews': 0, 
+                'poll_votes': 0, 
+                'poll_comments': 0, 
+                'poll_comments_unchecked': 0, 
+                'poll_comments_checked': 0, 
+                'poll_comments_authorized': 0, 
+                'poll_comments_unauthorized': 0})
 
             ficha_pageviews_qs = get_model('ProposicaoFichaPageviews').objects.filter(date=date)
 
@@ -651,6 +659,7 @@ def preprocess():
                     # (since each proposicao has more than one noticia)
                     pa[proposicao_id]['noticia_pageviews'] += pageviews
 
+            # Poll votes
             votes_qs = get_model('Resposta').objects \
                 .filter(dat_resposta__year=date.year) \
                 .filter(dat_resposta__month=date.month) \
@@ -668,25 +677,47 @@ def preprocess():
 
                 pa[proposicao_id]['poll_votes'] = poll_votes
 
+            # Poll comments
+            comment_status_mappings = [
+                ({}, 'poll_comments'),
+                ({'cod_autorizado': 0}, 'poll_comments_unchecked'),
+                ({'cod_autorizado__in': [1, 2]}, 'poll_comments_checked'),
+                ({'cod_autorizado': 1}, 'poll_comments_authorized'),
+                ({'cod_autorizado': 2}, 'poll_comments_unauthorized')
+            ]
 
-            comments_qs = get_model('Posicionamento').objects \
-                .filter(dat_posicionamento__year=date.year) \
-                .filter(dat_posicionamento__month=date.month) \
-                .filter(dat_posicionamento__day=date.day) \
-                .values('ide_formulario_publicado__proposicao') \
-                .annotate(comments_count=Count('ide_posicionamento')) \
-                .values('ide_formulario_publicado__proposicao','comments_count')
+            for filter_args, target_field in comment_status_mappings:
+                comments_qs = get_model('Posicionamento').objects \
+                    .filter(dat_posicionamento__year=date.year) \
+                    .filter(dat_posicionamento__month=date.month) \
+                    .filter(dat_posicionamento__day=date.day) \
+                    .filter(**filter_args) \
+                    .values('ide_formulario_publicado__proposicao') \
+                    .annotate(comments_count=Count('ide_posicionamento')) \
+                    .values('ide_formulario_publicado__proposicao','comments_count')
 
-            for row in comments_qs:
-                if not row['ide_formulario_publicado__proposicao']:
-                    continue
+                for row in comments_qs:
+                    if not row['ide_formulario_publicado__proposicao']:
+                        continue
 
-                proposicao_id = row['ide_formulario_publicado__proposicao']
-                poll_comments = row['comments_count']
+                    proposicao_id = row['ide_formulario_publicado__proposicao']
+                    poll_comments = row['comments_count']
 
-                pa[proposicao_id]['poll_comments'] = poll_comments
+                    pa[proposicao_id][target_field] = poll_comments
 
-            pa_list = [get_model('ProposicaoAggregated')(proposicao_id=k, date=date, ficha_pageviews=v['ficha_pageviews'], noticia_pageviews=v['noticia_pageviews'], poll_votes=v['poll_votes'], poll_comments=v['poll_comments']) for k, v in pa.items()]
+
+            pa_list = [get_model('ProposicaoAggregated')(
+                proposicao_id=k,
+                date=date,
+                ficha_pageviews=v['ficha_pageviews'],
+                noticia_pageviews=v['noticia_pageviews'],
+                poll_votes=v['poll_votes'],
+                poll_comments=v['poll_comments'],
+                poll_comments_unchecked=v['poll_comments_unchecked'],
+                poll_comments_checked=v['poll_comments_checked'],
+                poll_comments_authorized=v['poll_comments_authorized'],
+                poll_comments_unauthorized=v['poll_comments_unauthorized'],
+                ) for k, v in pa.items()]
             get_model('ProposicaoAggregated').objects.bulk_create(pa_list)
 
         cursor.execute('ALTER TABLE app_proposicaoaggregated ENABLE TRIGGER ALL;')
