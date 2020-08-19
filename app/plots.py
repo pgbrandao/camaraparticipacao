@@ -157,9 +157,13 @@ def poll_votes(proposicao):
     """
     proposicao: Proposicao object
     """
-    qs = qs = ItemResposta.objects.filter(ide_resposta__ide_formulario_publicado__proposicao=proposicao).values('num_indice_opcao')
+    qs = ItemResposta.objects.filter(ide_resposta__ide_formulario_publicado__proposicao=proposicao).values('num_indice_opcao')
 
     df = pd.DataFrame(qs)
+
+    if df.empty:
+        return (' ')
+
     df = df['num_indice_opcao'].value_counts().reset_index().sort_values('index')
     df = df.rename(columns={'index': 'num_indice_opcao', 'num_indice_opcao': 'votes_count'})
     df['votes_count_normalized'] = df['votes_count'] / df['votes_count'].sum()
@@ -174,7 +178,10 @@ def poll_votes(proposicao):
     ]
     fig = go.Figure()
     for i, label, color in poll_choices:
-        votes_count = df.loc[i, 'votes_count']
+        try:
+            votes_count = df.loc[i, 'votes_count']
+        except KeyError:
+            votes_count = 0
         fig.add_trace(
             go.Bar(
                 x=[votes_count],
