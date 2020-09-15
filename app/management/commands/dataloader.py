@@ -39,6 +39,11 @@ class Command(BaseCommand):
             help='Pre-processes data'
         )
         parser.add_argument(
+            '--db_dump',
+            action='store_true',
+            help='Generates database dump'
+        )
+        parser.add_argument(
             '--initial-date',
             nargs=1,
             type=str,
@@ -46,12 +51,15 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        if  not options['all'] and \
-            not options['enquetes'] and \
-            not options['dados_abertos'] and \
-            not options['analytics_fichas'] and \
-            not options['analytics_noticias'] and \
-            not options['preprocess']:
+        if  not any([
+            options['all'],
+            options['enquetes'],
+            options['dados_abertos'],
+            options['analytics_fichas'],
+            options['analytics_noticias'],
+            options['preprocess'],
+            options['db_dump'],
+        ]):
             raise CommandError('No option specified.')
 
         if options['initial_date']:
@@ -71,9 +79,7 @@ class Command(BaseCommand):
             dataloader.load_analytics_fichas(initial_date=initial_date)
         if options['all'] or options['analytics_noticias']:
             dataloader.load_analytics_noticias(initial_date=initial_date)
-        
-        dataloader.preprocess()
-
-
-
-
+        if options['all'] or options['preprocess']:
+            dataloader.preprocess()
+        if options['all'] or options['db_dump']:
+            dataloader.db_dump()

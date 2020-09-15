@@ -7,6 +7,7 @@ services:
     volumes:
       - .:/usr/src/app/
       - static_data:/usr/src/app/static
+      - db_dump:/usr/src/app/db_dump
     ports:
       - 50101:50101
       - 4444:4444
@@ -61,6 +62,7 @@ services:
       - web
 
 volumes:
+  db_dump:
   static_data:
   postgres_data:
     driver: local

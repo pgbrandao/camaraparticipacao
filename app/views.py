@@ -1,14 +1,17 @@
 from django.conf import settings
 from django.core.cache import cache
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, Sum, Q
 from django.shortcuts import redirect, render
 from django.urls import reverse
-from django.http import Http404, HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse, FileResponse
 
 import calendar
 import datetime
 from . import plots
+
+from pathlib import Path
 
 from .models import *
 
@@ -203,6 +206,25 @@ def enquetes_busca_data(request):
         proposicoes = proposicoes[:50]
 
     return render(request, 'pages/enquetes_busca_data.html', locals())
+
+# def enquetes_exportar_comentarios(request,):
+#     class Posicionamento(models.Model):
+#     ide_posicionamento
+#     ide_formulario_publicado.proposicao.id
+#     ind_positivo
+#     des_conteudo
+#     dat_posicionamento
+#     cod_autorizado = models.IntegerField(null=True)
+#     qtd_descurtidas = models.IntegerField(null=True)
+
+@login_required
+def db_dump(request,):
+    zip_path = Path(settings.DB_DUMP_PATH) / Path('latest_dump.zip')
+    f = open(zip_path, 'rb')
+    response = FileResponse(f)
+    response["Content-Disposition"] = "attachment; filename="+str('latest_dump.zip')
+    return response
+
 
 
 def busca_proposicao(request,):

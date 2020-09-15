@@ -34,5 +34,12 @@ RUN pip install --upgrade pip
 COPY ./requirements.txt /usr/src/app/requirements.txt
 RUN pip install -r requirements.txt
 
+# Install PostgreSQL
+RUN curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt buster-pgdg main" > /etc/apt/sources.list.d/pgdg.list
+
+RUN apt-get update
+RUN apt-get install -y postgresql-12
+
 # Copy files
 COPY . /usr/src/app/

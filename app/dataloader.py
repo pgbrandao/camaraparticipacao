@@ -17,6 +17,8 @@ from django.conf import settings
 from django.db import connections, transaction, IntegrityError
 from django.db.models import Count, Sum
 
+from pathlib import Path
+
 from oauth2client.service_account import ServiceAccountCredentials
 from oauth2client.client import HttpAccessTokenRefreshError
 
@@ -723,3 +725,19 @@ def preprocess():
         cursor.execute('ALTER TABLE app_proposicaoaggregated ENABLE TRIGGER ALL;')
 
         print('Finished preprocess')
+
+def db_dump():
+    sql_path = Path(settings.DB_DUMP_PATH) / Path('latest_dump.sql')
+    zip_path = Path(settings.DB_DUMP_PATH) / Path('latest_dump.zip')
+    os.system('PGPASSWORD="{}" pg_dumpall -c --host={} --username={} > {}'.format(
+        settings.DATABASES['default']['PASSWORD'],
+        settings.DATABASES['default']['HOST'],
+        settings.DATABASES['default']['USER'],
+        sql_path
+    ))
+    zipfile.ZipFile(
+        zip_path, mode='w'
+    ).write(sql_path)
+    os.system('rm {}'.format(
+        sql_path
+    ))

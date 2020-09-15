@@ -22,6 +22,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Base path which will be prepended to all URLs. Should include trailing slash
 BASE_PATH = os.environ.get('BASE_PATH', default='/')
 
+LOGIN_URL = BASE_PATH + 'login/'
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
@@ -82,6 +84,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'core/static'),
 ]
+
+DB_DUMP_PATH = '/usr/src/app/db_dump'
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
@@ -160,14 +164,14 @@ CELERY_RESULT_BACKEND = "redis://redis:6379"
 
 # TODO: This should be configured according to an environment variable
 CELERY_BEAT_SCHEDULE = {
-    "dataloader": {
-        "task": "core.tasks.dataloader_task",
-        "schedule": crontab(hour="5", minute="0"),
-    },
-    # "datacacher": {
-    #     "task": "core.tasks.datacacher",
-    #     "schedule": crontab(hour="*", minute="0")
-    # }
+    # "dataloader": {
+    #     "task": "core.tasks.dataloader_task",
+    #     "schedule": crontab(hour="5", minute="0"),
+    # },
+    "datacacher": {
+        "task": "core.tasks.datacacher",
+        "schedule": crontab(hour="*", minute="0")
+    }
 }
 
 CACHES = {

@@ -12,3 +12,4 @@ def dataloader_task():
     dataloader.load_analytics_fichas()
     dataloader.load_analytics_noticias()
     dataloader.preprocess()
+    dataloader.db_dump()
