@@ -31,7 +31,7 @@ LOGIN_URL = BASE_PATH + 'login/'
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = int(os.environ.get('DEBUG', default=0))
+DEBUG = bool(os.environ.get('DEBUG', default=False))
 
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
 
@@ -163,16 +163,13 @@ CELERY_BROKER_URL = "redis://redis:6379"
 CELERY_RESULT_BACKEND = "redis://redis:6379"
 
 # TODO: This should be configured according to an environment variable
-CELERY_BEAT_SCHEDULE = {
-    # "dataloader": {
-    #     "task": "core.tasks.dataloader_task",
-    #     "schedule": crontab(hour="5", minute="0"),
-    # },
-    "datacacher": {
-        "task": "core.tasks.datacacher",
-        "schedule": crontab(hour="*", minute="0")
+CELERY_BEAT_SCHEDULE = {}
+
+if bool(os.environ.get('AUTO_DATALOADER', default=False)):
+    CELERY_BEAT_SCHEDULE["dataloader"] = {
+        "task": "core.tasks.dataloader_task",
+        "schedule": crontab(hour="5", minute="0"),
     }
-}
 
 CACHES = {
     'default': {
