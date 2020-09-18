@@ -39,7 +39,7 @@ class Command(BaseCommand):
             help='Pre-processes data'
         )
         parser.add_argument(
-            '--db_dump',
+            '--db-dump',
             action='store_true',
             help='Generates database dump'
         )

@@ -207,15 +207,13 @@ def enquetes_busca_data(request):
 
     return render(request, 'pages/enquetes_busca_data.html', locals())
 
-# def enquetes_exportar_comentarios(request,):
-#     class Posicionamento(models.Model):
-#     ide_posicionamento
-#     ide_formulario_publicado.proposicao.id
-#     ind_positivo
-#     des_conteudo
-#     dat_posicionamento
-#     cod_autorizado = models.IntegerField(null=True)
-#     qtd_descurtidas = models.IntegerField(null=True)
+def enquetes_exportar_comentarios(request,):
+    posicionamentos = Posicionamento.objects \
+        .filter(ide_formulario_publicado__proposicao__isnull=False, cod_autorizado__in=[1,2]) \
+        .values('ide_posicionamento', 'ide_formulario_publicado__proposicao__id', 'ide_formulario_publicado__proposicao__nome_processado', 'ind_positivo', 'des_conteudo', 'dat_posicionamento', 'cod_autorizado')
+    return JsonResponse({
+        'posicionamentos': list(posicionamentos)
+    })
 
 @login_required
 def db_dump(request,):
