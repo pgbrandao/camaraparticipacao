@@ -217,10 +217,10 @@ def enquetes_exportar_comentarios(request,):
 
 @login_required
 def db_dump(request,):
-    zip_path = Path(settings.DB_DUMP_PATH) / Path('latest_dump.zip')
-    f = open(zip_path, 'rb')
+    dump_path = Path(settings.DB_DUMP_PATH) / Path('latest_dump.gz')
+    f = open(dump_path, 'rb')
     response = FileResponse(f)
-    response["Content-Disposition"] = "attachment; filename="+str('latest_dump.zip')
+    response["Content-Disposition"] = "attachment; filename="+str('latest_dump.gz')
     return response
 
 
