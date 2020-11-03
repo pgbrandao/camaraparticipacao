@@ -143,7 +143,7 @@ def raiox(request):
             date_max = dt.replace(day=num_days)
 
             plot_div, total, total_plot = plots.raiox_mensal(
-                date_min, date_max, metric_field, dimension)
+                date_min, date_max, metric_field, dimension, plot_type)
 
             percent_plot = total_plot / total * 100 if total else 0
         elif period_type == 'year' and year:
@@ -174,6 +174,11 @@ def raiox(request):
         ('poll_votes', 'Votos nas enquetes'),
         ('ficha_pageviews', 'Visualizações na ficha de tramitação'),
     ]
+    plot_type_choices = [
+        ('sunburst', 'Circular (sunburst)'),
+        ('treemap', 'Retangular (treemap)'),
+    ]
+
 
     return render(request, 'pages/raiox.html', locals())
 

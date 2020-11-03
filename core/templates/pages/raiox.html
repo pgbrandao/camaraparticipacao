@@ -82,6 +82,16 @@
                                     </select>
                                 </div>
                             </div>
+                            <div class="col">
+                                <div class="form-group">
+                                    <label for="plot_type">Visualização</label>
+                                    <select class="form-control" name="plot_type">
+                                        {% for value, text in plot_type_choices %}
+                                            <option value="{{ value }}" {% if plot_type == value %}selected{% endif %}>{{ text }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                         <div class="row">
                             <div class="col">
