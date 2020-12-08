@@ -37,6 +37,11 @@
                                         {% if group_by == 'month' %}active{% endif %}
                                         " href="{% url 'index' %}?group_by=month">Por mês</a>
                                     </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link mb-sm-3 mb-md-0
+                                        {% if group_by == 'year' %}active{% endif %}
+                                        " href="{% url 'index' %}?group_by=year">Por ano</a>
+                                    </li>
                                 </ul>
                             </div>                    
                                     

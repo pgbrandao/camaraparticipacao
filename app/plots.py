@@ -14,7 +14,7 @@ from .models import *
 
 def summary_plot(group_by, proposicao=None):
     """
-    group_by: 'day' or 'month'
+    group_by: 'day', 'month' or 'year'
     proposicao: Proposicao object or None
     """
     if not proposicao:
@@ -41,7 +41,26 @@ def summary_plot(group_by, proposicao=None):
         df = pd.DataFrame(qs)
 
     df['date'] = pd.to_datetime(df['date'])
-    if group_by == 'month':
+    if group_by == 'year':
+        df = df.groupby(pd.Grouper(key='date', freq='Y')) \
+            .agg({
+                'ficha_pageviews_total': 'sum',
+                'poll_votes_total': 'sum',
+                'poll_comments_unchecked_total': 'sum',
+                'poll_comments_authorized_total': 'sum',
+                'noticia_pageviews_total': 'sum'
+            }) \
+            .reset_index()
+        
+        df['api_params'] = df.apply(lambda x:
+            'initial_date={}&final_date={}'.format(
+                x['date'].replace(day=1).replace(month=1).strftime(settings.STRFTIME_SHORT_DATE_FORMAT),
+                x['date'].strftime(settings.STRFTIME_SHORT_DATE_FORMAT)
+            ),
+            axis=1)
+
+        df['date'] = df['date'].dt.strftime('%Y')
+    elif group_by == 'month':
         df = df.groupby(pd.Grouper(key='date', freq='M')) \
             .agg({
                 'ficha_pageviews_total': 'sum',
@@ -111,7 +130,7 @@ def summary_plot(group_by, proposicao=None):
         spikecolor="#999999",
         spikemode="across+marker",
         spikesnap="data",
-        type='category' if group_by == 'month' else 'date',
+        type='category' if group_by in ('month', 'year') else 'date',
         tickformat='%d/%m/%Y',
     )
     fig.update_yaxes(

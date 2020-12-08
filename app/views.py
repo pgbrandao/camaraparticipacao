@@ -19,7 +19,7 @@ from .models import *
 
 def index(request):
     group_by = request.GET.get('group_by') or 'day'
-    if group_by not in ('day', 'month'):
+    if group_by not in ('day', 'month', 'year'):
         return Http404
 
     summary_plot = plots.summary_plot(group_by=group_by)
