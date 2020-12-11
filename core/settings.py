@@ -104,14 +104,42 @@ DATABASES = {
     },
 }
 
-if "ENQUETES_SQL_DATABASE" in os.environ:
+if "SQL_SERVER_ENQUETES_DATABASE" in os.environ:
     DATABASES["enquetes"] = {
-        "ENGINE": os.environ.get("ENQUETES_SQL_ENGINE"),
-        "NAME": os.environ.get("ENQUETES_SQL_DATABASE"),
-        "USER": os.environ.get("ENQUETES_SQL_USER"),
-        "PASSWORD": os.environ.get("ENQUETES_SQL_PASSWORD"),
-        "HOST": os.environ.get("ENQUETES_SQL_HOST"),
-        "PORT": os.environ.get("ENQUETES_SQL_PORT"),
+        "ENGINE": os.environ.get("SQL_SERVER_ENGINE"),
+        "NAME": os.environ.get("SQL_SERVER_ENQUETES_DATABASE"),
+        "USER": os.environ.get("SQL_SERVER_USER"),
+        "PASSWORD": os.environ.get("SQL_SERVER_PASSWORD"),
+        "HOST": os.environ.get("SQL_SERVER_HOST"),
+        "PORT": os.environ.get("SQL_SERVER_PORT"),
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+            'extra_params': 'Trusted_connection=no'
+        },
+    }
+
+if "SQL_SERVER_PRISMA_DATABASE" in os.environ:
+    DATABASES["prisma"] = {
+        "ENGINE": os.environ.get("SQL_SERVER_ENGINE"),
+        "NAME": os.environ.get("SQL_SERVER_PRISMA_DATABASE"),
+        "USER": os.environ.get("SQL_SERVER_USER"),
+        "PASSWORD": os.environ.get("SQL_SERVER_PASSWORD"),
+        "HOST": os.environ.get("SQL_SERVER_HOST"),
+        "PORT": os.environ.get("SQL_SERVER_PORT"),
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+            'extra_params': 'Trusted_connection=no'
+        },
+    }
+
+if "SQL_SERVER_COMENTARIOS_PORTAL_DATABASE" in os.environ:
+    DATABASES["prisma"] = {
+        "ENGINE": os.environ.get("SQL_SERVER_ENGINE"),
+        "NAME": os.environ.get("SQL_SERVER_COMENTARIOS_PORTAL_DATABASE"),
+        "USER": os.environ.get("SQL_SERVER_USER"),
+        "PASSWORD": os.environ.get("SQL_SERVER_PASSWORD"),
+        "HOST": os.environ.get("SQL_SERVER_HOST"),
+        "PORT": os.environ.get("SQL_SERVER_PORT"),
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'extra_params': 'Trusted_connection=no'
