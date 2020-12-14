@@ -176,7 +176,7 @@ def poll_votes(proposicao):
     """
     proposicao: Proposicao object
     """
-    qs = ItemResposta.objects.filter(ide_resposta__ide_formulario_publicado__proposicao=proposicao).values('num_indice_opcao')
+    qs = EnqueteItemResposta.objects.filter(ide_resposta__ide_formulario_publicado__proposicao=proposicao).values('num_indice_opcao')
 
     df = pd.DataFrame(qs)
 

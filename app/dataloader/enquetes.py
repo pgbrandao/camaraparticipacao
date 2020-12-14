@@ -13,17 +13,24 @@ def load_enquetes():
         return
  
     with connections['default'].cursor() as cursor:
+        # model_mappings follow this format: (source_table_name, model)
+        model_mappings = (
+            ('Formulario_Publicado', get_model('EnqueteFormularioPublicado')),
+            ('Resposta', get_model('EnqueteResposta')),
+            ('Item_Resposta', get_model('EnqueteItemResposta')),
+            ('Posicionamento', get_model('EnquetePosicionamento')),
+        )
 
-        process_models = [get_model('FormularioPublicado'), get_model('Resposta'), get_model('ItemResposta'), get_model('Posicionamento')]
+        for source_table_name, model in model_mappings:
+            target_table_name = model._meta.db_table
 
-        for model in process_models:
-            table_name = model._meta.db_table
-
-            cursor.execute('ALTER TABLE public."%s" DISABLE TRIGGER ALL;' % (table_name,))
-            cursor.execute('DELETE FROM public."%s"' % (table_name,))
+            cursor.execute('ALTER TABLE public."%s" DISABLE TRIGGER ALL;' % (target_table_name,))
+            cursor.execute('DELETE FROM public."%s"' % (target_table_name,))
 
             field_list = []                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
             instance_list = []
+
+            model._meta.db_table = source_table_name
 
             for _, _, _, qs in batch_qs(model.objects.using('enquetes')):
                 instance_list = []
@@ -33,7 +40,10 @@ def load_enquetes():
                         model(**instance_values)
                     )
 
+                # TODO: Find a better way to do this.
+                model._meta.db_table = target_table_name
                 model.objects.using('default').bulk_create(instance_list)
+                model._meta.db_table = source_table_name
 
             cursor.execute('ALTER TABLE public."%s" DISABLE TRIGGER ALL;' % (table_name,))
 

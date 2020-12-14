@@ -17,7 +17,7 @@ class AppSettings(models.Model):
     def get_instance():
         return AppSettings.objects.get_or_create(pk=1)[0]
 
-class FormularioPublicado(models.Model):
+class EnqueteFormularioPublicado(models.Model):
     ide_formulario_publicado = models.AutoField(primary_key=True)
     ide_usuario = models.TextField()  # This field type is a guess.
     tex_url_formulario_publicado = models.TextField(db_index=True)  # This field type is a guess.
@@ -39,33 +39,24 @@ class FormularioPublicado(models.Model):
     tex_url_link_externo = models.TextField(blank=True, null=True)  # This field type is a guess.
     tex_label_link_externo = models.TextField(blank=True, null=True)  # This field type is a guess.
 
-    class Meta:
-        db_table = 'Formulario_Publicado'
-
-class Resposta(models.Model):
+class EnqueteResposta(models.Model):
     ide_resposta = models.AutoField(primary_key=True)
-    ide_formulario_publicado = models.ForeignKey('FormularioPublicado', null=True, on_delete=models.SET_NULL, db_column='ide_formulario_publicado')
+    ide_formulario_publicado = models.ForeignKey('EnqueteFormularioPublicado', null=True, on_delete=models.SET_NULL, db_column='ide_formulario_publicado')
     ide_usuario = models.TextField()
     dat_resposta = models.DateTimeField(blank=True, null=True)
 
-    class Meta:
-        db_table = 'Resposta'
-
-class ItemResposta(models.Model):
+class EnqueteItemResposta(models.Model):
     ide_item_resposta = models.AutoField(primary_key=True)
-    ide_resposta = models.ForeignKey('Resposta', null=True, on_delete=models.SET_NULL, db_column='ide_resposta')
+    ide_resposta = models.ForeignKey('EnqueteResposta', null=True, on_delete=models.SET_NULL, db_column='ide_resposta')
     num_indice_campo = models.IntegerField()
     num_indice_opcao = models.IntegerField(blank=True, null=True)
     num_indice_linha_tabela = models.IntegerField(blank=True, null=True)
     tex_texto_livre = models.TextField(blank=True, null=True)
 
-    class Meta:
-        db_table = 'Item_Resposta'
-
-class Posicionamento(models.Model):
+class EnquetePosicionamento(models.Model):
     ide_posicionamento = models.AutoField(primary_key=True)
-    ide_formulario_publicado = models.ForeignKey('FormularioPublicado', null=True, on_delete=models.SET_NULL, db_column='ide_formulario_publicado')
-    ide_resposta = models.ForeignKey('Resposta', null=True, on_delete=models.SET_NULL, db_column='ide_resposta')
+    ide_formulario_publicado = models.ForeignKey('EnqueteFormularioPublicado', null=True, on_delete=models.SET_NULL, db_column='ide_formulario_publicado')
+    ide_resposta = models.ForeignKey('EnqueteResposta', null=True, on_delete=models.SET_NULL, db_column='ide_resposta')
     ide_usuario = models.TextField(blank=True, null=True)
     nom_usuario = models.TextField(blank=True, null=True)
     ind_positivo = models.IntegerField()
@@ -75,16 +66,12 @@ class Posicionamento(models.Model):
     cod_autorizado = models.IntegerField(null=True)
     qtd_descurtidas = models.IntegerField(null=True)
 
-
-    class Meta:
-        db_table = 'Posicionamento'
-
-class PosicionamentoExtra(models.Model):
+class EnquetePosicionamentoExtra(models.Model):
     class ClassificationTypes(models.IntegerChoices):
         UNRATED = (0, 'Unrated')
         INSIGHTFUL = (1, 'Insightful')
         NOT_INSIGHTFUL = (-1, 'Not insightful')
-    posicionamento = models.OneToOneField('Posicionamento', on_delete=models.DO_NOTHING)
+    posicionamento = models.OneToOneField('EnquetePosicionamento', on_delete=models.DO_NOTHING)
     classification = models.IntegerField(
         choices=ClassificationTypes.choices,
         default=ClassificationTypes.UNRATED)
@@ -110,7 +97,7 @@ class Proposicao(models.Model):
 
     url_inteiro_teor = models.TextField(blank=True, null=True)
 
-    formulario_publicado = models.OneToOneField('FormularioPublicado', null=True, on_delete=models.SET_NULL)
+    formulario_publicado = models.OneToOneField('EnqueteFormularioPublicado', null=True, on_delete=models.SET_NULL)
     autor = models.ManyToManyField('Autor')
     tema = models.ManyToManyField('Tema')
     descricao = models.TextField(blank=True, null=True)
@@ -120,7 +107,7 @@ class Proposicao(models.Model):
     ultimo_status_orgao = models.ForeignKey('Orgao', null=True, on_delete=models.SET_NULL)
 
     def enquete_posicionamentos(self, order_by="-dat_posicionamento"):
-        queryset = Posicionamento.objects.filter(ide_formulario_publicado=self.formulario_publicado)
+        queryset = EnquetePosicionamento.objects.filter(ide_formulario_publicado=self.formulario_publicado)
         if order_by:
             queryset = queryset.order_by(order_by)
 

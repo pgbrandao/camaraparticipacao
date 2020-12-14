@@ -45,7 +45,7 @@ def preprocess():
                     pa[proposicao_id]['noticia_pageviews'] += pageviews
 
             # Poll votes
-            votes_qs = get_model('Resposta').objects \
+            votes_qs = get_model('EnqueteResposta').objects \
                 .filter(dat_resposta__year=date.year) \
                 .filter(dat_resposta__month=date.month) \
                 .filter(dat_resposta__day=date.day) \
@@ -72,7 +72,7 @@ def preprocess():
             ]
 
             for filter_args, target_field in comment_status_mappings:
-                comments_qs = get_model('Posicionamento').objects \
+                comments_qs = get_model('EnquetePosicionamento').objects \
                     .filter(dat_posicionamento__year=date.year) \
                     .filter(dat_posicionamento__month=date.month) \
                     .filter(dat_posicionamento__day=date.day) \

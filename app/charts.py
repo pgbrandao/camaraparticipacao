@@ -5,7 +5,7 @@ import altair
 from core.models import *
 
 def get_votes_chart(proposicao):
-    ItemResposta.objects.filter(resposta__ide_formulario_publicado=proposicao.formulario_publicado.pk) \
+    EnqueteItemResposta.objects.filter(resposta__ide_formulario_publicado=proposicao.formulario_publicado.pk) \
                         .values('num_indice_opcao') \
                         .order_by('num_indice_opcao') \
                         .annotate(votos=Count('num_indice_opcao'))

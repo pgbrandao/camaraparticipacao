@@ -85,7 +85,7 @@ def load_proposicoes():
         # Dict to store {tex_url_formulario_publicado => ide_formulario_publicado}
         # tex_url_formulario_publicado: ID proposição
         formulario_publicado_dict = {}
-        for r in get_model('FormularioPublicado').objects.values_list('ide_formulario_publicado', 'tex_url_formulario_publicado'):
+        for r in get_model('EnqueteFormularioPublicado').objects.values_list('ide_formulario_publicado', 'tex_url_formulario_publicado'):
             try:
                 formulario_publicado_dict[int(r[1])] = r[0]
             except ValueError:
