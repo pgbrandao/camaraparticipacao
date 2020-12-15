@@ -104,42 +104,42 @@ DATABASES = {
     },
 }
 
-if "SQL_SERVER_ENQUETES_DATABASE" in os.environ:
+if "MSSQL_ENQUETES_DATABASE" in os.environ:
     DATABASES["enquetes"] = {
-        "ENGINE": os.environ.get("SQL_SERVER_ENGINE"),
-        "NAME": os.environ.get("SQL_SERVER_ENQUETES_DATABASE"),
-        "USER": os.environ.get("SQL_SERVER_USER"),
-        "PASSWORD": os.environ.get("SQL_SERVER_PASSWORD"),
-        "HOST": os.environ.get("SQL_SERVER_HOST"),
-        "PORT": os.environ.get("SQL_SERVER_PORT"),
+        "ENGINE": os.environ.get("MSSQL_ENGINE"),
+        "NAME": os.environ.get("MSSQL_ENQUETES_DATABASE"),
+        "USER": os.environ.get("MSSQL_USER"),
+        "PASSWORD": os.environ.get("MSSQL_PASSWORD"),
+        "HOST": os.environ.get("MSSQL_HOST"),
+        "PORT": os.environ.get("MSSQL_PORT"),
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'extra_params': 'Trusted_connection=no'
         },
     }
 
-if "SQL_SERVER_PRISMA_DATABASE" in os.environ:
+if "MSSQL_PRISMA_DATABASE" in os.environ:
     DATABASES["prisma"] = {
-        "ENGINE": os.environ.get("SQL_SERVER_ENGINE"),
-        "NAME": os.environ.get("SQL_SERVER_PRISMA_DATABASE"),
-        "USER": os.environ.get("SQL_SERVER_USER"),
-        "PASSWORD": os.environ.get("SQL_SERVER_PASSWORD"),
-        "HOST": os.environ.get("SQL_SERVER_HOST"),
-        "PORT": os.environ.get("SQL_SERVER_PORT"),
+        "ENGINE": os.environ.get("MSSQL_ENGINE"),
+        "NAME": os.environ.get("MSSQL_PRISMA_DATABASE"),
+        "USER": os.environ.get("MSSQL_USER"),
+        "PASSWORD": os.environ.get("MSSQL_PASSWORD"),
+        "HOST": os.environ.get("MSSQL_HOST"),
+        "PORT": os.environ.get("MSSQL_PORT"),
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'extra_params': 'Trusted_connection=no'
         },
     }
 
-if "SQL_SERVER_COMENTARIOS_PORTAL_DATABASE" in os.environ:
-    DATABASES["prisma"] = {
-        "ENGINE": os.environ.get("SQL_SERVER_ENGINE"),
-        "NAME": os.environ.get("SQL_SERVER_COMENTARIOS_PORTAL_DATABASE"),
-        "USER": os.environ.get("SQL_SERVER_USER"),
-        "PASSWORD": os.environ.get("SQL_SERVER_PASSWORD"),
-        "HOST": os.environ.get("SQL_SERVER_HOST"),
-        "PORT": os.environ.get("SQL_SERVER_PORT"),
+if "MSSQL_COMENTARIOS_PORTAL_DATABASE" in os.environ:
+    DATABASES["comentarios_portal"] = {
+        "ENGINE": os.environ.get("MSSQL_ENGINE"),
+        "NAME": os.environ.get("MSSQL_COMENTARIOS_PORTAL_DATABASE"),
+        "USER": os.environ.get("MSSQL_USER"),
+        "PASSWORD": os.environ.get("MSSQL_PASSWORD"),
+        "HOST": os.environ.get("MSSQL_HOST"),
+        "PORT": os.environ.get("MSSQL_PORT"),
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'extra_params': 'Trusted_connection=no'

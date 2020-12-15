@@ -7,6 +7,9 @@ WORKDIR /usr/src/app
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONDONTWRITEBYTECODE 1
 
+ARG http_proxy
+ARG https_proxy
+
 RUN apt-get update
 
 # install locales
@@ -35,6 +38,7 @@ COPY ./requirements.txt /usr/src/app/requirements.txt
 RUN pip install -r requirements.txt
 
 # Install PostgreSQL
+RUN apt-get install -y --no-install-recommends apt-utils
 RUN apt-get install -y ca-certificates
 RUN curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt buster-pgdg main" > /etc/apt/sources.list.d/pgdg.list

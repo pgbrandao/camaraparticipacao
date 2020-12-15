@@ -27,15 +27,15 @@ def load_enquetes():
             cursor.execute('ALTER TABLE public."%s" DISABLE TRIGGER ALL;' % (target_table_name,))
             cursor.execute('DELETE FROM public."%s"' % (target_table_name,))
 
-            field_list = []                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
             instance_list = []
 
+            # TODO: Find a better way to do this.
             model._meta.db_table = source_table_name
 
             for _, _, _, qs in batch_qs(model.objects.using('enquetes')):
                 instance_list = []
 
-                for instance_values in qs.values(*field_list):
+                for instance_values in qs.values():
                     instance_list.append(
                         model(**instance_values)
                     )
@@ -45,6 +45,9 @@ def load_enquetes():
                 model.objects.using('default').bulk_create(instance_list)
                 model._meta.db_table = source_table_name
 
-            cursor.execute('ALTER TABLE public."%s" DISABLE TRIGGER ALL;' % (table_name,))
+            # TODO: Find a better way to do this.
+            model._meta.db_table = target_table_name
 
-            print('Loaded enquetes %s' % (table_name,))
+            cursor.execute('ALTER TABLE public."%s" DISABLE TRIGGER ALL;' % (target_table_name,))
+
+            print('Loaded %s' % (target_table_name,))
