@@ -3,6 +3,8 @@ from celery import shared_task
 
 @shared_task
 def dataloader_task():
+    dataloader.load_comentarios_portal()
+    dataloader.load_prisma()
     dataloader.load_enquetes()
     dataloader.load_deputados()
     dataloader.load_orgaos()

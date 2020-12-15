@@ -198,3 +198,66 @@ class ProposicaoAggregated(models.Model):
     poll_comments_unauthorized = models.IntegerField(default=0)
     class Meta:
         unique_together = ('proposicao', 'date')
+
+class PrismaDemandante(models.Model):
+    iddemandante = models.AutoField(db_column='IdDemandante', primary_key=True)
+    demandante_data_cadastro = models.DateTimeField(db_column='Demandante.Data Cadastro')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    demandante_grau_de_instrução = models.TextField(db_column='Demandante.Grau de Instrução', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    demandante_sexo = models.TextField(db_column='Demandante.Sexo', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    demandante_categoria = models.TextField(db_column='Demandante.Categoria', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    demandante_data_de_nascimento = models.DateField(db_column='Demandante.Data de Nascimento', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    demandante_profissão_externa = models.TextField(db_column='Demandante.Profissão Externa', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+
+class PrismaDemanda(models.Model):
+    iddemanda = models.AutoField(db_column='IdDemanda', primary_key=True)
+    iddemandante = models.ForeignKey('PrismaDemandante', db_column='IdDemandante', on_delete=models.DO_NOTHING, null=True)
+    demanda_protocolo = models.TextField(db_column='Demanda.Protocolo', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    demanda_fila = models.TextField(db_column='Demanda.Fila', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    demanda_prioridade = models.TextField(db_column='Demanda.Prioridade', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    demanda_canal = models.TextField(db_column='Demanda.Canal', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    demanda_tipo = models.TextField(db_column='Demanda.Tipo', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    demanda_data_criação = models.DateTimeField(db_column='Demanda.Data Criação', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    demanda_prazo = models.DateTimeField(db_column='Demanda.Prazo', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    demanda_prazo_sugerido = models.DateTimeField(db_column='Demanda.Prazo Sugerido', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    demanda_data_da_resposta = models.DateTimeField(db_column='Demanda.Data da Resposta', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    demanda_tempo_em_aberto = models.IntegerField(db_column='Demanda.Tempo em Aberto', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    demanda_tempo_em_aberto_em_minutos = models.IntegerField(db_column='Demanda.Tempo em Aberto em Minutos', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    demanda_tempo_de_trabalho = models.IntegerField(db_column='Demanda.Tempo de Trabalho', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    demanda_titulo = models.TextField(db_column='Demanda.Titulo', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    demanda_data_da_atualização = models.DateTimeField(db_column='Demanda.Data da Atualização', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    demanda_status = models.TextField(db_column='Demanda.Status', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    demanda_forma_de_recebimento = models.TextField(db_column='Demanda.Forma de Recebimento', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    demanda_orgão_interessado = models.TextField(db_column='Demanda.Orgão Interessado', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    demanda_resultado_do_atendimento = models.TextField(db_column='Demanda.Resultado do Atendimento', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+
+class PrismaAssunto(models.Model):
+    assunto_iddemanda = models.ForeignKey('PrismaDemanda', db_column='Assunto.IdDemanda', on_delete=models.DO_NOTHING)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    assunto_nome = models.TextField(db_column='Assunto.Nome', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+
+class PrismaCategoria(models.Model):
+    iddemanda = models.ForeignKey('PrismaDemanda', db_column='IdDemanda', on_delete=models.DO_NOTHING)
+    macrotema = models.TextField(db_column='Macrotema', blank=True, null=True)  # Field name made lowercase.
+    tema = models.TextField(db_column='Tema', blank=True, null=True)  # Field name made lowercase.
+    subtema = models.TextField(db_column='Subtema', blank=True, null=True)  # Field name made lowercase.
+    categoria_posicionamento = models.TextField(db_column='Categoria.Posicionamento', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    categoria_tema_proposição = models.TextField(db_column='Categoria.Tema Proposição', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+
+class PortalComentario(models.Model):
+    id = models.CharField(primary_key=True, max_length=500)
+    usuario_id = models.CharField(max_length=100)
+    data = models.DateTimeField()
+    comentario = models.TextField(blank=True, null=True)
+    sistema = models.CharField(max_length=100, blank=True, null=True)
+    url = models.CharField(max_length=100, blank=True, null=True)
+    situacao = models.CharField(max_length=100, blank=True, null=True)
+    usuario_nome = models.CharField(max_length=100, blank=True, null=True)
+
+class PortalComentarioPosicionamento(models.Model):
+    id_comentario = models.ForeignKey('PortalComentario', db_column='id_comentario', on_delete=models.DO_NOTHING)
+    usuario_id = models.CharField(max_length=100)
+    usuario_nome = models.CharField(max_length=500)
+    data = models.DateTimeField()
+    favor = models.SmallIntegerField()
+
+    class Meta:
+        unique_together = (('id_comentario', 'usuario_id'),)

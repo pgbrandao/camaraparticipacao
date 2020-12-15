@@ -23,7 +23,7 @@ TENACITY_ARGUMENTS_FAST = {
     'wait': tenacity.wait_exponential(multiplier=30),
     'before_sleep': tenacity.before_sleep_log(logger, logging.ERROR, exc_info=True)
 }
-def batch_qs(qs, batch_size=1000):
+def batch_qs(qs, batch_size=50000):
     """
     Returns a (start, end, total, queryset) tuple for each batch in the given
     queryset. Useful when memory is an issue. Picked from djangosnippets.

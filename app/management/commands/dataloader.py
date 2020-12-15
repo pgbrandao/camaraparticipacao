@@ -14,6 +14,16 @@ class Command(BaseCommand):
             help='Syncs all data'
         )
         parser.add_argument(
+            '--comentarios-portal',
+            action='store_true',
+            help='Syncs comentarios portal'
+        )
+        parser.add_argument(
+            '--prisma',
+            action='store_true',
+            help='Syncs prisma'
+        )
+        parser.add_argument(
             '--enquetes',
             action='store_true',
             help='Syncs enquetes'
@@ -53,6 +63,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         if  not any([
             options['all'],
+            options['comentarios_portal'],
+            options['prisma'],
             options['enquetes'],
             options['dados_abertos'],
             options['analytics_fichas'],
@@ -67,6 +79,10 @@ class Command(BaseCommand):
         else:
             initial_date = None
         
+        if options['all'] or options['comentarios_portal']:
+            dataloader.load_comentarios_portal()
+        if options['all'] or options['prisma']:
+            dataloader.load_prisma()
         if options['all'] or options['enquetes']:
             dataloader.load_enquetes()
         if options['all'] or options['dados_abertos']:
