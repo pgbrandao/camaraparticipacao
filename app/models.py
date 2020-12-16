@@ -201,7 +201,7 @@ class ProposicaoAggregated(models.Model):
 
 class PrismaDemandante(models.Model):
     iddemandante = models.AutoField(db_column='IdDemandante', primary_key=True)
-    demandante_data_cadastro = models.DateTimeField(db_column='Demandante.Data Cadastro')  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    demandante_data_cadastro = models.DateTimeField(db_column='Demandante.Data Cadastro', null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
     demandante_grau_de_instrução = models.TextField(db_column='Demandante.Grau de Instrução', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
     demandante_sexo = models.TextField(db_column='Demandante.Sexo', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
     demandante_categoria = models.TextField(db_column='Demandante.Categoria', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
