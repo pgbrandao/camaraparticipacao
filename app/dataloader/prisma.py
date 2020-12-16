@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.db import connections, transaction, IntegrityError
+from django.db import connections, transaction, models, IntegrityError
 
 import tenacity
 
@@ -19,7 +19,6 @@ def load_prisma():
             ('vwCategoria', get_model('PrismaCategoria')),
             ('vwDemanda', get_model('PrismaDemanda')),
             ('vwDemandante', get_model('PrismaDemandante')),
-            ('vwMensagem', get_model('PrismaMensagem')),
         )
 
         for source_table_name, model in model_mappings:
@@ -33,10 +32,25 @@ def load_prisma():
             # TODO: Find a better way to do this.
             model._meta.db_table = source_table_name
 
-            for _, _, _, qs in batch_qs(model.objects.using('prisma')):
+            field_list = []
+            for field in model._meta.fields:
+                if field.name == 'local_id':
+                    pass
+                elif isinstance(field, models.ForeignKey):
+                    field_list.append('{}_id'.format(field.name))
+                else:
+                    field_list.append(field.name)
+
+            import pdb;pdb.set_trace()
+            model_qs = model.objects.using('prisma')
+            if (model._meta.pk.name == 'local_id'):
+                fk_field = [field for field in model._meta.fields if isinstance(field, models.ForeignKey)][0]
+                model_qs = model_qs.order_by(fk_field.name)
+
+            for _, _, _, qs in batch_qs(model_qs):
                 instance_list = []
 
-                for instance_values in qs.values():
+                for instance_values in qs.values(*field_list):
                     instance_list.append(
                         model(**instance_values)
                     )

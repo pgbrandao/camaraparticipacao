@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.db import connections, transaction, IntegrityError
+from django.db import connections, models, transaction, IntegrityError
 
 import tenacity
 
@@ -30,10 +30,19 @@ def load_comentarios_portal():
             # TODO: Find a better way to do this.
             model._meta.db_table = source_table_name
 
+            field_list = []
+            for field in model._meta.fields:
+                if field.name == 'local_id':
+                    pass
+                elif isinstance(field, models.ForeignKey):
+                    field_list.append('{}_id'.format(field.name))
+                else:
+                    field_list.append(field.name)
+
             for _, _, _, qs in batch_qs(model.objects.using('comentarios_portal')):
                 instance_list = []
 
-                for instance_values in qs.values():
+                for instance_values in qs.values(*field_list):
                     instance_list.append(
                         model(**instance_values)
                     )

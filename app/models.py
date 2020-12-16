@@ -231,10 +231,12 @@ class PrismaDemanda(models.Model):
     demanda_resultado_do_atendimento = models.TextField(db_column='Demanda.Resultado do Atendimento', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
 
 class PrismaAssunto(models.Model):
+    local_id = models.AutoField(primary_key=True) # This is not in the original model, but Django requires it
     assunto_iddemanda = models.ForeignKey('PrismaDemanda', db_column='Assunto.IdDemanda', on_delete=models.DO_NOTHING)  # Field name made lowercase. Field renamed to remove unsuitable characters.
     assunto_nome = models.TextField(db_column='Assunto.Nome', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
 
 class PrismaCategoria(models.Model):
+    local_id = models.AutoField(primary_key=True) # This is not in the original model, but Django requires it
     iddemanda = models.ForeignKey('PrismaDemanda', db_column='IdDemanda', on_delete=models.DO_NOTHING)
     macrotema = models.TextField(db_column='Macrotema', blank=True, null=True)  # Field name made lowercase.
     tema = models.TextField(db_column='Tema', blank=True, null=True)  # Field name made lowercase.
@@ -253,6 +255,7 @@ class PortalComentario(models.Model):
     usuario_nome = models.CharField(max_length=100, blank=True, null=True)
 
 class PortalComentarioPosicionamento(models.Model):
+    local_id = models.AutoField(primary_key=True) # This is not in the original model, but Django requires it
     id_comentario = models.ForeignKey('PortalComentario', db_column='id_comentario', on_delete=models.DO_NOTHING)
     usuario_id = models.CharField(max_length=100)
     usuario_nome = models.CharField(max_length=500)
