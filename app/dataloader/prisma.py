@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.db import connections, transaction, models, IntegrityError
+from django.db import connections, models, transaction, IntegrityError
 
 import tenacity
 
@@ -32,6 +32,7 @@ def load_prisma():
             # TODO: Find a better way to do this.
             model._meta.db_table = source_table_name
 
+            # Remove local_id from queries to the source table
             field_list = []
             for field in model._meta.fields:
                 if field.name == 'local_id':
@@ -41,7 +42,8 @@ def load_prisma():
                 else:
                     field_list.append(field.name)
 
-            import pdb;pdb.set_trace()
+            # In models which would be ordered by local_id,
+            # change ordering to another foreign key
             model_qs = model.objects.using('prisma')
             if (model._meta.pk.name == 'local_id'):
                 fk_field = [field for field in model._meta.fields if isinstance(field, models.ForeignKey)][0]
