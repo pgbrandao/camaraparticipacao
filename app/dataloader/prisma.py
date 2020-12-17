@@ -29,8 +29,7 @@ def load_prisma():
 
             instance_list = []
 
-            # TODO: Find a better way to do this.
-            model._meta.db_table = source_table_name
+            rename_model_table(model, source_table_name)
 
             # Remove local_id from queries to the source table
             field_list = []
@@ -57,13 +56,11 @@ def load_prisma():
                         model(**instance_values)
                     )
 
-                # TODO: Find a better way to do this.
-                model._meta.db_table = target_table_name
+                rename_model_table(model, target_table_name)
                 model.objects.using('default').bulk_create(instance_list)
-                model._meta.db_table = source_table_name
+                rename_model_table(model, source_table_name)
 
-            # TODO: Find a better way to do this.
-            model._meta.db_table = target_table_name
+            rename_model_table(model, target_table_name)
 
             cursor.execute('ALTER TABLE public."%s" DISABLE TRIGGER ALL;' % (target_table_name,))
 

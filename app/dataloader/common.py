@@ -33,3 +33,13 @@ def batch_qs(qs, batch_size=50000):
     for start in range(0, total, batch_size):
         end = min(start + batch_size, total)
         yield (start, end, total, qs[start:end])
+
+def rename_model_table(model, table_name):
+    model._meta.db_table = table_name
+
+    # Invalidate columns (they also store the table name)
+    for field in model._meta.fields:
+        try:
+            del field.cached_col
+        except AttributeError:
+            pass
