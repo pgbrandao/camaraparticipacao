@@ -13,5 +13,7 @@ def dataloader_task():
     dataloader.load_proposicoes_temas()
     dataloader.load_analytics_fichas()
     dataloader.load_analytics_noticias()
-    dataloader.preprocess()
+    dataloader.preprocess_daily_summary()
+    dataloader.preprocess_proposicoes()
+    dataloader.preprocess_noticias()
     dataloader.db_dump()

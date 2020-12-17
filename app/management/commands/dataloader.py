@@ -96,6 +96,8 @@ class Command(BaseCommand):
         if options['all'] or options['analytics_noticias']:
             dataloader.load_analytics_noticias(initial_date=initial_date)
         if options['all'] or options['preprocess']:
-            dataloader.preprocess()
+            dataloader.preprocess_daily_summary()
+            dataloader.preprocess_noticias()
+            dataloader.preprocess_proposicoes()
         if options['all'] or options['db_dump']:
             dataloader.db_dump()

@@ -175,15 +175,20 @@ class Noticia(models.Model):
     def pageviews(self):
         return self.noticiapageviews_set.all().aggregate(Sum('pageviews'))['pageviews__sum']
 
-class NoticiaPageviews(models.Model):
-    noticia = models.ForeignKey('Noticia', on_delete=models.CASCADE)
-    date = models.DateField()
-    pageviews = models.IntegerField()
 
-class ProposicaoFichaPageviews(models.Model):
-    proposicao = models.ForeignKey('Proposicao', on_delete=models.CASCADE)
-    date = models.DateField()
-    pageviews = models.IntegerField()
+class DailySummary(models.Model):
+    date = models.DateField(db_index=True, unique=True)
+    atendimentos_telefone = models.IntegerField(default=0)
+    atendimentos_autosservico = models.IntegerField(default=0)
+
+class NoticiaAggregated(models.Model):
+    noticia = models.ForeignKey('Noticia', on_delete=models.CASCADE)
+    date = models.DateField(db_index=True)
+    pageviews = models.IntegerField(default=0)
+    portal_comments = models.IntegerField(default=0)
+    portal_comments_unchecked = models.IntegerField(default=0)
+    portal_comments_authorized = models.IntegerField(default=0)
+    portal_comments_unauthorized = models.IntegerField(default=0)
 
 class ProposicaoAggregated(models.Model):
     proposicao = models.ForeignKey('Proposicao', on_delete=models.CASCADE)
@@ -196,6 +201,26 @@ class ProposicaoAggregated(models.Model):
     poll_comments_checked = models.IntegerField(default=0)
     poll_comments_authorized = models.IntegerField(default=0)
     poll_comments_unauthorized = models.IntegerField(default=0)
+    class Meta:
+        unique_together = ('proposicao', 'date')
+
+class NoticiaPageviews(models.Model):
+    '''
+    PRIVATE: This model is for data loader internal use only.
+    '''
+    noticia = models.ForeignKey('Noticia', on_delete=models.CASCADE)
+    date = models.DateField(db_index=True)
+    pageviews = models.IntegerField(default=0)
+    class Meta:
+        unique_together = ('noticia', 'date')
+
+class ProposicaoFichaPageviews(models.Model):
+    '''
+    PRIVATE: This model is for data loader internal use only.
+    '''
+    proposicao = models.ForeignKey('Proposicao', on_delete=models.CASCADE)
+    date = models.DateField(db_index=True)
+    pageviews = models.IntegerField()
     class Meta:
         unique_together = ('proposicao', 'date')
 
