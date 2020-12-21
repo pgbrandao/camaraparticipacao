@@ -17,8 +17,8 @@
 <div id="app">
 <div class="container-fluid mt--7 bg-secondary">
 
-    <div class="row" id="app">
-        <div class="col-xl-12">
+    <div class="row">
+        <div class="col-xl-6 col-lg-12">
             <div class="card shadow card-stats mb-4 mb-xl-0 fade-in-top">
                 <div class="card-body ">
                     <form method="GET" action=".">
@@ -27,7 +27,20 @@
                             <div class="col">
                                 <div class="form-group">
                                     <label for="month_year">Período</label>
-                                    <select class="form-control" name="year">
+                                    <div class="custom-control custom-radio custom-control-inline">
+                                        <input type="radio" id="month" name="period_type" value="month" class="custom-control-input" v-model="period_type">
+                                        <label for="month" class="custom-control-label">Mensal</label>
+                                    </div>
+                                    <div class="custom-control custom-radio custom-control-inline">
+                                        <input type="radio" id="year" name="period_type" value="year" class="custom-control-input" v-model="period_type">
+                                        <label for="year" class="custom-control-label">Anual</label>    
+                                    </div>
+                                    <select class="form-control" name="month_year" v-show="period_type == 'month'">
+                                        {% for value, text in month_year_choices %}
+                                            <option value="{{ value }}" {% if month_year == value %}selected{% endif %}>{{ text }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <select class="form-control" name="year" v-show="period_type == 'year'">
                                         {% for value, text in year_choices %}
                                             <option value="{{ value }}" {% if year == value %}selected{% endif %}>{{ text }}</option>
                                         {% endfor %}
@@ -50,7 +63,13 @@
 
     {% if stats %}
     <div class="row">
-
+        <div class="col-xl-12">
+            {% if period_type == "year" %}
+                Dados para o ano de {{ year }}
+            {% elif period_type == "month" %}
+                Dados para o mês {{ month }}/{{ year }}
+            {% endif %}
+        </div>
         <div class="col-xl-3 col-lg-6">
             <div class="card shadow card-stats">
                 <div class="card-body ">
@@ -163,7 +182,7 @@
                         </div>
                         <div class="col-auto">
                             <div class="icon icon-shape bg-primary text-white rounded-circle shadow">
-                                <i class="fas fa-newspaper"></i>
+                                <i class="fas fa-bullhorn"></i>
                             </div>
                         </div>
                     </div>
@@ -240,13 +259,16 @@
         el: '#app',
         vuetify: new Vuetify(),
         data: {
-            top_polls: {{ stats.top_polls|safe }},
+            period_type: '{{ period_type|escapejs }}',
+            {% if stats %}
+                top_polls: {{ stats.top_polls|safe }},
+                top_news: {{ stats.top_news|safe }},
+            {% endif %}
             top_polls_headers: [
                 { text: 'Proposição', align: 'start', sortable: false, value: 'proposicao_nome_processado', },
                 { text: 'Votos', value: 'poll_votes_count' },
                 { text: 'Comentários', value: 'poll_comments_count' },
             ],
-            top_news: {{ stats.top_news|safe }},
             top_news_headers: [
                 { text: 'Notícia', align: 'start', sortable: false, value: 'title', },
                 { text: 'Comentários', value: 'comments' },

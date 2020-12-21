@@ -45,13 +45,14 @@ def api_top_noticias(request):
         }
         requires_grouping = True
 
-    qs = NoticiaPageviews.objects.filter(**filter_params).values('noticia__titulo', 'noticia__link', 'noticia__tipo_conteudo', 'pageviews')
+    qs = NoticiaAggregated.objects.filter(**filter_params).values('noticia__titulo', 'noticia__link', 'noticia__tipo_conteudo', 'pageviews', 'portal_comments')
     df = pd.DataFrame(qs)
 
     if requires_grouping:
         df = df.groupby(['noticia__titulo', 'noticia__link', 'noticia__tipo_conteudo']) \
             .agg({
                 'pageviews': 'sum',
+                'portal_comments': 'sum',
             }) \
             .reset_index()
 
@@ -64,6 +65,7 @@ def api_top_noticias(request):
             'titulo': row['noticia__titulo'],
             'link': row['noticia__link'],
             'pageviews': row['pageviews'],
+            'portal_comments': row['portal_comments'],
             'tipo_conteudo': row['noticia__tipo_conteudo']
         } for _, row in df.iterrows()]
     })
@@ -183,11 +185,28 @@ def raiox(request):
     return render(request, 'pages/raiox.html', locals())
 
 
+def date_filter_generator(year=None, month=None, day=None):
+    def date_filter(field):
+        filter_params = {}
+        if year:
+            filter_params['{}__year'.format(field)] = year
+        if month:
+            filter_params['{}__month'.format(field)] = month
+        if day:
+            filter_params['{}__day'.format(field)] = day
+        return filter_params
+    return date_filter
+
 def relatorio_consolidado(request):
-    try:
-        year = int(request.GET.get('year'))
-    except TypeError:
-        year = None
+    year = request.GET.get('year')
+    month_year = request.GET.get('month_year')
+    period_type = request.GET.get('period_type') or 'year'
+
+    month_year_choices = [
+        (x.strftime('%m-%Y'), x.strftime('%B-%Y'))
+        for x in pd.date_range('2019-01-01', datetime.date.today(), freq='MS').to_series()
+    ]
+    month_year_choices = month_year_choices[::-1]
 
     year_choices = [
         (x.strftime('%Y'), x.strftime('%Y'))
@@ -195,11 +214,25 @@ def relatorio_consolidado(request):
     ]
     year_choices = year_choices[::-1]
 
-    if year in range(2019, datetime.date.today().year+1):
+    if period_type == 'month' and month_year:
+        dt = datetime.datetime.strptime(month_year, '%m-%Y')
+
+        month = dt.month
+        year = dt.year
+
+        date_filter = date_filter_generator(month=month, year=year)
+
+    elif period_type == 'year' and year:
+        date_filter = date_filter_generator(year=year)
+    else:
+        date_filter = None
+
+
+    if date_filter:
         stats = {}
 
         qs = ProposicaoAggregated \
-            .objects.filter(date__year=year) \
+            .objects.filter(**date_filter('date')) \
             .aggregate(poll_votes=Sum('poll_votes'),
                    poll_comments=Sum('poll_comments'),
                    poll_comments_unchecked=Sum('poll_comments_unchecked'),
@@ -216,7 +249,7 @@ def relatorio_consolidado(request):
         })
 
         qs = NoticiaAggregated \
-            .objects.filter(date__year=year) \
+            .objects.filter(**date_filter('date')) \
             .aggregate(
                    portal_comments=Sum('portal_comments'),
                    portal_comments_unchecked=Sum('portal_comments_unchecked'),
@@ -232,7 +265,7 @@ def relatorio_consolidado(request):
         })
 
         qs = PrismaDemanda \
-            .objects.filter(demanda_data_criação__year=year) \
+            .objects.filter(**date_filter('demanda_data_criação')) \
             .aggregate(
                 Count('iddemanda')
             ) \
@@ -242,7 +275,7 @@ def relatorio_consolidado(request):
         })
 
         qs = PrismaDemanda \
-            .objects.filter(demanda_data_criação__year=year) \
+            .objects.filter(**date_filter('demanda_data_criação')) \
             .values('demanda_forma_de_recebimento') \
             .annotate(
                 Count('iddemanda')
@@ -255,7 +288,7 @@ def relatorio_consolidado(request):
 
 
         qs = ProposicaoAggregated.objects \
-            .filter(date__year=year) \
+            .filter(**date_filter('date')) \
             .values('proposicao__id') \
             .annotate(
                 poll_votes_count=Sum('poll_votes'),
@@ -275,7 +308,7 @@ def relatorio_consolidado(request):
         })
 
         qs = PortalComentario.objects \
-            .filter(data__year=year) \
+            .filter(**date_filter('data')) \
             .values('url__id') \
             .annotate(comments=Count('id')) \
             .values('url__link', 'url__titulo', 'comments') \
@@ -288,8 +321,6 @@ def relatorio_consolidado(request):
                 'comments': row['comments'],
             } for row in qs]
         })
-
-        print(stats)
 
 
 
