@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
                 ('sistema', models.CharField(blank=True, max_length=100, null=True)),
                 ('situacao', models.CharField(blank=True, max_length=100, null=True)),
                 ('usuario_nome', models.CharField(blank=True, max_length=100, null=True)),
-                ('url', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='app.Noticia')),
+                ('url', models.ForeignKey(db_column='url', blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='app.Noticia')),
             ],
         ),
     ]

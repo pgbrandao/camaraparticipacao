@@ -210,10 +210,10 @@
                 <div class="card-body">
                     <h2 class="card-title">Matérias mais comentadas</h2>
                     <template>
-                        <v-data-table :headers="top_noticias_headers" :items="top_noticias" :items-per-page="10">
-                            <template #item.proposicao_nome_processado="{ item }">
+                        <v-data-table :headers="top_news_headers" :items="top_news" :items-per-page="10">
+                            <template #item.title="{ item }">
                                 <a :href="item.link">
-                                    [[ item.proposicao_nome_processado ]]
+                                    [[ item.title ]]
                                 </a>
                             </template>
                         </v-data-table>

@@ -283,8 +283,8 @@ def relatorio_consolidado(request):
 
         stats.update({
             'top_news': [{
-                'title': row['url__titulo'],
-                'link': row['url__link'],
+                'title': row['url__titulo'] or '',
+                'link': row['url__link'] or '',
                 'comments': row['comments'],
             } for row in qs]
         })

@@ -275,7 +275,7 @@ class PortalComentario(models.Model):
     data = models.DateTimeField()
     comentario = models.TextField(blank=True, null=True)
     sistema = models.CharField(max_length=100, blank=True, null=True)
-    url = models.ForeignKey('Noticia', blank=True, null=True, on_delete=models.DO_NOTHING)
+    url = models.ForeignKey('Noticia', db_column='url', blank=True, null=True, on_delete=models.DO_NOTHING)
     situacao = models.CharField(max_length=100, blank=True, null=True)
     usuario_nome = models.CharField(max_length=100, blank=True, null=True)
 
