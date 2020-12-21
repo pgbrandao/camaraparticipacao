@@ -183,6 +183,119 @@ def raiox(request):
     return render(request, 'pages/raiox.html', locals())
 
 
+def relatorio_consolidado(request):
+    try:
+        year = int(request.GET.get('year'))
+    except TypeError:
+        year = None
+
+    year_choices = [
+        (x.strftime('%Y'), x.strftime('%Y'))
+        for x in pd.date_range('2019-01-01', datetime.date.today(), freq='YS').to_series()
+    ]
+    year_choices = year_choices[::-1]
+
+    if year in range(2019, datetime.date.today().year+1):
+        stats = {}
+
+        qs = ProposicaoAggregated \
+            .objects.filter(date__year=year) \
+            .aggregate(poll_votes=Sum('poll_votes'),
+                   poll_comments=Sum('poll_comments'),
+                   poll_comments_unchecked=Sum('poll_comments_unchecked'),
+                   poll_comments_authorized=Sum('poll_comments_authorized'),
+                   poll_comments_unauthorized=Sum('poll_comments_unauthorized'),
+                   )
+
+        stats.update({
+            'poll_votes': qs['poll_votes'],
+            'poll_comments': qs['poll_comments'],
+            'poll_comments_unchecked': qs['poll_comments_unchecked'],
+            'poll_comments_authorized': qs['poll_comments_authorized'],
+            'poll_comments_unauthorized': qs['poll_comments_unauthorized'],
+        })
+
+        qs = NoticiaAggregated \
+            .objects.filter(date__year=year) \
+            .aggregate(
+                   portal_comments=Sum('portal_comments'),
+                   portal_comments_unchecked=Sum('portal_comments_unchecked'),
+                   portal_comments_authorized=Sum('portal_comments_authorized'),
+                   portal_comments_unauthorized=Sum('portal_comments_unauthorized'),
+                   )
+
+        stats.update({
+            'portal_comments': qs['portal_comments'],
+            'portal_comments_unchecked': qs['portal_comments_unchecked'],
+            'portal_comments_authorized': qs['portal_comments_authorized'],
+            'portal_comments_unauthorized': qs['portal_comments_unauthorized'],
+        })
+
+        qs = PrismaDemanda \
+            .objects.filter(demanda_data_criação__year=year) \
+            .aggregate(
+                Count('iddemanda')
+            ) \
+
+        stats.update({
+            'prisma_tickets': qs['iddemanda__count'],
+        })
+
+        qs = PrismaDemanda \
+            .objects.filter(demanda_data_criação__year=year) \
+            .values('demanda_forma_de_recebimento') \
+            .annotate(
+                Count('iddemanda')
+            ) \
+            .order_by('-iddemanda__count')
+
+        stats.update({
+            'prisma_channels': [row for row in qs]
+        })
+
+
+        qs = ProposicaoAggregated.objects \
+            .filter(date__year=year) \
+            .values('proposicao__id') \
+            .annotate(
+                poll_votes_count=Sum('poll_votes'),
+                poll_comments_count=Sum('poll_comments')
+            ) \
+            .order_by('-poll_votes') \
+            .values('proposicao__id', 'proposicao__nome_processado', 'poll_votes_count', 'poll_comments_count') \
+            [:100]
+
+        stats.update({
+            'top_polls': [{
+                'proposicao_nome_processado': row['proposicao__nome_processado'],
+                'link': reverse('proposicao_detail', args=[row['proposicao__id']]),
+                'poll_votes_count': row['poll_votes_count'],
+                'poll_comments_count': row['poll_comments_count'],
+            } for row in qs]
+        })
+
+        qs = PortalComentario.objects \
+            .filter(data__year=year) \
+            .values('url__id') \
+            .annotate(comments=Count('id')) \
+            .values('url__link', 'url__titulo', 'comments') \
+            .order_by('-comments')
+
+        stats.update({
+            'top_news': [{
+                'title': row['url__titulo'],
+                'link': row['url__link'],
+                'comments': row['comments'],
+            } for row in qs]
+        })
+
+        print(stats)
+
+
+
+    return render(request, 'pages/relatorio_consolidado.html', locals())
+
+
 def enquetes_busca_data(request):
     date_min = None
     try:

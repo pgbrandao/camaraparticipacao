@@ -52,6 +52,6 @@ def load_comentarios_portal():
 
             rename_model_table(model, target_table_name)
 
-            cursor.execute('ALTER TABLE public."%s" DISABLE TRIGGER ALL;' % (target_table_name,))
+            cursor.execute('ALTER TABLE public."%s" ENABLE TRIGGER ALL;' % (target_table_name,))
 
             print('Loaded %s' % (target_table_name,))

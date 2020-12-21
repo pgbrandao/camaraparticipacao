@@ -17,10 +17,9 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
-if settings.BASE_PATH == '/':
-    prefix = ''
-else:
-    prefix = settings.BASE_PATH.lstrip('/')
+import re
+
+prefix = re.search(r'/(.*)', settings.BASE_PATH).group(1)
 
 urlpatterns = [
     path(prefix + 'admin/', admin.site.urls),
