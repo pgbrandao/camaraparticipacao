@@ -185,18 +185,6 @@ def raiox(request):
     return render(request, 'pages/raiox.html', locals())
 
 
-def date_filter_generator(year=None, month=None, day=None):
-    def date_filter(field):
-        filter_params = {}
-        if year:
-            filter_params['{}__year'.format(field)] = year
-        if month:
-            filter_params['{}__month'.format(field)] = month
-        if day:
-            filter_params['{}__day'.format(field)] = day
-        return filter_params
-    return date_filter
-
 def relatorio_consolidado(request):
     year = request.GET.get('year')
     month_year = request.GET.get('month_year')
@@ -214,31 +202,27 @@ def relatorio_consolidado(request):
     ]
     year_choices = year_choices[::-1]
 
+    initial_date = None
+    final_date = None
+
     if period_type == 'month' and month_year:
         dt = datetime.datetime.strptime(month_year, '%m-%Y')
+        _, num_days = calendar.monthrange(
+            int(dt.strftime('%Y')), int(dt.strftime('%m')))
 
-        month = dt.month
-        year = dt.year
-
-        date_filter = date_filter_generator(month=month, year=year)
+        initial_date = dt
+        final_date = dt.replace(day=num_days)
 
     elif period_type == 'year' and year:
-        date_filter = date_filter_generator(year=year)
-    else:
-        date_filter = None
+        initial_date = datetime.date(year=int(year), month=1, day=1)
+        final_date = datetime.date(year=int(year), month=12, day=31)
 
 
-    if date_filter:
+    if initial_date and final_date:
         stats = {}
 
-        qs = ProposicaoAggregated \
-            .objects.filter(**date_filter('date')) \
-            .aggregate(poll_votes=Sum('poll_votes'),
-                   poll_comments=Sum('poll_comments'),
-                   poll_comments_unchecked=Sum('poll_comments_unchecked'),
-                   poll_comments_authorized=Sum('poll_comments_authorized'),
-                   poll_comments_unauthorized=Sum('poll_comments_unauthorized'),
-                   )
+        # poll votes and comments
+        qs = ProposicaoAggregated.objects.get_aggregated(initial_date, final_date)
 
         stats.update({
             'poll_votes': qs['poll_votes'],
@@ -248,14 +232,8 @@ def relatorio_consolidado(request):
             'poll_comments_unauthorized': qs['poll_comments_unauthorized'],
         })
 
-        qs = NoticiaAggregated \
-            .objects.filter(**date_filter('date')) \
-            .aggregate(
-                   portal_comments=Sum('portal_comments'),
-                   portal_comments_unchecked=Sum('portal_comments_unchecked'),
-                   portal_comments_authorized=Sum('portal_comments_authorized'),
-                   portal_comments_unauthorized=Sum('portal_comments_unauthorized'),
-                   )
+        # portal comments
+        qs = NoticiaAggregated.objects.get_aggregated(initial_date, final_date)
 
         stats.update({
             'portal_comments': qs['portal_comments'],
@@ -264,55 +242,56 @@ def relatorio_consolidado(request):
             'portal_comments_unauthorized': qs['portal_comments_unauthorized'],
         })
 
-        qs = PrismaDemanda \
-            .objects.filter(**date_filter('demanda_data_criação')) \
-            .aggregate(
-                Count('iddemanda')
-            ) \
+        # prisma tickets
+        qs = PrismaDemanda.objects.get_count(initial_date, final_date)
 
         stats.update({
             'prisma_tickets': qs['iddemanda__count'],
         })
 
-        qs = PrismaDemanda \
-            .objects.filter(**date_filter('demanda_data_criação')) \
-            .values('demanda_forma_de_recebimento') \
-            .annotate(
-                Count('iddemanda')
-            ) \
-            .order_by('-iddemanda__count')
+        # prisma formas de recebimento
+        qs = PrismaDemanda.objects.get_forma_de_recebimento_counts(initial_date, final_date)
 
         stats.update({
-            'prisma_channels': [row for row in qs]
+            'prisma_formas_de_recebimento': [row for row in qs]
+        })
+
+        # prisma tipos
+        qs = PrismaDemanda.objects.get_tipo_counts(initial_date, final_date)
+
+        stats.update({
+            'prisma_tipos': [row for row in qs]
         })
 
 
-        qs = ProposicaoAggregated.objects \
-            .filter(**date_filter('date')) \
-            .values('proposicao__id') \
-            .annotate(
-                poll_votes_count=Sum('poll_votes'),
-                poll_comments_count=Sum('poll_comments')
-            ) \
-            .order_by('-poll_votes') \
-            .values('proposicao__id', 'proposicao__nome_processado', 'poll_votes_count', 'poll_comments_count') \
-            [:100]
+        # prisma categorias
+        prisma_categorias = PrismaDemanda.objects.get_categoria_counts(initial_date, final_date)
+
+        stats.update({
+            'top_prisma_categorias': [row for row in prisma_categorias]
+        })
+
+        # prisma proposições
+        qs = PrismaDemanda.objects.get_proposicao_counts(initial_date, final_date)
+
+        stats.update({
+            'top_prisma_proposicoes': [row for row in qs]
+        })
+
+        # top polls
+        qs = ProposicaoAggregated.objects.top_polls(initial_date, final_date)[:500]
 
         stats.update({
             'top_polls': [{
                 'proposicao_nome_processado': row['proposicao__nome_processado'],
                 'link': reverse('proposicao_detail', args=[row['proposicao__id']]),
-                'poll_votes_count': row['poll_votes_count'],
-                'poll_comments_count': row['poll_comments_count'],
+                'poll_votes': row['poll_votes'],
+                'poll_comments': row['poll_comments'],
             } for row in qs]
         })
 
-        qs = PortalComentario.objects \
-            .filter(**date_filter('data')) \
-            .values('url__id') \
-            .annotate(comments=Count('id')) \
-            .values('url__link', 'url__titulo', 'comments') \
-            .order_by('-comments')
+        # top news
+        qs = PortalComentario.objects.get_top_news(initial_date, final_date)[:500]
 
         stats.update({
             'top_news': [{

@@ -33,8 +33,7 @@ def summary_plot(group_by, proposicao=None):
             )
         qs3 = DailySummary.objects.values('date') \
             .annotate(
-                atendimentos_telefone_total=Sum('atendimentos_telefone'),
-                atendimentos_autosservico_total=Sum('atendimentos_autosservico'),
+                atendimentos_total=Sum('atendimentos'),
             )
         df = pd.DataFrame(qs1).merge(pd.DataFrame(qs2), how='outer').merge(pd.DataFrame(qs3), how='outer')
     else:
@@ -59,8 +58,7 @@ def summary_plot(group_by, proposicao=None):
                 'poll_comments_authorized_total': 'sum',
                 'portal_comments_unchecked_total': 'sum',
                 'portal_comments_authorized_total': 'sum',
-                'atendimentos_telefone_total': 'sum',
-                'atendimentos_autosservico_total': 'sum',
+                'atendimentos_total': 'sum',
                 'noticia_pageviews_total': 'sum'
             }) \
             .reset_index()
@@ -82,8 +80,7 @@ def summary_plot(group_by, proposicao=None):
                 'poll_comments_authorized_total': 'sum',
                 'portal_comments_unchecked_total': 'sum',
                 'portal_comments_authorized_total': 'sum',
-                'atendimentos_telefone_total': 'sum',
-                'atendimentos_autosservico_total': 'sum',
+                'atendimentos_total': 'sum',
                 'noticia_pageviews_total': 'sum'
             }) \
             .reset_index()
@@ -148,35 +145,29 @@ def summary_plot(group_by, proposicao=None):
             customdata=df.api_params,
             name='Comentários não moderados nas notícias',
             )
-        atendimentos_telefone_trace = go.Bar(
+        atendimentos_trace = go.Bar(
             x=df.date,
-            y=df.atendimentos_telefone_total,
+            y=df.atendimentos_total,
             customdata=df.api_params,
-            name='Atendimentos (telefone)',
-            )
-        atendimentos_autosservico_trace = go.Bar(
-            x=df.date,
-            y=df.atendimentos_telefone_total,
-            customdata=df.api_params,
-            name='Atendimentos (autosserviço)',
+            name='Atendimentos no Prisma',
             )
 
 
     if not proposicao:
         fig = plotly.tools.make_subplots(
-            rows=6,
+            rows=5,
             cols=1,
             shared_xaxes=True,
-            subplot_titles=["Visualizações (fichas de tramitação)", "Votos nas enquetes", "Comentários nas enquetes", "Visualizações (notícias)", "Comentários nas notícias", "Atendimentos no Prisma"],
+            subplot_titles=["Visualizações (fichas de tramitação)", "Enquetes", "Visualizações (notícias)", "Comentários nas notícias", "Atendimentos no Prisma"],
             x_title='Data',
             vertical_spacing=0.05
         )
     else:
         fig = plotly.tools.make_subplots(
-            rows=4,
+            rows=3,
             cols=1,
             shared_xaxes=True,
-            subplot_titles=["Visualizações (fichas de tramitação)", "Votos nas enquetes", "Comentários nas enquetes", "Visualizações (notícias)"],
+            subplot_titles=["Visualizações (fichas de tramitação)", "Enquetes", "Visualizações (notícias)"],
             x_title='Data',
             vertical_spacing=0.05 if not proposicao else 0.07
         )
@@ -209,7 +200,7 @@ def summary_plot(group_by, proposicao=None):
             'b': 50,
             't': 50,
         },
-        height=800 if not proposicao else 500,
+        height=700 if not proposicao else 500,
         hoverlabel=dict(
             namelength=-1,
         ),
@@ -218,17 +209,16 @@ def summary_plot(group_by, proposicao=None):
     )
     fig.append_trace(ficha_pageviews_trace, 1, 1)
     fig.append_trace(poll_votes_trace, 2, 1)
-    fig.append_trace(poll_comments_authorized_trace, 3, 1)
-    fig.append_trace(poll_comments_unchecked_trace, 3, 1)
-    fig.append_trace(noticia_pageviews_trace, 4, 1)
+    fig.append_trace(poll_comments_authorized_trace, 2, 1)
+    fig.append_trace(poll_comments_unchecked_trace, 2, 1)
+    fig.append_trace(noticia_pageviews_trace, 3, 1)
     if not proposicao:
-        fig.append_trace(portal_comments_authorized_trace, 5, 1)
-        fig.append_trace(portal_comments_unchecked_trace, 5, 1)
-        fig.append_trace(atendimentos_telefone_trace, 6, 1)
-        fig.append_trace(atendimentos_autosservico_trace, 6, 1)
-        fig.update_traces(xaxis='x6')
+        fig.append_trace(portal_comments_authorized_trace, 4, 1)
+        fig.append_trace(portal_comments_unchecked_trace, 4, 1)
+        fig.append_trace(atendimentos_trace, 5, 1)
+        fig.update_traces(xaxis='x5')
     else:
-        fig.update_traces(xaxis='x4')
+        fig.update_traces(xaxis='x3')
 
     post_script = """
         document.getElementById('{plot_id}').on('plotly_click', function(data){

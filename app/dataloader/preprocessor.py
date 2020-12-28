@@ -190,14 +190,12 @@ def preprocess_daily_summary():
         for date in daterange:
 
             aggregated_dict = defaultdict(lambda:{
-                'atendimentos_telefone': 0, 
-                'atendimentos_autosservico': 0
+                'atendimentos': 0, 
             })
 
             # Demandas (Prisma)
             demanda_canal_mappings = [
-                ({'demanda_canal': 'Telefone'}, 'atendimentos_telefone'),
-                ({'demanda_canal': 'Autosserviço'}, 'atendimentos_autosservico'),
+                ({}, 'atendimentos'),
             ]
 
             for filter_args, target_field in demanda_canal_mappings:
@@ -214,8 +212,7 @@ def preprocess_daily_summary():
 
             daily_summary = get_model('DailySummary')(
                 date=date,
-                atendimentos_telefone=aggregated_dict['atendimentos_telefone'],
-                atendimentos_autosservico=aggregated_dict['atendimentos_autosservico'],
+                atendimentos=aggregated_dict['atendimentos'],
             )
             get_model('DailySummary').objects.bulk_create([daily_summary])
 

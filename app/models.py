@@ -1,7 +1,7 @@
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
-from django.db.models import Sum
+from django.db.models import Count, Sum, Q
 
 import datetime
 
@@ -178,8 +178,20 @@ class Noticia(models.Model):
 
 class DailySummary(models.Model):
     date = models.DateField(db_index=True, unique=True)
-    atendimentos_telefone = models.IntegerField(default=0)
-    atendimentos_autosservico = models.IntegerField(default=0)
+    atendimentos = models.IntegerField(default=0)
+
+class NoticiaAggregatedManager(models.Manager):
+    def get_aggregated(self, initial_date, final_date):
+        return super().get_queryset() \
+            .filter(date__gte=initial_date, date__lte=final_date) \
+            .aggregate(
+                    pageviews=Sum('pageviews'),
+                    portal_comments=Sum('portal_comments'),
+                    portal_comments_unchecked=Sum('portal_comments_unchecked'),
+                    portal_comments_authorized=Sum('portal_comments_authorized'),
+                    portal_comments_unauthorized=Sum('portal_comments_unauthorized'),
+                   )
+
 
 class NoticiaAggregated(models.Model):
     noticia = models.ForeignKey('Noticia', on_delete=models.CASCADE)
@@ -189,6 +201,41 @@ class NoticiaAggregated(models.Model):
     portal_comments_unchecked = models.IntegerField(default=0)
     portal_comments_authorized = models.IntegerField(default=0)
     portal_comments_unauthorized = models.IntegerField(default=0)
+
+    objects = NoticiaAggregatedManager()
+
+class ProposicaoAggregatedManager(models.Manager):
+    def get_aggregated(self, initial_date, final_date):
+        return self.get_queryset() \
+            .filter(date__gte=initial_date, date__lte=final_date) \
+            .aggregate(
+                    ficha_pageviews=Sum('ficha_pageviews'),
+                    noticia_pageviews=Sum('noticia_pageviews'),
+                    poll_votes=Sum('poll_votes'),
+                    poll_comments=Sum('poll_comments'),
+                    poll_comments_checked=Sum('poll_comments_checked'),
+                    poll_comments_unchecked=Sum('poll_comments_unchecked'),
+                    poll_comments_authorized=Sum('poll_comments_authorized'),
+                    poll_comments_unauthorized=Sum('poll_comments_unauthorized'),
+                   )
+
+    def top_polls(self, initial_date, final_date):
+        return self.get_queryset() \
+            .filter(date__gte=initial_date, date__lte=final_date) \
+            .values('proposicao__id') \
+            .annotate(
+                    poll_votes=Sum('poll_votes'),
+                    poll_comments=Sum('poll_comments'),
+                    poll_comments_checked=Sum('poll_comments_checked'),
+                    poll_comments_unchecked=Sum('poll_comments_unchecked'),
+                    poll_comments_authorized=Sum('poll_comments_authorized'),
+                    poll_comments_unauthorized=Sum('poll_comments_unauthorized'),
+            ) \
+            .order_by('-poll_votes') \
+            .values('proposicao__id', 'proposicao__nome_processado', 'poll_votes', 'poll_comments', 'poll_comments_checked', 'poll_comments_unchecked', 'poll_comments_authorized', 'poll_comments_unauthorized')
+
+
+
 
 class ProposicaoAggregated(models.Model):
     proposicao = models.ForeignKey('Proposicao', on_delete=models.CASCADE)
@@ -201,6 +248,9 @@ class ProposicaoAggregated(models.Model):
     poll_comments_checked = models.IntegerField(default=0)
     poll_comments_authorized = models.IntegerField(default=0)
     poll_comments_unauthorized = models.IntegerField(default=0)
+
+    objects = ProposicaoAggregatedManager()
+
     class Meta:
         unique_together = ('proposicao', 'date')
 
@@ -233,6 +283,66 @@ class PrismaDemandante(models.Model):
     demandante_data_de_nascimento = models.DateField(db_column='Demandante.Data de Nascimento', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
     demandante_profissão_externa = models.TextField(db_column='Demandante.Profissão Externa', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
 
+class PrismaDemandaManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset() \
+            .filter(iddemandante__demandante_categoria__startswith='Externo') \
+            .filter(~Q(demanda_tipo__startswith='Fora do escopo') & ~Q(demanda_tipo__startswith='Denúncia')) \
+            .filter(demanda_fila__startswith='CCI')
+
+    def get_count(self, initial_date, final_date):
+        return self.get_queryset() \
+            .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lte=final_date) \
+            .aggregate(
+                Count('iddemanda')
+            )
+
+    def get_forma_de_recebimento_counts(self, initial_date, final_date):
+        return self.get_queryset() \
+            .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lte=final_date) \
+            .values('demanda_forma_de_recebimento') \
+            .annotate(
+                Count('iddemanda')
+            ) \
+            .order_by('-iddemanda__count')
+
+    def get_tipo_counts(self, initial_date, final_date):
+        return self.get_queryset() \
+            .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lte=final_date) \
+            .values('demanda_tipo') \
+            .annotate(
+                Count('iddemanda')
+            ) \
+            .order_by('-iddemanda__count')
+    
+    def get_proposicao_counts(self,initial_date,final_date):
+        qs = self.get_queryset() \
+            .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lte=final_date) \
+            .filter(prismacategoria__categoria_tema_proposição__isnull=False) \
+            .values('prismacategoria__categoria_tema_proposição') \
+            .annotate(
+                Count('iddemanda')
+            ) \
+            .order_by('-iddemanda__count')
+
+        return qs
+
+    def get_categoria_counts(self,initial_date,final_date):
+        qs = self.get_queryset() \
+            .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lte=final_date) \
+            .values('prismacategoria__macrotema', 'prismacategoria__tema', 'prismacategoria__subtema')
+        df = pd.DataFrame(qs)
+        return df \
+            .fillna('') \
+            .groupby(['prismacategoria__macrotema', 'prismacategoria__tema', 'prismacategoria__subtema']) \
+            .size() \
+            .to_frame('count') \
+            .reset_index() \
+            .sort_values('count', ascending=False) \
+            .to_dict('records')
+
+
+
 class PrismaDemanda(models.Model):
     iddemanda = models.AutoField(db_column='IdDemanda', primary_key=True)
     iddemandante = models.ForeignKey('PrismaDemandante', db_column='IdDemandante', on_delete=models.DO_NOTHING, null=True)
@@ -255,6 +365,8 @@ class PrismaDemanda(models.Model):
     demanda_orgão_interessado = models.TextField(db_column='Demanda.Orgão Interessado', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
     demanda_resultado_do_atendimento = models.TextField(db_column='Demanda.Resultado do Atendimento', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
 
+    objects = PrismaDemandaManager()
+
 class PrismaAssunto(models.Model):
     local_id = models.AutoField(primary_key=True) # This is not in the original model, but Django requires it
     assunto_iddemanda = models.ForeignKey('PrismaDemanda', db_column='Assunto.IdDemanda', on_delete=models.DO_NOTHING)  # Field name made lowercase. Field renamed to remove unsuitable characters.
@@ -269,6 +381,16 @@ class PrismaCategoria(models.Model):
     categoria_posicionamento = models.TextField(db_column='Categoria.Posicionamento', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
     categoria_tema_proposição = models.TextField(db_column='Categoria.Tema Proposição', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
 
+class PortalComentarioManager(models.Manager):
+    def get_top_news(self,initial_date,final_date):
+        return self.get_queryset() \
+            .filter(data__gte=initial_date, data__lte=final_date) \
+            .values('url__id') \
+            .annotate(comments=Count('id')) \
+            .values('url__link', 'url__titulo', 'comments') \
+            .order_by('-comments')
+
+
 class PortalComentario(models.Model):
     id = models.CharField(primary_key=True, max_length=500)
     usuario_id = models.CharField(max_length=100)
@@ -278,6 +400,8 @@ class PortalComentario(models.Model):
     url = models.ForeignKey('Noticia', db_column='url', blank=True, null=True, on_delete=models.DO_NOTHING)
     situacao = models.CharField(max_length=100, blank=True, null=True)
     usuario_nome = models.CharField(max_length=100, blank=True, null=True)
+
+    objects = PortalComentarioManager()
 
 class PortalComentarioPosicionamento(models.Model):
     local_id = models.AutoField(primary_key=True) # This is not in the original model, but Django requires it
