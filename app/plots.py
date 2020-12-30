@@ -12,10 +12,12 @@ import datetime
 from .models import *
 
 
-def summary_plot(group_by, proposicao=None):
+def summary_plot(group_by, height, proposicao=None, initial_date=None, final_date=None, subplots='all', show_legend=False):
     """
     group_by: 'day', 'month' or 'year'
     proposicao: Proposicao object or None
+    initial_date and final_date: if both are set, plot will be restricted to showing that period's data
+    subplots: 'all' for all available subplots, or list with one or more of: ('ficha', 'enquete', 'noticia', 'prisma')
     """
     if not proposicao:
         qs1 = ProposicaoAggregated.objects.values('date') \
@@ -49,8 +51,16 @@ def summary_plot(group_by, proposicao=None):
         df = pd.DataFrame(qs)
 
     df['date'] = pd.to_datetime(df['date'])
+
+    # Group data when showing by year or month
+    freq = None
     if group_by == 'year':
-        df = df.groupby(pd.Grouper(key='date', freq='Y')) \
+        freq = 'Y'
+    elif group_by == 'month':
+        freq = 'M'
+
+    if freq:
+        df = df.groupby(pd.Grouper(key='date', freq=freq)) \
             .agg({
                 'ficha_pageviews_total': 'sum',
                 'poll_votes_total': 'sum',
@@ -62,7 +72,9 @@ def summary_plot(group_by, proposicao=None):
                 'noticia_pageviews_total': 'sum'
             }) \
             .reset_index()
-        
+    
+    # Set api_params (this can be moved to the client-side in the future)
+    if group_by == 'year':
         df['api_params'] = df.apply(lambda x:
             'initial_date={}&final_date={}'.format(
                 x['date'].replace(day=1).replace(month=1).strftime(settings.STRFTIME_SHORT_DATE_FORMAT),
@@ -72,19 +84,6 @@ def summary_plot(group_by, proposicao=None):
 
         df['date'] = df['date'].dt.strftime('%Y')
     elif group_by == 'month':
-        df = df.groupby(pd.Grouper(key='date', freq='M')) \
-            .agg({
-                'ficha_pageviews_total': 'sum',
-                'poll_votes_total': 'sum',
-                'poll_comments_unchecked_total': 'sum',
-                'poll_comments_authorized_total': 'sum',
-                'portal_comments_unchecked_total': 'sum',
-                'portal_comments_authorized_total': 'sum',
-                'atendimentos_total': 'sum',
-                'noticia_pageviews_total': 'sum'
-            }) \
-            .reset_index()
-        
         df['api_params'] = df.apply(lambda x:
             'initial_date={}&final_date={}'.format(
                 x['date'].replace(day=1).strftime(settings.STRFTIME_SHORT_DATE_FORMAT),
@@ -100,80 +99,113 @@ def summary_plot(group_by, proposicao=None):
             ),
             axis=1)
 
-    ficha_pageviews_trace = go.Bar(
-        x=df.date,
-        y=df.ficha_pageviews_total,
-        customdata=df.api_params,
-        name='Visualizações (fichas de tramitação)',
-        )
-    poll_votes_trace = go.Bar(
-        x=df.date,
-        y=df.poll_votes_total,
-        customdata=df.api_params,
-        name='Votos nas enquetes',
-        )
-    poll_comments_authorized_trace = go.Bar(
-        x=df.date,
-        y=df.poll_comments_authorized_total,
-        customdata=df.api_params,
-        name='Comentários aprovados nas enquetes',
-        )
-    poll_comments_unchecked_trace = go.Bar(
-        x=df.date,
-        y=df.poll_comments_unchecked_total,
-        customdata=df.api_params,
-        name='Comentários não moderados nas enquetes',
-        )
-    noticia_pageviews_trace = go.Bar(
-        x=df.date,
-        y=df.noticia_pageviews_total,
-        customdata=df.api_params,
-        name='Visualizações (notícias)',
-        )
-
-    # These parameters don't apply to proposicao
-    if not proposicao:
-        portal_comments_authorized_trace = go.Bar(
+    subplots_list = []
+    if subplots == 'all' or 'ficha' in subplots:
+        ficha_pageviews_trace = go.Scatter(
             x=df.date,
-            y=df.portal_comments_authorized_total,
+            y=df.ficha_pageviews_total,
             customdata=df.api_params,
-            name='Comentários aprovados nas notícias',
+            name='Visualizações (fichas de tramitação)',
+            fill='tozeroy',
             )
-        portal_comments_unchecked_trace = go.Bar(
+        subplots_list.append({
+            'traces': [ficha_pageviews_trace],
+            'title': 'Visualizações (fichas de tramitação)',
+        })
+    if subplots == 'all' or 'enquete' in subplots:
+        poll_votes_trace = go.Scatter(
             x=df.date,
-            y=df.portal_comments_unchecked_total,
+            y=df.poll_votes_total,
             customdata=df.api_params,
-            name='Comentários não moderados nas notícias',
+            name='Votos nas enquetes',
+            fill='tozeroy',
             )
-        atendimentos_trace = go.Bar(
+        poll_comments_authorized_trace = go.Scatter(
+            x=df.date,
+            y=df.poll_comments_authorized_total,
+            customdata=df.api_params,
+            name='Comentários aprovados nas enquetes',
+            fill='tozeroy',
+            )
+        poll_comments_unchecked_trace = go.Scatter(
+            x=df.date,
+            y=df.poll_comments_unchecked_total,
+            customdata=df.api_params,
+            name='Comentários não moderados nas enquetes',
+            fill='tozeroy',
+            )
+        subplots_list.append({
+            'traces': [poll_votes_trace, poll_comments_authorized_trace, poll_comments_unchecked_trace],
+            'title': 'Votos e comentários nas enquetes',
+        })
+    if subplots == 'all' or 'noticia' in subplots:
+        noticia_pageviews_trace = go.Scatter(
+            x=df.date,
+            y=df.noticia_pageviews_total,
+            customdata=df.api_params,
+            name='Visualizações (notícias)',
+            fill='tozeroy',
+            )
+        if not proposicao:
+            portal_comments_authorized_trace = go.Scatter(
+                x=df.date,
+                y=df.portal_comments_authorized_total,
+                customdata=df.api_params,
+                name='Comentários aprovados nas notícias',
+                fill='tozeroy',
+                )
+            portal_comments_unchecked_trace = go.Scatter(
+                x=df.date,
+                y=df.portal_comments_unchecked_total,
+                customdata=df.api_params,
+                name='Comentários não moderados nas notícias',
+                fill='tozeroy',
+                )
+            subplots_list.append({
+                'traces': [noticia_pageviews_trace, portal_comments_authorized_trace, portal_comments_unchecked_trace],
+                'title': 'Notícias',
+            })
+        else:
+            subplots_list.append({
+                'traces': [noticia_pageviews_trace],
+                'title': 'Notícias',
+            })
+    if subplots == 'all' or 'prisma' in subplots:
+        atendimentos_trace = go.Scatter(
             x=df.date,
             y=df.atendimentos_total,
             customdata=df.api_params,
             name='Atendimentos no Prisma',
+            fill='tozeroy',
             )
+        subplots_list.append({
+            'traces': [atendimentos_trace],
+            'title': 'Atendimentos no Prisma',
+        })
 
 
-    if not proposicao:
-        fig = plotly.tools.make_subplots(
-            rows=5,
-            cols=1,
-            shared_xaxes=True,
-            subplot_titles=["Visualizações (fichas de tramitação)", "Enquetes", "Visualizações (notícias)", "Comentários nas notícias", "Atendimentos no Prisma"],
-            x_title='Data',
-            vertical_spacing=0.05
-        )
+    fig = plotly.tools.make_subplots(
+        rows=len(subplots_list),
+        cols=1,
+        shared_xaxes=True,
+        subplot_titles=list(map(lambda x: x['title'], subplots_list)),
+        x_title='Data',
+        vertical_spacing=0.08
+    )
+    i = 0
+    for subplot in subplots_list:
+        i += 1
+        for trace in subplot['traces']:
+            fig.append_trace(trace, i, 1)
+    fig.update_traces(xaxis='x{}'.format(i))
+
+    if initial_date and final_date:
+        range_param = [initial_date, final_date]
     else:
-        fig = plotly.tools.make_subplots(
-            rows=3,
-            cols=1,
-            shared_xaxes=True,
-            subplot_titles=["Visualizações (fichas de tramitação)", "Enquetes", "Visualizações (notícias)"],
-            x_title='Data',
-            vertical_spacing=0.05 if not proposicao else 0.07
-        )
+        range_param = [datetime.date.today() - datetime.timedelta(days=180), datetime.date.today()]
 
     fig.update_xaxes(
-        range=[datetime.date.today() - datetime.timedelta(days=180), datetime.date.today()],
+        range=range_param,
         showspikes=True,
         spikethickness=2,
         spikedash="dot",
@@ -200,35 +232,18 @@ def summary_plot(group_by, proposicao=None):
             'b': 50,
             't': 50,
         },
-        height=700 if not proposicao else 500,
+        height=height,
         hoverlabel=dict(
             namelength=-1,
         ),
         barmode='stack',
-        showlegend=False
+        showlegend=show_legend
     )
-    fig.append_trace(ficha_pageviews_trace, 1, 1)
-    fig.append_trace(poll_votes_trace, 2, 1)
-    fig.append_trace(poll_comments_authorized_trace, 2, 1)
-    fig.append_trace(poll_comments_unchecked_trace, 2, 1)
-    fig.append_trace(noticia_pageviews_trace, 3, 1)
-    if not proposicao:
-        fig.append_trace(portal_comments_authorized_trace, 4, 1)
-        fig.append_trace(portal_comments_unchecked_trace, 4, 1)
-        fig.append_trace(atendimentos_trace, 5, 1)
-        fig.update_traces(xaxis='x5')
-    else:
-        fig.update_traces(xaxis='x3')
 
-    post_script = """
-        document.getElementById('{plot_id}').on('plotly_click', function(data){
-            app.api_params = data.points[0]['customdata'];
-        });
-    """
-
-    plot_div = plotly.io.to_html(fig, include_plotlyjs='cdn', config={'displayModeBar': False}, full_html=False, post_script=post_script)
+    # config={'displayModeBar': False}, 
+    plot_json = plotly.io.to_json(fig)
     
-    return plot_div
+    return plot_json
 
 def poll_votes(proposicao):
     """
@@ -295,6 +310,33 @@ def poll_votes(proposicao):
     
     return plot_div
 
+def prisma_sexo(initial_date, final_date):
+    df = PrismaDemanda.objects.get_sexo_counts(initial_date, final_date)
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Bar(
+            x=df['sexo'],
+            y=df['count']
+        )
+    )
+
+    plot_json = plotly.io.to_json(fig)
+    return plot_json
+
+def prisma_idade(initial_date, final_date):
+    df = PrismaDemanda.objects.get_idade_counts(initial_date, final_date)
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Bar(
+            x=df['idade'],
+            y=df['count']
+        )
+    )
+
+    plot_json = plotly.io.to_json(fig)
+    return plot_json
 
 def proposicao_heatmap(proposicao):
     """

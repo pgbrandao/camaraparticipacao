@@ -1,0 +1,9 @@
+.btn-default, .btn-primary {
+    color: #fff !important;
+}
+
+[v-cloak] > * { display:none; }
+[v-cloak]::before { 
+  content: " ";
+  display: block;
+}

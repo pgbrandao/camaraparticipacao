@@ -1,34 +1,36 @@
 {% extends 'layouts/base.html' %}
 {% load humanize %}
 
-{% block title %}Relatório consolidado{% endblock title %}
+{% block title %}Relatório consolidado da participação{% endblock title %}
 
 {% block content %}
-<div class="header pt-4 bg-primary">
+<div class="header pt-4">
     <div class="container-fluid">
         <div class="col">
-            <h2 class="h2 text-white">Relatório consolidado</h2><br />
+            <h1>Relatório consolidado da participação</h1><br />
         </div>
     </div>
 </div>
 
 <div id="app">
-    <div class="container-fluid pt-4 bg-secondary">
+    <div class="container-fluid">
         <div class="row">
             <div class="col-lg-4">
                 <div class="card shadow">
                     <div class="card-header">
                         <div class="row">
                             <div class="col">
-                                <h3>Parâmetros de busca</h3>
+                                <h3>Dados para geração do relatório</h3>
                             </div>
                         </div>
                     </div>
-                    <div class="card-body ">
+                    <div class="card-body " v-cloak>
                         <form method="GET" action=".">
                             <div class="row">
+                                <div class="col-md-auto">
+                                    <label for="period_type">Período</label>
+                                </div>
                                 <div class="col">
-                                    <label for="month_year">Período</label>
                                     <div class="custom-control custom-radio custom-control-inline">
                                         <input type="radio" id="month" name="period_type" value="month"
                                             class="custom-control-input" v-model="period_type">
@@ -153,11 +155,19 @@
         <div class="row">
             <div class="col">
                 <h1>
-                    Enquetes
+                    Proposições e enquetes
                 </h1>
+                <div class="card">
+                    <plotly>
+                        <div class="card-body">
+                            <div id="ficha_enquete_summary_plot" v-pre></div>
+                        </div>
+                    </plotly>
+                </div>
+
             </div>
         </div>
-
+    
         <div class="row">
             <div class="col-xl-3 col-lg-6">
                 <div class="card">
@@ -210,7 +220,7 @@
                     <div class="card-header">
                         <div class="row">
                             <div class="col">
-                                <h2>Enquetes mais votadas</h2>
+                                <h2>Enquetes mais votadas e mais acessadas</h2>
                             </div>
                         </div>
                     </div>
@@ -218,7 +228,7 @@
 
                     <div class="card-body">
                         <template>
-                            <v-data-table :headers="top_polls_headers" :items="top_polls" :items-per-page="10">
+                            <v-data-table :headers="top_proposicoes_headers" :items="top_proposicoes" :items-per-page="10">
                                 <template #item.proposicao_nome_processado="{ item }">
                                     <a :href="item.link">
                                         [[ item.proposicao_nome_processado ]]
@@ -237,10 +247,56 @@
                 <h1>
                     Prisma
                 </h1>
+                <div class="card">
+                    <div class="card-body">
+                        <div id="prisma_summary_plot" v-pre></div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
         <div class="row">
+
+            <div class="col-xl-6 col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col">
+                                <h2>Categorias</h2>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        <template>
+                            <v-data-table :headers="top_prisma_categorias_headers" :items="top_prisma_categorias" :items-per-page="10">
+                            </v-data-table>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-6 col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col">
+                                <h2>Proposições</h2>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-body text-wrap">
+                        <template>
+                            <v-data-table :headers="top_prisma_proposicoes_headers" :items="top_prisma_proposicoes" :items-per-page="10">
+                            </v-data-table>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+
             <div class="col-xl-3 col-lg-6">
                 <div class="card">
                     <div class="card-header">
@@ -316,21 +372,18 @@
             </div>
 
 
-            <div class="col-xl-6 col-lg-12">
+            <div class="col-xl-3 col-lg-6">
                 <div class="card">
                     <div class="card-header">
                         <div class="row">
                             <div class="col">
-                                <h2>Categorias</h2>
+                                <h2>Sexo dos demandantes (com base nas demandas)</h3>
                             </div>
                         </div>
                     </div>
 
                     <div class="card-body">
-                        <template>
-                            <v-data-table :headers="top_prisma_categorias_headers" :items="top_prisma_categorias" :items-per-page="10">
-                            </v-data-table>
-                        </template>
+                        <div id="prisma_sexo_plot" v-pre></div>
                     </div>
                 </div>
             </div>
@@ -340,19 +393,17 @@
                     <div class="card-header">
                         <div class="row">
                             <div class="col">
-                                <h2>Proposições</h2>
+                                <h2>Idade dos demandantes (com base nas demandas)</h3>
                             </div>
                         </div>
                     </div>
 
-                    <div class="card-body text-wrap">
-                        <template>
-                            <v-data-table :headers="top_prisma_proposicoes_headers" :items="top_prisma_proposicoes" :items-per-page="10">
-                            </v-data-table>
-                        </template>
+                    <div class="card-body">
+                        <div id="prisma_idade_plot" v-pre></div>
                     </div>
                 </div>
             </div>
+
 
         </div>
 
@@ -362,6 +413,12 @@
                 <h1>
                     Notícias
                 </h1>
+                <div class="card">
+                    <div class="card-body">
+                        <div id="noticia_summary_plot" v-pre></div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -403,6 +460,12 @@
                                             <th>Comentários na fila de moderação</th>
                                             <td>
                                                 {{ stats.portal_comments_unchecked|intcomma }}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>Comentários da Câmara dos Deputados</th>
+                                            <td>
+                                                {{ stats.portal_comments_camara|intcomma }}
                                             </td>
                                         </tr>
                                     </tbody>
@@ -449,6 +512,9 @@
 <!-- Specific JS goes HERE -->
 {% block javascripts %}
 <script>
+    Vue.config.ignoredElements = [
+        'plotly'
+    ];
     var app = new Vue({
         delimiters: ['[[', ']]'],
         el: '#app',
@@ -456,15 +522,16 @@
         data: {
             period_type: '{{ period_type|escapejs }}',
             {% if stats %}
-                top_polls: {{ stats.top_polls | safe }},
+                top_proposicoes: {{ stats.top_proposicoes | safe }},
                 top_news: {{ stats.top_news | safe }},
                 top_prisma_categorias: {{ stats.top_prisma_categorias | safe}},
                 top_prisma_proposicoes: {{ stats.top_prisma_proposicoes | safe}},
             {% endif %}
-            top_polls_headers: [
+            top_proposicoes_headers: [
                 { text: 'Proposição', align: 'start', sortable: false, value: 'proposicao_nome_processado', },
                 { text: 'Votos', value: 'poll_votes' },
                 { text: 'Comentários', value: 'poll_comments' },
+                { text: 'Visualizações (ficha de tramitação)', value: 'ficha_pageviews' },
             ],
             top_news_headers: [
                 { text: 'Notícia', align: 'start', sortable: false, value: 'title', },
@@ -480,8 +547,28 @@
                 { text: 'Proposição', value: 'prismacategoria__categoria_tema_proposição', },
                 { text: 'Demandas', value: 'iddemanda__count', },
             ]
-
         },
     });
+
+    {% if stats %}
+        Plotly.setPlotConfig({"displayModeBar": false, "responsive": true});
+
+        var ficha_enquete_summary_plot = {{ stats.ficha_enquete_summary_plot | safe}};
+        Plotly.plot('ficha_enquete_summary_plot', ficha_enquete_summary_plot, {});
+
+        var prisma_summary_plot = {{ stats.prisma_summary_plot | safe}};
+        Plotly.plot('prisma_summary_plot', prisma_summary_plot, {});
+
+        var noticia_summary_plot = {{ stats.noticia_summary_plot | safe}};
+        Plotly.plot('noticia_summary_plot', noticia_summary_plot, {});
+
+        var prisma_sexo_plot = {{ stats.prisma_sexo_plot | safe}};
+        Plotly.plot('prisma_sexo_plot', prisma_sexo_plot, {});
+
+        var prisma_idade_plot = {{ stats.prisma_idade_plot | safe}};
+        Plotly.plot('prisma_idade_plot', prisma_idade_plot, {});
+
+        {% endif %}
+
 </script>
 {% endblock javascripts %}

@@ -50,9 +50,7 @@
                 </div>
 
                 <div class="card-body">
-                    {% autoescape off %}
-                    {{ summary_plot }}
-                    {% endautoescape %}
+                    <div id="summary_plot"></div>
                 </div>
             </div>
         </div>
@@ -205,5 +203,16 @@
         methods: {
         }
     });
+    var config = {"displayModeBar": false, "responsive": true};
+    
+    Plotly.setPlotConfig(config);
+
+    var summary_plot = {{ summary_plot | safe}};
+    Plotly.plot('summary_plot', summary_plot, {});
+
+    document.getElementById('summary_plot').on('plotly_click', function(data){
+            app.api_params = data.points[0]['customdata'];
+    });
+
 </script>
 {% endblock javascripts %}

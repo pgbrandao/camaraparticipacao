@@ -7,6 +7,7 @@ import datetime
 
 import altair as alt
 import pandas as pd
+import numpy as np
 
 from bs4 import BeautifulSoup
 
@@ -219,20 +220,30 @@ class ProposicaoAggregatedManager(models.Manager):
                     poll_comments_unauthorized=Sum('poll_comments_unauthorized'),
                    )
 
-    def top_polls(self, initial_date, final_date):
-        return self.get_queryset() \
+    def top_proposicoes(self, initial_date, final_date):
+        qs = self.get_queryset() \
             .filter(date__gte=initial_date, date__lte=final_date) \
             .values('proposicao__id') \
             .annotate(
+                    ficha_pageviews=Sum('ficha_pageviews'),
                     poll_votes=Sum('poll_votes'),
                     poll_comments=Sum('poll_comments'),
-                    poll_comments_checked=Sum('poll_comments_checked'),
-                    poll_comments_unchecked=Sum('poll_comments_unchecked'),
-                    poll_comments_authorized=Sum('poll_comments_authorized'),
-                    poll_comments_unauthorized=Sum('poll_comments_unauthorized'),
             ) \
             .order_by('-poll_votes') \
-            .values('proposicao__id', 'proposicao__nome_processado', 'poll_votes', 'poll_comments', 'poll_comments_checked', 'poll_comments_unchecked', 'poll_comments_authorized', 'poll_comments_unauthorized')
+            .values('proposicao__id', 'proposicao__nome_processado', 'ficha_pageviews', 'poll_votes', 'poll_comments')
+
+        return pd.DataFrame(qs) \
+            .groupby(['proposicao__nome_processado', 'proposicao__id']) \
+            .agg({
+                'ficha_pageviews': 'sum',
+                'poll_votes': 'sum',
+                'poll_comments': 'sum',
+            }) \
+            .reset_index() \
+            .sort_values('poll_votes', ascending=False) \
+            .to_dict('records')
+
+
 
 
 
@@ -291,15 +302,17 @@ class PrismaDemandaManager(models.Manager):
             .filter(demanda_fila__startswith='CCI')
 
     def get_count(self, initial_date, final_date):
+        final_date += datetime.timedelta(days=1) # Final date is advanced by one day for DateTimeField
         return self.get_queryset() \
-            .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lte=final_date) \
+            .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lt=final_date) \
             .aggregate(
                 Count('iddemanda')
             )
 
     def get_forma_de_recebimento_counts(self, initial_date, final_date):
+        final_date += datetime.timedelta(days=1) # Final date is advanced by one day for DateTimeField
         return self.get_queryset() \
-            .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lte=final_date) \
+            .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lt=final_date) \
             .values('demanda_forma_de_recebimento') \
             .annotate(
                 Count('iddemanda')
@@ -307,8 +320,9 @@ class PrismaDemandaManager(models.Manager):
             .order_by('-iddemanda__count')
 
     def get_tipo_counts(self, initial_date, final_date):
+        final_date += datetime.timedelta(days=1) # Final date is advanced by one day for DateTimeField
         return self.get_queryset() \
-            .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lte=final_date) \
+            .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lt=final_date) \
             .values('demanda_tipo') \
             .annotate(
                 Count('iddemanda')
@@ -316,8 +330,9 @@ class PrismaDemandaManager(models.Manager):
             .order_by('-iddemanda__count')
     
     def get_proposicao_counts(self,initial_date,final_date):
+        final_date += datetime.timedelta(days=1) # Final date is advanced by one day for DateTimeField
         qs = self.get_queryset() \
-            .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lte=final_date) \
+            .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lt=final_date) \
             .filter(prismacategoria__categoria_tema_proposição__isnull=False) \
             .values('prismacategoria__categoria_tema_proposição') \
             .annotate(
@@ -328,8 +343,9 @@ class PrismaDemandaManager(models.Manager):
         return qs
 
     def get_categoria_counts(self,initial_date,final_date):
+        final_date += datetime.timedelta(days=1) # Final date is advanced by one day for DateTimeField
         qs = self.get_queryset() \
-            .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lte=final_date) \
+            .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lt=final_date) \
             .values('prismacategoria__macrotema', 'prismacategoria__tema', 'prismacategoria__subtema')
         df = pd.DataFrame(qs)
         return df \
@@ -341,6 +357,39 @@ class PrismaDemandaManager(models.Manager):
             .sort_values('count', ascending=False) \
             .to_dict('records')
 
+    def get_sexo_counts(self,initial_date,final_date):
+        final_date += datetime.timedelta(days=1) # Final date is advanced by one day for DateTimeField
+        qs = self.get_queryset() \
+            .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lt=final_date) \
+            .values('iddemandante__demandante_sexo')
+
+        df = pd.DataFrame(qs)
+
+        return df['iddemandante__demandante_sexo'] \
+            .value_counts() \
+            .to_frame('count') \
+            .rename_axis('sexo') \
+            .reset_index()
+
+    def get_idade_counts(self,initial_date,final_date):
+        final_date += datetime.timedelta(days=1) # Final date is advanced by one day for DateTimeField
+        qs = self.get_queryset() \
+            .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lt=final_date) \
+            .values('demanda_data_criação', 'iddemandante__demandante_data_de_nascimento')
+
+        df = pd.DataFrame(qs)
+        df['iddemandante__demandante_data_de_nascimento'] = pd.to_datetime(df['iddemandante__demandante_data_de_nascimento'])
+        df['idade_demanda'] = df['demanda_data_criação'] - df['iddemandante__demandante_data_de_nascimento']
+        df['idade_demanda'] = df['idade_demanda'].dt.days / 365.25
+        df['idade_demanda'] = df['idade_demanda'].apply(np.floor)
+
+
+        return df['idade_demanda'] \
+            .value_counts() \
+            .to_frame('count') \
+            .rename_axis('idade') \
+            .reset_index() \
+        .sort_values('idade')
 
 
 class PrismaDemanda(models.Model):
@@ -382,9 +431,18 @@ class PrismaCategoria(models.Model):
     categoria_tema_proposição = models.TextField(db_column='Categoria.Tema Proposição', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
 
 class PortalComentarioManager(models.Manager):
-    def get_top_news(self,initial_date,final_date):
+    def get_comentarios_camara_count(self,initial_date,final_date):
+        final_date += datetime.timedelta(days=1) # Final date is advanced by one day for DateTimeField
         return self.get_queryset() \
-            .filter(data__gte=initial_date, data__lte=final_date) \
+            .filter(data__gte=initial_date, data__lt=final_date) \
+            .filter(usuario_nome='Câmara dos Deputados') \
+            .count()
+
+            
+    def get_top_news(self,initial_date,final_date):
+        final_date += datetime.timedelta(days=1) # Final date is advanced by one day for DateTimeField
+        return self.get_queryset() \
+            .filter(data__gte=initial_date, data__lt=final_date) \
             .values('url__id') \
             .annotate(comments=Count('id')) \
             .values('url__link', 'url__titulo', 'comments') \

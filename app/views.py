@@ -22,7 +22,7 @@ def index(request):
     if group_by not in ('day', 'month', 'year'):
         return Http404
 
-    summary_plot = plots.summary_plot(group_by=group_by)
+    summary_plot = plots.summary_plot(group_by=group_by, height=500)
 
     # last_updated = AppSettings.get_instance().last_updated
 
@@ -221,7 +221,12 @@ def relatorio_consolidado(request):
     if initial_date and final_date:
         stats = {}
 
-        # poll votes and comments
+        # summary plots
+        stats['ficha_enquete_summary_plot'] = plots.summary_plot(group_by='day', height=340, initial_date=initial_date, final_date=final_date, subplots=['ficha', 'enquete'], show_legend=True)
+        stats['prisma_summary_plot'] = plots.summary_plot(group_by='day', height=200, initial_date=initial_date, final_date=final_date, subplots=['prisma'], show_legend=True)
+        stats['noticia_summary_plot'] = plots.summary_plot(group_by='day', height=200, initial_date=initial_date, final_date=final_date, subplots=['noticia'], show_legend=True)
+
+        # enquetes votes and comments
         qs = ProposicaoAggregated.objects.get_aggregated(initial_date, final_date)
 
         stats.update({
@@ -233,6 +238,7 @@ def relatorio_consolidado(request):
         })
 
         # portal comments
+        comentarios_camara_count = PortalComentario.objects.get_comentarios_camara_count(initial_date, final_date)
         qs = NoticiaAggregated.objects.get_aggregated(initial_date, final_date)
 
         stats.update({
@@ -240,6 +246,7 @@ def relatorio_consolidado(request):
             'portal_comments_unchecked': qs['portal_comments_unchecked'],
             'portal_comments_authorized': qs['portal_comments_authorized'],
             'portal_comments_unauthorized': qs['portal_comments_unauthorized'],
+            'portal_comments_camara': comentarios_camara_count,
         })
 
         # prisma tickets
@@ -278,15 +285,24 @@ def relatorio_consolidado(request):
             'top_prisma_proposicoes': [row for row in qs]
         })
 
-        # top polls
-        qs = ProposicaoAggregated.objects.top_polls(initial_date, final_date)[:500]
-
+        # prisma sexo
+        prisma_sexo_plot = plots.prisma_sexo(initial_date, final_date)
+        prisma_idade_plot = plots.prisma_idade(initial_date, final_date)
         stats.update({
-            'top_polls': [{
+            'prisma_sexo_plot': prisma_sexo_plot,
+            'prisma_idade_plot': prisma_idade_plot
+        })
+
+
+        # top polls
+        qs = ProposicaoAggregated.objects.top_proposicoes(initial_date, final_date)[:500]
+        stats.update({
+            'top_proposicoes': [{
                 'proposicao_nome_processado': row['proposicao__nome_processado'],
                 'link': reverse('proposicao_detail', args=[row['proposicao__id']]),
                 'poll_votes': row['poll_votes'],
                 'poll_comments': row['poll_comments'],
+                'ficha_pageviews': row['ficha_pageviews'],
             } for row in qs]
         })
 
@@ -375,7 +391,7 @@ def busca_proposicao(request,):
 def proposicao_detail(request, id_proposicao):
     proposicao = Proposicao.objects.get(pk=id_proposicao)
 
-    summary_plot = plots.summary_plot(group_by='day', proposicao=proposicao)
+    summary_plot = plots.summary_plot(group_by='day', height=500, proposicao=proposicao)
     poll_votes_plot = plots.poll_votes(proposicao)
 
     return render(request, 'pages/proposicao_details.html', locals())
