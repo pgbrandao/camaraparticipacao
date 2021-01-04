@@ -13,14 +13,14 @@ def load_prisma():
         return
  
     with connections['default'].cursor() as cursor:
-        models = (
+        models_list = [
             get_model('PrismaAssunto'),
             get_model('PrismaCategoria'),
             get_model('PrismaDemanda'),
             get_model('PrismaDemandante'),
-        )
+        ]
 
-        for model in models:
+        for model in models_list:
             target_table_name = model._meta.db_table
 
             cursor.execute('ALTER TABLE public."%s" DISABLE TRIGGER ALL;' % (target_table_name,))
@@ -44,6 +44,8 @@ def load_prisma():
             if (model._meta.pk.name == 'local_id'):
                 fk_field = [field for field in model._meta.fields if isinstance(field, models.ForeignKey)][0]
                 model_qs = model_qs.order_by(fk_field.name)
+            else:
+                model_qs = model_qs.order_by(model._meta.pk.name)
 
             for _, _, _, qs in batch_qs(model_qs):
                 instance_list = []

@@ -13,14 +13,14 @@ def load_enquetes():
         return
  
     with connections['default'].cursor() as cursor:
-        models = (
+        models_list = [
             get_model('EnqueteFormularioPublicado'),
             get_model('EnqueteResposta'),
             get_model('EnqueteItemResposta'),
             get_model('EnquetePosicionamento'),
-        )
+        ]
 
-        for model in models:
+        for model in models_list:
             target_table_name = model._meta.db_table
 
             cursor.execute('ALTER TABLE public."%s" DISABLE TRIGGER ALL;' % (target_table_name,))

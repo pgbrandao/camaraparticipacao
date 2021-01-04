@@ -95,6 +95,11 @@ def load_proposicoes():
             url = 'https://dadosabertos.camara.leg.br/arquivos/proposicoes/json/proposicoes-%s.json' % (i,)
 
             r = requests.get(url)
+
+            if r.status_code == 404:
+                print("Missing proposicoes %d" % (i,))
+                continue
+
             j = r.json()
             
             proposicoes = []
@@ -176,6 +181,11 @@ def load_proposicoes_autores():
             url = 'https://dadosabertos.camara.leg.br/arquivos/proposicoesAutores/json/proposicoesAutores-%s.json' % (i,)
 
             r = requests.get(url)
+
+            if r.status_code == 404:
+                print("Missing proposicoes autores %d" % (i,))
+                continue
+
             j = r.json()
 
             count = 0
@@ -240,6 +250,11 @@ def load_proposicoes_temas():
             url = 'https://dadosabertos.camara.leg.br/arquivos/proposicoesTemas/json/proposicoesTemas-%s.json' % (i,)
 
             r = requests.get(url)
+
+            if r.status_code == 404:
+                print("Missing proposicoes temas %d" % (i,))
+                continue
+
             j = r.json()
 
             count = 0

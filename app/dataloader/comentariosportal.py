@@ -14,12 +14,12 @@ def load_comentarios_portal():
  
     with connections['default'].cursor() as cursor:
         # model_mappings follow this format: (source_table_name, model)
-        models = (
+        models_list = [ 
             get_model('PortalComentario'),
             get_model('PortalComentarioPosicionamento'),
-        )
+        ]
 
-        for model in model_mappings:
+        for model in models_list:
             target_table_name = model._meta.db_table
 
             cursor.execute('ALTER TABLE public."%s" DISABLE TRIGGER ALL;' % (target_table_name,))
