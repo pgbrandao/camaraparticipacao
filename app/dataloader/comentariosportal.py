@@ -14,20 +14,18 @@ def load_comentarios_portal():
  
     with connections['default'].cursor() as cursor:
         # model_mappings follow this format: (source_table_name, model)
-        model_mappings = (
-            ('COMENTARIO', get_model('PortalComentario')),
-            ('POSICIONAMENTO', get_model('PortalComentarioPosicionamento')),
+        models = (
+            get_model('PortalComentario'),
+            get_model('PortalComentarioPosicionamento'),
         )
 
-        for source_table_name, model in model_mappings:
+        for model in model_mappings:
             target_table_name = model._meta.db_table
 
             cursor.execute('ALTER TABLE public."%s" DISABLE TRIGGER ALL;' % (target_table_name,))
             cursor.execute('DELETE FROM public."%s"' % (target_table_name,))
 
             instance_list = []
-
-            rename_model_table(model, source_table_name)
 
             field_list = []
             for field in model._meta.fields:
@@ -46,11 +44,7 @@ def load_comentarios_portal():
                         model(**instance_values)
                     )
 
-                rename_model_table(model, target_table_name)
                 model.objects.using('default').bulk_create(instance_list)
-                rename_model_table(model, source_table_name)
-
-            rename_model_table(model, target_table_name)
 
             cursor.execute('ALTER TABLE public."%s" ENABLE TRIGGER ALL;' % (target_table_name,))
 

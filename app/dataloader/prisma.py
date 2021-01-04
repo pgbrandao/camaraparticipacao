@@ -13,23 +13,20 @@ def load_prisma():
         return
  
     with connections['default'].cursor() as cursor:
-        # model_mappings follow this format: (source_table_name, model)
-        model_mappings = (
-            ('vwAssunto', get_model('PrismaAssunto')),
-            ('vwCategoria', get_model('PrismaCategoria')),
-            ('vwDemanda', get_model('PrismaDemanda')),
-            ('vwDemandante', get_model('PrismaDemandante')),
+        models = (
+            get_model('PrismaAssunto'),
+            get_model('PrismaCategoria'),
+            get_model('PrismaDemanda'),
+            get_model('PrismaDemandante'),
         )
 
-        for source_table_name, model in model_mappings:
+        for model in models:
             target_table_name = model._meta.db_table
 
             cursor.execute('ALTER TABLE public."%s" DISABLE TRIGGER ALL;' % (target_table_name,))
             cursor.execute('DELETE FROM public."%s"' % (target_table_name,))
 
             instance_list = []
-
-            # rename_model_table(model, source_table_name)
 
             # Remove local_id from queries to the source table
             field_list = []
@@ -56,11 +53,7 @@ def load_prisma():
                         model(**instance_values)
                     )
 
-                # rename_model_table(model, target_table_name)
                 model.objects.using('default').bulk_create(instance_list)
-                # rename_model_table(model, source_table_name)
-
-            # rename_model_table(model, target_table_name)
 
             cursor.execute('ALTER TABLE public."%s" ENABLE TRIGGER ALL;' % (target_table_name,))
 
