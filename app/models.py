@@ -40,11 +40,17 @@ class EnqueteFormularioPublicado(models.Model):
     tex_url_link_externo = models.TextField(blank=True, null=True)  # This field type is a guess.
     tex_label_link_externo = models.TextField(blank=True, null=True)  # This field type is a guess.
 
+    class Meta:
+        db_table = 'Formulario_Publicado'
+
 class EnqueteResposta(models.Model):
     ide_resposta = models.AutoField(primary_key=True)
     ide_formulario_publicado = models.ForeignKey('EnqueteFormularioPublicado', null=True, on_delete=models.SET_NULL, db_column='ide_formulario_publicado')
     ide_usuario = models.TextField()
     dat_resposta = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        db_table = 'Resposta'
 
 class EnqueteItemResposta(models.Model):
     ide_item_resposta = models.AutoField(primary_key=True)
@@ -53,6 +59,9 @@ class EnqueteItemResposta(models.Model):
     num_indice_opcao = models.IntegerField(blank=True, null=True)
     num_indice_linha_tabela = models.IntegerField(blank=True, null=True)
     tex_texto_livre = models.TextField(blank=True, null=True)
+
+    class Meta:
+        db_table = 'Item_Resposta'
 
 class EnquetePosicionamento(models.Model):
     ide_posicionamento = models.AutoField(primary_key=True)
@@ -66,6 +75,9 @@ class EnquetePosicionamento(models.Model):
     dat_posicionamento = models.DateTimeField(blank=True, null=True)
     cod_autorizado = models.IntegerField(null=True)
     qtd_descurtidas = models.IntegerField(null=True)
+
+    class Meta:
+        db_table = 'Posicionamento'
 
 class EnquetePosicionamentoExtra(models.Model):
     class ClassificationTypes(models.IntegerChoices):
@@ -294,6 +306,9 @@ class PrismaDemandante(models.Model):
     demandante_data_de_nascimento = models.DateField(db_column='Demandante.Data de Nascimento', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
     demandante_profissão_externa = models.TextField(db_column='Demandante.Profissão Externa', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
 
+    class Meta:
+        db_table = 'vwDemandante'
+
 class PrismaDemandaManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset() \
@@ -416,10 +431,16 @@ class PrismaDemanda(models.Model):
 
     objects = PrismaDemandaManager()
 
+    class Meta:
+        db_table = 'vwDemanda'
+
 class PrismaAssunto(models.Model):
     local_id = models.AutoField(primary_key=True) # This is not in the original model, but Django requires it
     assunto_iddemanda = models.ForeignKey('PrismaDemanda', db_column='Assunto.IdDemanda', on_delete=models.DO_NOTHING)  # Field name made lowercase. Field renamed to remove unsuitable characters.
     assunto_nome = models.TextField(db_column='Assunto.Nome', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+
+    class Meta:
+        db_table = 'vwAssunto'
 
 class PrismaCategoria(models.Model):
     local_id = models.AutoField(primary_key=True) # This is not in the original model, but Django requires it
@@ -429,6 +450,9 @@ class PrismaCategoria(models.Model):
     subtema = models.TextField(db_column='Subtema', blank=True, null=True)  # Field name made lowercase.
     categoria_posicionamento = models.TextField(db_column='Categoria.Posicionamento', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
     categoria_tema_proposição = models.TextField(db_column='Categoria.Tema Proposição', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+
+    class Meta:
+        db_table = 'vwCategoria'
 
 class PortalComentarioManager(models.Manager):
     def get_comentarios_camara_count(self,initial_date,final_date):
@@ -461,6 +485,9 @@ class PortalComentario(models.Model):
 
     objects = PortalComentarioManager()
 
+    class Meta:
+        db_table = 'COMENTARIO'
+
 class PortalComentarioPosicionamento(models.Model):
     local_id = models.AutoField(primary_key=True) # This is not in the original model, but Django requires it
     id_comentario = models.ForeignKey('PortalComentario', db_column='id_comentario', on_delete=models.DO_NOTHING)
@@ -470,4 +497,5 @@ class PortalComentarioPosicionamento(models.Model):
     favor = models.SmallIntegerField()
 
     class Meta:
+        db_table = 'POSICIONAMENTO'
         unique_together = (('id_comentario', 'usuario_id'),)
