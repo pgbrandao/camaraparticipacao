@@ -1,0 +1,36 @@
+{% load humanize %}
+
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col">
+                <h2>Tipos</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <template>
+            <v-simple-table>
+                <template v-slot:default>
+                    <thead>
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Número</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for channel in stats.prisma_tipos %}
+                            <tr>
+                                <th>{{ channel.demanda_tipo }}</th>
+                                <td>
+                                    {{ channel.iddemanda__count|intcomma }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </template>
+            </v-data-table>
+        </template>
+    </div>
+</div>

@@ -1,0 +1,49 @@
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col">
+                <h3>Dados para geração do relatório</h3>
+            </div>
+        </div>
+    </div>
+    <div class="card-body " v-cloak>
+        <form method="GET" action=".">
+            <div class="row">
+                <div class="col-md-auto">
+                    <label for="period_type">Período</label>
+                </div>
+                <div class="col">
+                    <div class="custom-control custom-radio custom-control-inline">
+                        <input type="radio" id="month" name="period_type" value="month"
+                            class="custom-control-input" v-model="period_type">
+                        <label for="month" class="custom-control-label">Mensal</label>
+                    </div>
+                    <div class="custom-control custom-radio custom-control-inline">
+                        <input type="radio" id="year" name="period_type" value="year"
+                            class="custom-control-input" v-model="period_type">
+                        <label for="year" class="custom-control-label">Anual</label>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <select class="form-control" name="month_year" v-show="period_type == 'month'">
+                        {% for value, text in month_year_choices %}
+                        <option value="{{ value }}" {% if month_year == value %}selected{% endif %}>{{ text }}</option>
+                        {% endfor %}
+                    </select>
+                    <select class="form-control" name="year" v-show="period_type == 'year'">
+                        {% for value, text in year_choices %}
+                        <option value="{{ value }}" {% if year == value %}selected{% endif %}>{{ text }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <button class="btn btn-primary font-white" type="submit">Atualizar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

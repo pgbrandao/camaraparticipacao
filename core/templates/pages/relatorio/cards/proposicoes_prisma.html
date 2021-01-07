@@ -1,0 +1,16 @@
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col">
+                <h2>Proposições</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body text-wrap">
+        <template>
+            <v-data-table :headers="top_prisma_proposicoes_headers" :items="top_prisma_proposicoes" :items-per-page="10">
+            </v-data-table>
+        </template>
+    </div>
+</div>

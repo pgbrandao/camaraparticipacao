@@ -1,0 +1,16 @@
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col">
+                <h2>Categorias</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <template>
+            <v-data-table :headers="top_prisma_categorias_headers" :items="top_prisma_categorias" :items-per-page="10">
+            </v-data-table>
+        </template>
+    </div>
+</div>

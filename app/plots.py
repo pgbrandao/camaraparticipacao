@@ -99,6 +99,8 @@ def summary_plot(group_by, height, proposicao=None, initial_date=None, final_dat
             ),
             axis=1)
 
+    df.sort_values('date', inplace=True)
+    
     subplots_list = []
     if subplots == 'all' or 'ficha' in subplots:
         ficha_pageviews_trace = go.Scatter(
@@ -170,7 +172,7 @@ def summary_plot(group_by, height, proposicao=None, initial_date=None, final_dat
                 'traces': [noticia_pageviews_trace],
                 'title': 'Notícias',
             })
-    if subplots == 'all' or 'prisma' in subplots:
+    if (subplots == 'all' or 'prisma' in subplots) and not proposicao:
         atendimentos_trace = go.Scatter(
             x=df.date,
             y=df.atendimentos_total,

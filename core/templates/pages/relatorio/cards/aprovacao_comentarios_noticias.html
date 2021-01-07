@@ -1,0 +1,52 @@
+{% load humanize %}
+
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col">
+                <h2>Aprovação dos comentários</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <template>
+            <v-simple-table>
+                <template v-slot:default>
+                    <thead>
+                        <tr>
+                            <th>Classificação</th>
+                            <th>Número</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th>Comentários aprovados</th>
+                            <td>
+                                {{ stats.portal_comments_authorized|intcomma }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Comentários reprovados</th>
+                            <td>
+                                {{ stats.portal_comments_unauthorized|intcomma }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Comentários na fila de moderação</th>
+                            <td>
+                                {{ stats.portal_comments_unchecked|intcomma }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Comentários da Câmara dos Deputados</th>
+                            <td>
+                                {{ stats.portal_comments_camara|intcomma }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </template>
+            </v-data-table>
+        </template>
+    </div>
+</div>

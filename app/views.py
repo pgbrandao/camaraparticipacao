@@ -6,6 +6,7 @@ from django.db.models import Count, Sum, Q
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.http import Http404, HttpResponse, JsonResponse, FileResponse
+from django.views.decorators.clickjacking import xframe_options_exempt
 
 import calendar
 import datetime
@@ -184,8 +185,8 @@ def raiox(request):
 
     return render(request, 'pages/raiox.html', locals())
 
-
-def relatorio_consolidado(request):
+@xframe_options_exempt
+def relatorio_consolidado(request, custom):
     year = request.GET.get('year')
     month_year = request.GET.get('month_year')
     period_type = request.GET.get('period_type') or 'year'
@@ -318,8 +319,18 @@ def relatorio_consolidado(request):
         })
 
 
+    if not custom:
+        return render(request, 'pages/relatorio/index.html', locals())
+    else:
+        if initial_date and final_date:
+            try:
+                if period_type == 'year':
+                    return render(request, 'pages/relatorio/custom/{}.html'.format(year), locals())
+                elif period_type == 'month_year':
+                    return render(request, 'pages/relatorio/custom/{}.html'.format(month_year), locals())
+            except:
+                raise Http404
 
-    return render(request, 'pages/relatorio_consolidado.html', locals())
 
 
 def enquetes_busca_data(request):

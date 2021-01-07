@@ -1,0 +1,36 @@
+{% load humanize %}
+
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col">
+                <h2>Canais</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <template>
+            <v-simple-table>
+                <template v-slot:default>
+                    <thead>
+                        <tr>
+                            <th>Forma de recebimento</th>
+                            <th>Número</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for channel in stats.prisma_formas_de_recebimento %}
+                            <tr>
+                                <th>{{ channel.demanda_forma_de_recebimento }}</th>
+                                <td>
+                                    {{ channel.iddemanda__count|intcomma }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </template>
+            </v-data-table>
+        </template>
+    </div>
+</div>
