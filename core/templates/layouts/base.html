@@ -55,7 +55,9 @@
 
 <body class="">
 
-    {% include "includes/sidenav.html" %}
+    {% block sidenav %}
+        {% include "includes/sidenav.html" %}
+    {% endblock sidenav %}
 
     <div class="main-content">
 

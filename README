@@ -1,0 +1,20 @@
+# What's this app?
+
+This is an internal web app to load data and show visualizations on citizen participation at [Câmara dos Deputados](http://www.camara.leg.br). As experiments evolve, reports and visualizations will be made available based on this code. At the moment, access to internal APIs and databases is required in order to load data.
+
+# How do I run it?
+
+This is all it takes
+```
+docker-compose up --build
+```
+
+# How do I load data?
+
+Loading data from a database dump:
+```
+docker-compose up db
+docker-compose exec -T db dropdb -U postgres camaraparticipacao
+docker-compose exec -T db createdb -U postgres camaraparticipacao
+docker-compose exec -T db psql -U postgres camaraparticipacao < dump.sql
+```

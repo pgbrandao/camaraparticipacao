@@ -7,3 +7,11 @@
   content: " ";
   display: block;
 }
+
+body {
+  background-color: #fff !important;
+}
+
+.footer {
+  background-color: #fff !important;
+}
