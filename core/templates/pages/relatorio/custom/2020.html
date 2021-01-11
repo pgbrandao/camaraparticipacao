@@ -19,8 +19,46 @@
         <!-- dados gerais-->
         <div class="row">
             <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <p>
+                            Este relatório contém alguns dados sobre os seguintes aspectos da participação cidadã na câmara:
+                        </p>
+                        <h4>Comunicação Interativa</h4>
+                        <ul>
+                            <li>Fale Conosco;</li>
+                            <li>Disque Câmara;</li>
+                            <li>Comentários nas notícias do Portal da Câmara;</li>
+                            <li>Canais de ;</li>
+                        </ul>
+                        <h4>Relacionamento com o público infantojuvenil</h4>
+                        <ul>
+                            <li>Parlamento Jovem Brasileiro – PJB</li>
+                            <li>Plenarinho</li>
+                        </ul>
+                        <h4>Canais de participação popular</h4>
+                        <ul>
+                            <li>Enquetes legislativas</li>
+                        </ul>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <iframe src='https://cdn.knightlab.com/libs/timeline3/latest/embed/index.html?source=1Pu1BSyQZcVPpuI7FibrNVL3Yb4zxkhpc8oNKU0vUebo&font=Default&lang=en&initial_zoom=2&height=650' width='100%' height='650' webkitallowfullscreen mozallowfullscreen allowfullscreen frameborder='0'></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
                 <h3>
-                    Dados gerais
+                    Quantitativos gerais
                 </h3>
             </div>
         </div>
@@ -69,7 +107,7 @@
         <div class="row">
             <div class="col">
                 <h1>
-                    Prisma
+                    Comunicação interativa
                 </h1>
                 <div class="card">
                     <div class="card-body">
@@ -82,15 +120,6 @@
 
         <div class="row">
 
-            <div class="col-xl-6 col-lg-12">
-                {% include "pages/relatorio/cards/categorias_prisma.html" %}
-            </div>
-
-            <div class="col-xl-6 col-lg-12">
-                {% include "pages/relatorio/cards/proposicoes_prisma.html" %}
-            </div>
-
-
             <div class="col-xl-3 col-lg-6">
                 {% include "pages/relatorio/cards/canais_prisma.html" %}
             </div>
@@ -100,14 +129,9 @@
             </div>
 
 
-            <div class="col-xl-3 col-lg-6">
-                {% include "pages/relatorio/cards/sexo_prisma.html" %}
-            </div>
-
             <div class="col-xl-6 col-lg-12">
-                {% include "pages/relatorio/cards/idade_prisma.html" %}
+                {% include "pages/relatorio/cards/sexo_idade_prisma.html" %}
             </div>
-
 
         </div>
 
@@ -195,11 +219,8 @@
         var noticia_summary_plot = {{ stats.noticia_summary_plot | safe}};
         Plotly.plot('noticia_summary_plot', noticia_summary_plot, {});
 
-        var prisma_sexo_plot = {{ stats.prisma_sexo_plot | safe}};
-        Plotly.plot('prisma_sexo_plot', prisma_sexo_plot, {});
-
-        var prisma_idade_plot = {{ stats.prisma_idade_plot | safe}};
-        Plotly.plot('prisma_idade_plot', prisma_idade_plot, {});
+        var prisma_sexo_idade_plot = {{ stats.prisma_sexo_idade_plot | safe}};
+        Plotly.plot('prisma_sexo_idade_plot', prisma_sexo_idade_plot, {});
 
         {% endif %}
 

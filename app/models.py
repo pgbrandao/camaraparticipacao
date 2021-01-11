@@ -2,6 +2,7 @@ from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import Count, Sum, Q
+from django.db.models.functions import Coalesce
 
 import datetime
 
@@ -198,11 +199,11 @@ class NoticiaAggregatedManager(models.Manager):
         return super().get_queryset() \
             .filter(date__gte=initial_date, date__lte=final_date) \
             .aggregate(
-                    pageviews=Sum('pageviews'),
-                    portal_comments=Sum('portal_comments'),
-                    portal_comments_unchecked=Sum('portal_comments_unchecked'),
-                    portal_comments_authorized=Sum('portal_comments_authorized'),
-                    portal_comments_unauthorized=Sum('portal_comments_unauthorized'),
+                    pageviews=Coalesce(Sum('pageviews'), 0),
+                    portal_comments=Coalesce(Sum('portal_comments'), 0),
+                    portal_comments_unchecked=Coalesce(Sum('portal_comments_unchecked'), 0),
+                    portal_comments_authorized=Coalesce(Sum('portal_comments_authorized'), 0),
+                    portal_comments_unauthorized=Coalesce(Sum('portal_comments_unauthorized'), 0),
                    )
 
 
@@ -222,14 +223,14 @@ class ProposicaoAggregatedManager(models.Manager):
         return self.get_queryset() \
             .filter(date__gte=initial_date, date__lte=final_date) \
             .aggregate(
-                    ficha_pageviews=Sum('ficha_pageviews'),
-                    noticia_pageviews=Sum('noticia_pageviews'),
-                    poll_votes=Sum('poll_votes'),
-                    poll_comments=Sum('poll_comments'),
-                    poll_comments_checked=Sum('poll_comments_checked'),
-                    poll_comments_unchecked=Sum('poll_comments_unchecked'),
-                    poll_comments_authorized=Sum('poll_comments_authorized'),
-                    poll_comments_unauthorized=Sum('poll_comments_unauthorized'),
+                    ficha_pageviews=Coalesce(Sum('ficha_pageviews'), 0),
+                    noticia_pageviews=Coalesce(Sum('noticia_pageviews'), 0),
+                    poll_votes=Coalesce(Sum('poll_votes'), 0),
+                    poll_comments=Coalesce(Sum('poll_comments'), 0),
+                    poll_comments_checked=Coalesce(Sum('poll_comments_checked'), 0),
+                    poll_comments_unchecked=Coalesce(Sum('poll_comments_unchecked'), 0),
+                    poll_comments_authorized=Coalesce(Sum('poll_comments_authorized'), 0),
+                    poll_comments_unauthorized=Coalesce(Sum('poll_comments_unauthorized'), 0),
                    )
 
     def top_proposicoes(self, initial_date, final_date):
@@ -244,7 +245,7 @@ class ProposicaoAggregatedManager(models.Manager):
             .order_by('-poll_votes') \
             .values('proposicao__id', 'proposicao__nome_processado', 'ficha_pageviews', 'poll_votes', 'poll_comments')
 
-        return pd.DataFrame(qs) \
+        return pd.DataFrame(qs, columns=['proposicao__id', 'proposicao__nome_processado', 'ficha_pageviews', 'poll_votes', 'poll_comments']) \
             .groupby(['proposicao__nome_processado', 'proposicao__id']) \
             .agg({
                 'ficha_pageviews': 'sum',
@@ -362,7 +363,7 @@ class PrismaDemandaManager(models.Manager):
         qs = self.get_queryset() \
             .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lt=final_date) \
             .values('prismacategoria__macrotema', 'prismacategoria__tema', 'prismacategoria__subtema')
-        df = pd.DataFrame(qs)
+        df = pd.DataFrame(qs, columns=['prismacategoria__macrotema', 'prismacategoria__tema', 'prismacategoria__subtema'])
         return df \
             .fillna('') \
             .groupby(['prismacategoria__macrotema', 'prismacategoria__tema', 'prismacategoria__subtema']) \
@@ -372,40 +373,31 @@ class PrismaDemandaManager(models.Manager):
             .sort_values('count', ascending=False) \
             .to_dict('records')
 
-    def get_sexo_counts(self,initial_date,final_date):
+    def get_sexo_idade_counts(self,initial_date,final_date):
         final_date += datetime.timedelta(days=1) # Final date is advanced by one day for DateTimeField
         qs = self.get_queryset() \
             .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lt=final_date) \
-            .values('iddemandante__demandante_sexo')
+            .values('demanda_data_criação', 'iddemandante__demandante_data_de_nascimento', 'iddemandante__demandante_sexo')
 
-        df = pd.DataFrame(qs)
-
-        return df['iddemandante__demandante_sexo'] \
-            .value_counts() \
-            .to_frame('count') \
-            .rename_axis('sexo') \
-            .reset_index()
-
-    def get_idade_counts(self,initial_date,final_date):
-        final_date += datetime.timedelta(days=1) # Final date is advanced by one day for DateTimeField
-        qs = self.get_queryset() \
-            .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lt=final_date) \
-            .values('demanda_data_criação', 'iddemandante__demandante_data_de_nascimento')
-
-        df = pd.DataFrame(qs)
+        df = pd.DataFrame(qs, columns=['demanda_data_criação', 'iddemandante__demandante_data_de_nascimento', 'iddemandante__demandante_sexo'])
         df['iddemandante__demandante_data_de_nascimento'] = pd.to_datetime(df['iddemandante__demandante_data_de_nascimento'])
+        df['demanda_data_criação'] = pd.to_datetime(df['demanda_data_criação'])
         df['idade_demanda'] = df['demanda_data_criação'] - df['iddemandante__demandante_data_de_nascimento']
         df['idade_demanda'] = df['idade_demanda'].dt.days / 365.25
         df['idade_demanda'] = df['idade_demanda'].apply(np.floor)
 
-
-        return df['idade_demanda'] \
-            .value_counts() \
-            .to_frame('count') \
-            .rename_axis('idade') \
+        df = df \
+            .rename({'iddemandante__demandante_sexo': 'sexo_demanda'}, axis=1) \
+            .drop(['demanda_data_criação', 'iddemandante__demandante_data_de_nascimento'], axis=1) \
+            .groupby(['sexo_demanda', 'idade_demanda']) \
+            .size() \
             .reset_index() \
-        .sort_values('idade')
+            .rename(columns={0: 'count'}) \
+            .sort_values(['idade_demanda', 'sexo_demanda'])
+        df = df[(df.idade_demanda >= 10) & (df.idade_demanda <= 100)]
+        df = df.pivot(index='idade_demanda', columns='sexo_demanda', values='count').reset_index()
 
+        return df
 
 class PrismaDemanda(models.Model):
     iddemanda = models.AutoField(db_column='IdDemanda', primary_key=True)

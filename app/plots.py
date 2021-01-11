@@ -312,29 +312,27 @@ def poll_votes(proposicao):
     
     return plot_div
 
-def prisma_sexo(initial_date, final_date):
-    df = PrismaDemanda.objects.get_sexo_counts(initial_date, final_date)
+def prisma_sexo_idade(initial_date, final_date):
+    df = PrismaDemanda.objects.get_sexo_idade_counts(initial_date, final_date)
 
-    fig = go.Figure()
-    fig.add_trace(
+    fig = go.Figure(data=[
         go.Bar(
-            x=df['sexo'],
-            y=df['count']
-        )
-    )
-
-    plot_json = plotly.io.to_json(fig)
-    return plot_json
-
-def prisma_idade(initial_date, final_date):
-    df = PrismaDemanda.objects.get_idade_counts(initial_date, final_date)
-
-    fig = go.Figure()
-    fig.add_trace(
+            x=df['idade_demanda'],
+            y=df.get('Masculino', []),
+            name='Masculino'
+        ),
         go.Bar(
-            x=df['idade'],
-            y=df['count']
+            x=df['idade_demanda'],
+            y=df.get('Feminino', []),
+            name='Feminino'
         )
+    ])
+
+    fig.update_layout(
+        barmode='stack',
+        xaxis_title='Idade',
+        yaxis_title='Número de demandas',
+        hovermode="x unified"
     )
 
     plot_json = plotly.io.to_json(fig)

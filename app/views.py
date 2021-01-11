@@ -287,11 +287,9 @@ def relatorio_consolidado(request, custom):
         })
 
         # prisma sexo
-        prisma_sexo_plot = plots.prisma_sexo(initial_date, final_date)
-        prisma_idade_plot = plots.prisma_idade(initial_date, final_date)
+            prisma_sexo_idade_plot = plots.prisma_sexo_idade(initial_date, final_date)
         stats.update({
-            'prisma_sexo_plot': prisma_sexo_plot,
-            'prisma_idade_plot': prisma_idade_plot
+                'prisma_sexo_idade_plot': prisma_sexo_idade_plot,
         })
 
 

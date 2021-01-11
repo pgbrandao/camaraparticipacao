@@ -15,3 +15,7 @@ body {
 .footer {
   background-color: #fff !important;
 }
+
+p {
+  font-weight: 400 !important;
+}
