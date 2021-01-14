@@ -364,6 +364,9 @@ class PrismaDemandaManager(models.Manager):
             .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lt=final_date) \
             .values('prismacategoria__macrotema', 'prismacategoria__tema', 'prismacategoria__subtema')
         df = pd.DataFrame(qs, columns=['prismacategoria__macrotema', 'prismacategoria__tema', 'prismacategoria__subtema'])
+
+        df = df.fillna(value='—')
+
         return df \
             .fillna('') \
             .groupby(['prismacategoria__macrotema', 'prismacategoria__tema', 'prismacategoria__subtema']) \
@@ -377,14 +380,15 @@ class PrismaDemandaManager(models.Manager):
         final_date += datetime.timedelta(days=1) # Final date is advanced by one day for DateTimeField
         qs = self.get_queryset() \
             .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lt=final_date) \
-            .values('demanda_data_criação', 'iddemandante__demandante_data_de_nascimento', 'iddemandante__demandante_sexo')
+            .values('demanda_data_criação', 'iddemandante', 'iddemandante__demandante_data_de_nascimento', 'iddemandante__demandante_sexo')
 
-        df = pd.DataFrame(qs, columns=['demanda_data_criação', 'iddemandante__demandante_data_de_nascimento', 'iddemandante__demandante_sexo'])
+        df = pd.DataFrame(qs, columns=['demanda_data_criação', 'iddemandante', 'iddemandante__demandante_data_de_nascimento', 'iddemandante__demandante_sexo'])
         df['iddemandante__demandante_data_de_nascimento'] = pd.to_datetime(df['iddemandante__demandante_data_de_nascimento'])
         df['demanda_data_criação'] = pd.to_datetime(df['demanda_data_criação'])
         df['idade_demanda'] = df['demanda_data_criação'] - df['iddemandante__demandante_data_de_nascimento']
         df['idade_demanda'] = df['idade_demanda'].dt.days / 365.25
         df['idade_demanda'] = df['idade_demanda'].apply(np.floor)
+        df.drop_duplicates(subset='iddemandante', keep='last', inplace=True)
 
         df = df \
             .rename({'iddemandante__demandante_sexo': 'sexo_demanda'}, axis=1) \
@@ -451,7 +455,7 @@ class PortalComentarioManager(models.Manager):
         final_date += datetime.timedelta(days=1) # Final date is advanced by one day for DateTimeField
         return self.get_queryset() \
             .filter(data__gte=initial_date, data__lt=final_date) \
-            .filter(usuario_nome='Câmara dos Deputados') \
+            .filter(usuario_id='66a23639-d13f-41eb-b15e-3d9656512a4f') \
             .count()
 
             

@@ -52,6 +52,11 @@ def summary_plot(group_by, height, proposicao=None, initial_date=None, final_dat
 
     df['date'] = pd.to_datetime(df['date'])
 
+    # if initial_date and final_date:
+    # df = df[(df['date'] >= pd.to_datetime(initial_date)) & (df['date'] <= pd.to_datetime(final_date))]
+
+    df.sort_values('date', inplace=True)
+    
     # Group data when showing by year or month
     freq = None
     if group_by == 'year':
@@ -73,6 +78,7 @@ def summary_plot(group_by, height, proposicao=None, initial_date=None, final_dat
             }) \
             .reset_index()
     
+
     # Set api_params (this can be moved to the client-side in the future)
     if group_by == 'year':
         df['api_params'] = df.apply(lambda x:
@@ -99,20 +105,18 @@ def summary_plot(group_by, height, proposicao=None, initial_date=None, final_dat
             ),
             axis=1)
 
-    df.sort_values('date', inplace=True)
-    
     subplots_list = []
     if subplots == 'all' or 'ficha' in subplots:
         ficha_pageviews_trace = go.Scatter(
             x=df.date,
             y=df.ficha_pageviews_total,
             customdata=df.api_params,
-            name='Visualizações (fichas de tramitação)',
+            name='Visualizações das fichas de tramitação',
             fill='tozeroy',
             )
         subplots_list.append({
             'traces': [ficha_pageviews_trace],
-            'title': 'Visualizações (fichas de tramitação)',
+            'title': 'Visualizações das fichas de tramitação',
         })
     if subplots == 'all' or 'enquete' in subplots:
         poll_votes_trace = go.Scatter(
@@ -122,6 +126,10 @@ def summary_plot(group_by, height, proposicao=None, initial_date=None, final_dat
             name='Votos nas enquetes',
             fill='tozeroy',
             )
+        subplots_list.append({
+            'traces': [poll_votes_trace],
+            'title': 'Votos nas enquetes',
+        })
         poll_comments_authorized_trace = go.Scatter(
             x=df.date,
             y=df.poll_comments_authorized_total,
@@ -137,17 +145,21 @@ def summary_plot(group_by, height, proposicao=None, initial_date=None, final_dat
             fill='tozeroy',
             )
         subplots_list.append({
-            'traces': [poll_votes_trace, poll_comments_authorized_trace, poll_comments_unchecked_trace],
-            'title': 'Votos e comentários nas enquetes',
+            'traces': [poll_comments_authorized_trace, poll_comments_unchecked_trace],
+            'title': 'Comentários nas enquetes',
         })
     if subplots == 'all' or 'noticia' in subplots:
         noticia_pageviews_trace = go.Scatter(
             x=df.date,
             y=df.noticia_pageviews_total,
             customdata=df.api_params,
-            name='Visualizações (notícias)',
+            name='Visualizações das notícias',
             fill='tozeroy',
             )
+        subplots_list.append({
+            'traces': [noticia_pageviews_trace],
+            'title': 'Visualizações das notícias',
+        })
         if not proposicao:
             portal_comments_authorized_trace = go.Scatter(
                 x=df.date,
@@ -164,25 +176,20 @@ def summary_plot(group_by, height, proposicao=None, initial_date=None, final_dat
                 fill='tozeroy',
                 )
             subplots_list.append({
-                'traces': [noticia_pageviews_trace, portal_comments_authorized_trace, portal_comments_unchecked_trace],
-                'title': 'Notícias',
-            })
-        else:
-            subplots_list.append({
-                'traces': [noticia_pageviews_trace],
-                'title': 'Notícias',
+                'traces': [portal_comments_authorized_trace, portal_comments_unchecked_trace],
+                'title': 'Comentários nas notícias',
             })
     if (subplots == 'all' or 'prisma' in subplots) and not proposicao:
         atendimentos_trace = go.Scatter(
             x=df.date,
             y=df.atendimentos_total,
             customdata=df.api_params,
-            name='Atendimentos no Prisma',
+            name='Atendimentos pela Central de Comunicação Interativa (Fale Conosco e Disque Câmara)',
             fill='tozeroy',
             )
         subplots_list.append({
             'traces': [atendimentos_trace],
-            'title': 'Atendimentos no Prisma',
+            'title': 'Atendimentos pela Central de Comunicação Interativa (Fale Conosco e Disque Câmara)',
         })
 
 
@@ -224,7 +231,7 @@ def summary_plot(group_by, height, proposicao=None, initial_date=None, final_dat
         hoverformat=',d'
     )
     fig.update_layout(
-        dragmode='pan',
+        dragmode=False if initial_date and final_date else 'pan',
         hovermode='x unified',
         hoverdistance=1000,
         spikedistance=-1,
@@ -331,8 +338,9 @@ def prisma_sexo_idade(initial_date, final_date):
     fig.update_layout(
         barmode='stack',
         xaxis_title='Idade',
-        yaxis_title='Número de demandas',
-        hovermode="x unified"
+        yaxis_title='Número de demandantes',
+        hovermode="x unified",
+        title=False
     )
 
     plot_json = plotly.io.to_json(fig)

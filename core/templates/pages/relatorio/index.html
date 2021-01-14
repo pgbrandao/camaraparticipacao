@@ -24,7 +24,7 @@
         <div class="row">
             <div class="col">
                 <h3>
-                    Dados gerais
+                    Quantitativos gerais
                 </h3>
             </div>
         </div>
@@ -52,13 +52,7 @@
                 <h1>
                     Proposições e enquetes
                 </h1>
-                <div class="card">
-                    <plotly>
-                        <div class="card-body">
-                            <div id="ficha_enquete_summary_plot" v-pre></div>
-                        </div>
-                    </plotly>
-                </div>
+                {% include "pages/relatorio/cards/ficha_enquete_summary_plot.html" %}
             </div>
         </div>
     
@@ -66,20 +60,18 @@
             <div class="col-xl-3 col-lg-6">
                 {% include "pages/relatorio/cards/aprovacao_comentarios_enquetes.html" %}
             </div>
+            <div class="col-xl-6 col-lg-12">
+                {% include "pages/relatorio/cards/top_proposicoes_enquetes.html" %}
+            </div>
         </div>
-        
+
         <!-- prisma -->
         <div class="row">
             <div class="col">
                 <h1>
-                    Prisma
+                    Central de Comunicação Interativa
                 </h1>
-                <div class="card">
-                    <div class="card-body">
-                        <div id="prisma_summary_plot" v-pre></div>
-                    </div>
-                </div>
-
+                {% include "pages/relatorio/cards/prisma_summary_plot.html" %}
             </div>
         </div>
 
@@ -115,12 +107,7 @@
                 <h1>
                     Notícias
                 </h1>
-                <div class="card">
-                    <div class="card-body">
-                        <div id="noticia_summary_plot" v-pre></div>
-                    </div>
-                </div>
-
+                {% include "pages/relatorio/cards/noticia_summary_plot.html" %}
             </div>
         </div>
 

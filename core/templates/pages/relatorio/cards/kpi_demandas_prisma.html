@@ -4,8 +4,10 @@
     <div class="card-body">
         <div class="row">
             <div class="col">
-                <h4 class="card-title text-muted mb-0">Demandas no Prisma</h5>
+                <h4 class="card-title text-muted mb-0">Atendimentos pela Central de Comunicação Interativa</h5>
                     <span class="h2 font-weight-bold mb-0">{{ stats.prisma_tickets|intcomma }}</span>
+                    <span class="text-sm">em <mark>{{ period_humanized }}</mark></span>
+
             </div>
             <div class="col-auto">
                 <div class="icon icon-shape bg-primary text-white rounded-circle shadow">

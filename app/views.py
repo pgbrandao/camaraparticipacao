@@ -23,7 +23,7 @@ def index(request):
     if group_by not in ('day', 'month', 'year'):
         return Http404
 
-    summary_plot = plots.summary_plot(group_by=group_by, height=500)
+    summary_plot = plots.summary_plot(group_by=group_by, height=600)
 
     # last_updated = AppSettings.get_instance().last_updated
 
@@ -214,23 +214,27 @@ def relatorio_consolidado(request, custom):
         initial_date = dt
         final_date = dt.replace(day=num_days)
 
+        period_humanized = datetime.datetime.strftime(initial_date, '%B/%Y')
+
     elif period_type == 'year' and year:
         initial_date = datetime.date(year=int(year), month=1, day=1)
         final_date = datetime.date(year=int(year), month=12, day=31)
+
+        period_humanized = datetime.datetime.strftime(initial_date, '%Y')
 
 
     if initial_date and final_date:
         cache_name = 'relatorio_consolidado-{}-{}'.format(initial_date.toordinal(), final_date.toordinal())
         stats = cache.get(cache_name, None)
 
-        if not stats:
+        if not stats or not settings.USE_CACHE:
 
             stats = {}
 
             # summary plots
-            stats['ficha_enquete_summary_plot'] = plots.summary_plot(group_by='day', height=340, initial_date=initial_date, final_date=final_date, subplots=['ficha', 'enquete'], show_legend=True)
+            stats['ficha_enquete_summary_plot'] = plots.summary_plot(group_by='day', height=360, initial_date=initial_date, final_date=final_date, subplots=['ficha', 'enquete'], show_legend=True)
             stats['prisma_summary_plot'] = plots.summary_plot(group_by='day', height=200, initial_date=initial_date, final_date=final_date, subplots=['prisma'], show_legend=True)
-            stats['noticia_summary_plot'] = plots.summary_plot(group_by='day', height=200, initial_date=initial_date, final_date=final_date, subplots=['noticia'], show_legend=True)
+            stats['noticia_summary_plot'] = plots.summary_plot(group_by='day', height=300, initial_date=initial_date, final_date=final_date, subplots=['noticia'], show_legend=True)
 
             # enquetes votes and comments
             qs = ProposicaoAggregated.objects.get_aggregated(initial_date, final_date)
@@ -246,7 +250,6 @@ def relatorio_consolidado(request, custom):
             # portal comments
             comentarios_camara_count = PortalComentario.objects.get_comentarios_camara_count(initial_date, final_date)
             qs = NoticiaAggregated.objects.get_aggregated(initial_date, final_date)
-
             stats.update({
                 'portal_comments': qs['portal_comments'],
                 'portal_comments_unchecked': qs['portal_comments_unchecked'],
@@ -335,6 +338,7 @@ def relatorio_consolidado(request, custom):
                     return render(request, 'pages/relatorio/custom/{}.html'.format(month_year), locals())
             except:
                 raise Http404
+        raise Http404
 
 
 

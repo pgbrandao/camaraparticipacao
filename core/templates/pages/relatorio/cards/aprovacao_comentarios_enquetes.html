@@ -4,7 +4,8 @@
     <div class="card-header">
         <div class="row">
             <div class="col">
-                <h2>Aprovação dos comentários</h3>
+                <h2>Aprovação dos comentários das enquetes <span class="text-sm">em <mark>{{ period_humanized }}</mark></span></h2>
+                
             </div>
         </div>
     </div>
@@ -39,30 +40,6 @@
                             </td>
                         </tr>
                     </tbody>
-                </template>
-            </v-data-table>
-        </template>
-    </div>
-</div>
-</div>
-<div class="col-xl-6 col-lg-12">
-<div class="card">
-    <div class="card-header">
-        <div class="row">
-            <div class="col">
-                <h2>Enquetes mais votadas e proposições mais acessadas</h2>
-            </div>
-        </div>
-    </div>
-
-
-    <div class="card-body">
-        <template>
-            <v-data-table :headers="top_proposicoes_headers" :items="top_proposicoes" :items-per-page="10">
-                <template #item.proposicao_nome_processado="{ item }">
-                    <a :href="item.link">
-                        [[ item.proposicao_nome_processado ]]
-                    </a>
                 </template>
             </v-data-table>
         </template>

@@ -208,3 +208,5 @@ CACHES = {
         }
     }
 }
+
+USE_CACHE = os.environ.get('USE_CACHE', default=False) == 'True'
