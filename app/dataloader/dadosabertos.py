@@ -102,7 +102,7 @@ def load_proposicoes():
 
             j = r.json()
             
-            proposicoes = []
+            proposicoes = {}
 
             for p in j['dados']:
                 try:
@@ -125,7 +125,6 @@ def load_proposicoes():
                 except KeyError:
                     formulario_publicado_id = None
 
-                # TODO: Improve this for edgier cases
                 nome_processado = '{} {}/{}'.format(p['siglaTipo'], p['numero'], p['ano'])
 
                 proposicao = get_model('Proposicao')(
@@ -149,9 +148,17 @@ def load_proposicoes():
                     ultimo_status_relator_id = ultimo_status_relator_id,
                     ultimo_status_orgao_id = ultimo_status_orgao_id,
                 )
-                proposicoes.append(proposicao)
+                proposicoes[p['id']] = proposicao
 
-            get_model('Proposicao').objects.bulk_create(proposicoes)
+            for id, proposicao in proposicoes.items():
+                if proposicao.sigla_tipo == 'EMP':
+                    try:
+                        id_principal = int(re.search('/([0-9]*)$', proposicao.uri_prop_principal).group(1))
+                        proposicao.nome_processado = 'EMP {} => {}'.format(proposicao.numero, proposicoes[id_principal].nome_processado)
+                    except (AttributeError, KeyError):
+                        pass
+
+            get_model('Proposicao').objects.bulk_create(list(proposicoes.values()))
 
             print("Loaded proposicoes %d" % (i,))
 
