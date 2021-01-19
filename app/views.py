@@ -46,7 +46,7 @@ def api_top_noticias(request):
         }
         requires_grouping = True
 
-    qs = NoticiaAggregated.objects.filter(**filter_params).values('noticia__titulo', 'noticia__link', 'noticia__tipo_conteudo', 'pageviews', 'portal_comments')
+    qs = NoticiaAggregated.objects.filter(**filter_params).values('noticia__id').annotate(pageviews=Sum('pageviews'), portal_comments=Sum('portal_comments')).values('noticia__titulo', 'noticia__link', 'noticia__tipo_conteudo', 'pageviews', 'portal_comments')
     df = pd.DataFrame(qs)
 
     if requires_grouping:
@@ -88,19 +88,13 @@ def api_top_proposicoes(request):
         }
         requires_grouping = True
 
-    qs = ProposicaoAggregated.objects.filter(**filter_params).values('proposicao__nome_processado', 'proposicao__id', 'ficha_pageviews', 'noticia_pageviews', 'poll_votes', 'poll_comments')
+    qs = ProposicaoAggregated.objects \
+        .filter(**filter_params) \
+        .values('proposicao__id') \
+        .annotate(ficha_pageviews=Sum('ficha_pageviews'), noticia_pageviews=Sum('noticia_pageviews'), poll_votes=Sum('poll_votes'), poll_comments=Sum('poll_comments')) \
+        .values('proposicao__nome_processado', 'proposicao__id', 'ficha_pageviews', 'noticia_pageviews', 'poll_votes', 'poll_comments')
 
     df = pd.DataFrame(qs)
-
-    if requires_grouping:
-        df = df.groupby(['proposicao__nome_processado', 'proposicao__id']) \
-            .agg({
-                'ficha_pageviews': 'sum',
-                'noticia_pageviews': 'sum',
-                'poll_votes': 'sum',
-                'poll_comments': 'sum',
-            }) \
-            .reset_index()
     
     df['score'] = (df.ficha_pageviews / df.ficha_pageviews.max()).fillna(0) + \
         (df.noticia_pageviews / df.noticia_pageviews.max()).fillna(0) + \
@@ -411,8 +405,24 @@ def busca_proposicao(request,):
 def proposicao_detail(request, id_proposicao):
     proposicao = Proposicao.objects.get(pk=id_proposicao)
 
+    stats = {}
+
     summary_plot = plots.summary_plot(group_by='day', height=500, proposicao=proposicao)
     poll_votes_plot = plots.poll_votes(proposicao)
+
+    # Noticias
+    qs = proposicao.noticia_set.order_by('data').all()
+    stats.update({
+        'noticias': [{
+            'data': row.data.strftime(settings.STRFTIME_SHORT_DATE_FORMAT),
+            'titulo': row.titulo,
+            'link': row.link,
+            'pageviews': row.pageviews(),
+            'comments_unchecked': row.comments_unchecked(),
+            'comments_authorized': row.comments_authorized(),
+            'comments_unauthorized': row.comments_unauthorized(),
+        } for row in qs]
+    })
 
     return render(request, 'pages/proposicao_details.html', locals())
 

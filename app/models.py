@@ -132,10 +132,10 @@ class Proposicao(models.Model):
         qs = qs.aggregate(Sum('ficha_pageviews'), Sum('noticia_pageviews'), Sum('poll_votes'), Sum('poll_comments'))
 
         return {
-            'ficha_pageviews_total': qs['ficha_pageviews__sum'],
-            'noticia_pageviews_total': qs['noticia_pageviews__sum'],
-            'poll_votes_total': qs['poll_votes__sum'],
-            'poll_comments_total': qs['poll_comments__sum'],
+            'ficha_pageviews': qs['ficha_pageviews__sum'],
+            'noticia_pageviews': qs['noticia_pageviews__sum'],
+            'poll_votes': qs['poll_votes__sum'],
+            'poll_comments': qs['poll_comments__sum'],
         }
         
         
@@ -189,6 +189,12 @@ class Noticia(models.Model):
     def pageviews(self):
         return self.noticiapageviews_set.all().aggregate(Sum('pageviews'))['pageviews__sum']
 
+    def comments_unchecked(self):
+        return self.portalcomentario_set.filter(situacao='PENDENTE').aggregate(Count('id'))['id__count']
+    def comments_authorized(self):
+        return self.portalcomentario_set.filter(situacao='APROVADO').aggregate(Count('id'))['id__count']
+    def comments_unauthorized(self):
+        return self.portalcomentario_set.filter(situacao='REPROVADO').aggregate(Count('id'))['id__count']
 
 class DailySummary(models.Model):
     date = models.DateField(db_index=True, unique=True)
