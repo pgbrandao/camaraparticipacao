@@ -1,0 +1,22 @@
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col">
+                <h2>Notícias</h2>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="card-body">
+        <template>
+            <v-data-table :headers="noticias_headers" :items="noticias" :items-per-page="10">
+                <template #item.titulo="{ item }">
+                    <a :href="item.link">
+                        [[ item.titulo ]]
+                    </a>
+                </template>
+            </v-data-table>
+        </template>
+    </div>
+</div>

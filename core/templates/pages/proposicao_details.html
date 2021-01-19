@@ -5,222 +5,157 @@
 
 {% block content %}
 
-<div class="header pb-8 pt-5 bg-primary">
+<div class="header pt-4">
     <div class="container-fluid">
-        <div class="header-body">
-            <div class="col-6">
-                <h2 class="h2 text-white d-inline-block mb-0">{{ proposicao.nome_processado }}</h2>
-            </div>
-            <div class="col-6">
-                <a href="https://www.camara.leg.br/propostas-legislativas/{{ proposicao.pk }}" class="btn btn-sm btn-neutral">
-                    <i class="fas fa-external-link-alt"></i> Acessar no portal da Câmara
-                </a>
-                <a href="{% url 'proposicao_comentarios_enquete' id_proposicao=proposicao.pk %}" class="btn btn-sm btn-neutral">
-                    Ver comentários da enquete
-                </a>
-            </div>
+        <div class="col">
+            <h1>{{ proposicao.nome_processado }} </h1>
+            <a href="https://www.camara.leg.br/propostas-legislativas/{{ proposicao.pk }}" class="btn btn-sm">
+                <i class="fas fa-external-link-alt"></i> Acessar no portal da Câmara
+            </a>
+            <a href="{% url 'proposicao_comentarios_enquete' id_proposicao=proposicao.pk %}" class="btn btn-sm">
+                Ver comentários da enquete
+            </a>
         </div>
     </div>
 </div>
 
-<div class="container-fluid mt--7 bg-secondary">
+<div id="app">
 
-    <div class="row">
-        <div class="col-xl-12 mb-5 mb-xl-0">
-            <div class="card">
-                <div class="card-body">
-                    <table class="table">
-                        <tbody>
-                            <tr>
-                                <th scope="row">Ementa</th>
-                                <td class="text-wrap">
-                                    {{ proposicao.ementa }}<br />
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Autor</th>
-                                <td>
-                                    {% for autor in proposicao.autor.all %}
-                                        {{ autor.nome_processado }}<br />
-                                    {% empty %}
-                                        Acesse a <a href="https://www.camara.leg.br/propostas-legislativas/{{ proposicao.pk }}">ficha de tramitação</a> para consultar a autoria<br />
-                                    {% endfor %}
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Relator</th>
-                                <td>
-                                    {% if proposicao.ultimo_status_relator %}
-                                        {{ proposicao.ultimo_status_relator.nome_processado }}
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Tema</th>
-                                <td>
-                                    {% for tema in proposicao.tema.all %}
-                                    {{ tema.nome }}<br />
-                                    {% endfor %}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% with stats=proposicao.stats %}
-    <div class="row">
-        <div class="col-xl-3 col-lg-6">
-            <div class="card card-stats">
-                <div class="card-body ">
-                    <div class="row">
-                        <div class="col">
-                            <h5 class="card-title text-uppercase text-muted mb-0">Acessos à ficha</h5>
-                            <span
-                                class="h2 font-weight-bold mb-0">{{ stats.ficha_pageviews_total | intcomma }}</span>
-                        </div>
-                        <div class="col-auto">
-                            <div class="icon icon-shape bg-danger text-white rounded-circle shadow">
-                                <i class="fa fa-chart-line"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-lg-6">
-            <div class="card card-stats">
-                <div class="card-body ">
-                    <div class="row">
-                        <div class="col">
-                            <h5 class="card-title text-uppercase text-muted mb-0">Acessos às notícias</h5>
-                            <span
-                                class="h2 font-weight-bold mb-0">{{ stats.noticia_pageviews_total | intcomma }}</span>
-                        </div>
-                        <div class="col-auto">
-                            <div class="icon icon-shape bg-warning text-white rounded-circle shadow">
-                                <i class="fa fa-chart-line"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-lg-6">
-            <div class="card card-stats">
-                <div class="card-body ">
-                    <div class="row">
-                        <div class="col">
-                            <h5 class="card-title text-uppercase text-muted mb-0">Votos</h5>
-                            <span class="h2 font-weight-bold mb-0">{{ stats.poll_votes_total | intcomma }}</span>
-                        </div>
-                        <div class="col-auto">
-                            <div class="icon icon-shape bg-primary text-white rounded-circle shadow">
-                                <i class="fas fa-check-circle"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-lg-6">
-            <div class="card card-stats">
-                <div class="card-body ">
-                    <div class="row">
-                        <div class="col">
-                            <h5 class="card-title text-uppercase text-muted mb-0">Posicionamentos</h5>
-                            <span
-                                class="h2 font-weight-bold mb-0">{{ stats.poll_comments_total | intcomma }}</span>
-                        </div>
-                        <div class="col-auto">
-                            <div class="icon icon-shape bg-green text-white rounded-circle shadow">
-                                <i class="fas fa-pencil-alt"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endwith %}
+    <div class="container-fluid">
 
-    <div class="row">
-        <div class="col">
-            <div class="card">
-                <plotly>
+        <div class="row">
+            <div class="col-xl-12 mb-5 mb-xl-0">
+                <div class="card">
                     <div class="card-body">
-                        <div id="summary_plot" v-pre></div>
-                    </div>
-                </plotly>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col">
-            <div class="card">
-                <div class="card-body plotly">
-                    <h2 class="card-title">Enquete</h2>
-                    {% autoescape off %}
-                    {{ poll_votes_plot }}
-                    {% endautoescape %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-    <div class="row">
-        <div class="col-xl-12 mb-5 mb-xl-0">
-            <div class="card">
-                <div class="card-body">
-                    <h2 class="card-title">Notícias sobre esta proposição</h2>
-                    <table class="table">
-                        <tbody>
-                            {% for noticia in proposicao.noticia_set.all %}
+                        <table class="table">
+                            <tbody>
                                 <tr>
-                                    <td>
-                                        {{ noticia.tipo_conteudo }}
-                                    </td>
-                                    <td>
-                                        {{ noticia.data }}
-                                    </td>
-                                    <td>
-                                        <a href="{{ noticia.link }}">{{ noticia.titulo }}</a>
-                                    </td>
-                                    <td>
-                                        {{ noticia.pageviews }}
+                                    <th scope="row">Ementa</th>
+                                    <td class="text-wrap">
+                                        {{ proposicao.ementa }}<br />
                                     </td>
                                 </tr>
-                            {% empty %}
-                            <tr>
-                                <td>
-                                    Não há notícias associadas a esta proposição.
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                                <tr>
+                                    <th scope="row">Autor</th>
+                                    <td>
+                                        {% for autor in proposicao.autor.all %}
+                                            {{ autor.nome_processado }}<br />
+                                        {% empty %}
+                                            Acesse a <a href="https://www.camara.leg.br/propostas-legislativas/{{ proposicao.pk }}">ficha de tramitação</a> para consultar a autoria<br />
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Relator</th>
+                                    <td>
+                                        {% if proposicao.ultimo_status_relator %}
+                                            {{ proposicao.ultimo_status_relator.nome_processado }}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Tema</th>
+                                    <td>
+                                        {% for tema in proposicao.tema.all %}
+                                        {{ tema.nome }}<br />
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
+        {% with stats=proposicao.stats %}
+        <div class="row">
+            <div class="col-xl-3 col-lg-6">
+                {% include "pages/cards/kpi_votos_enquetes.html" %}
+            </div>
+
+            <div class="col-xl-3 col-lg-6">
+                {% include "pages/cards/kpi_comentarios_enquetes.html" %}
+            </div>
+
+            <div class="col-xl-3 col-lg-6">
+                {% include "pages/cards/kpi_ficha_pageviews.html" %}
+            </div>
+
+            <div class="col-xl-3 col-lg-6">
+                {% include "pages/cards/kpi_noticia_pageviews.html" %}
+            </div>
+
+        </div>
+        {% endwith %}
+    
+        <div class="row">
+            <div class="col">
+                <div class="card">
+                    <plotly>
+                        <div class="card-body">
+                            <div id="summary_plot" v-pre></div>
+                        </div>
+                    </plotly>
+                </div>
+            </div>
+        </div>
+    
+        <div class="row">
+            <div class="col">
+                <div class="card">
+                    <div class="card-body plotly">
+                        <h2 class="card-title">Enquete</h2>
+                        {% autoescape off %}
+                        {{ poll_votes_plot }}
+                        {% endautoescape %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+    
+        <div class="row">
+            <div class="col-xl-6 col-lg-12">
+                {% include "pages/cards/table_noticias.html" %}
+            </div>
+        </div>
+    
+        {% include "includes/footer.html" %}
+    
     </div>
-
-
-
-    {% include "includes/footer.html" %}
-
 </div>
+
+
 
 {% endblock content %}
 
 <!-- Specific JS goes HERE -->
 {% block javascripts %}
 <script>
-        Plotly.setPlotConfig({"displayModeBar": false, "responsive": true});
+    Vue.config.ignoredElements = [
+        'plotly'
+    ];
+    var app = new Vue({
+        delimiters: ['[[', ']]'],
+        el: '#app',
+        vuetify: new Vuetify(),
+        data: {
+            noticias: {{ stats.noticias|safe }},
+            noticias_headers: [
+                { text: 'Data', value: 'data' },
+                { text: 'Título', value: 'titulo' },
+                { text: 'Visualizações', value: 'pageviews' },
+                { text: 'Comentários (não moderados)', value: 'comments_unchecked' },
+                { text: 'Comentários (não autorizados) ', value: 'comments_unauthorized' },
+                { text: 'Comentários (autorizados)', value: 'comments_authorized' },
+            ],
+        },
+    });
 
-        var summary_plot = {{ summary_plot | safe}};
-        Plotly.plot('summary_plot', summary_plot, {});
+    
+    Plotly.setPlotConfig({"displayModeBar": false, "responsive": true});
+
+    var summary_plot = {{ summary_plot | safe}};
+    Plotly.plot('summary_plot', summary_plot, {});
 </script>
 {% endblock javascripts %}

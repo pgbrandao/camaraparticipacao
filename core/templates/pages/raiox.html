@@ -4,33 +4,31 @@
 {% block title %}Raio-X da participação{% endblock title %}
 
 {% block content %}
-<div class="header pb-8 pt-5 pt-md-6 bg-primary">
+<div class="header pt-4">
     <div class="container-fluid">
-        <div class="header-body">
-            <div class="col-lg-6 col-7">
-                <h2 class="h2 text-white d-inline-block mb-0">Raio-X</h2><br />
-                <h3 class="h3 text-white d-inline-block mb-0">
-                    {% if dimension == "proposicao" %}
-                        Por proposição
-                    {% elif dimension == "tema" %}
-                        Por tema
-                    {% elif dimension == "indexacao" %}
-                        Por indexação
-                    {% elif dimension == "autor" %}
-                        Por autor
-                    {% elif dimension == "relator" %}
-                        Por relator
-                    {% elif dimension == "situacao" %}
-                        Por situação
-                    {% endif %}
-                </h3>
-            </div>
+        <div class="col">
+            <h1>Raio-X</h1><br />
+            <h2>
+                {% if dimension == "proposicao" %}
+                    Por proposição
+                {% elif dimension == "tema" %}
+                    Por tema
+                {% elif dimension == "indexacao" %}
+                    Por indexação
+                {% elif dimension == "autor" %}
+                    Por autor
+                {% elif dimension == "relator" %}
+                    Por relator
+                {% elif dimension == "situacao" %}
+                    Por situação
+                {% endif %}
+            </h2>
+
         </div>
     </div>
 </div>
 
-
-<div class="container-fluid mt--7 bg-secondary">
+<div class="container-fluid">
 
     <div class="row" id="app">
         <div class="col-xl-12">

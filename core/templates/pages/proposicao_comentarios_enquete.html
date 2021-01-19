@@ -13,7 +13,22 @@ padding: 1.25rem 1.5rem;
 
 {% block content %}
 
-<div class="header pb-8 pt-5 bg-primary">
+<div class="header pt-4">
+    <div class="container-fluid">
+        <div class="col">
+            <h1>{{ proposicao.nome_processado }}</h1><br />
+            <a href="https://www.camara.leg.br/propostas-legislativas/{{ proposicao.pk }}" class="btn btn-sm btn-neutral">
+                <i class="fas fa-external-link-alt"></i> Acessar no portal da Câmara
+            </a>
+            <a href="{% url 'proposicao_detail' id_proposicao=proposicao.pk %}" class="btn btn-sm btn-neutral">
+                Ver dados da proposição
+            </a>
+        </div>
+    </div>
+</div>
+
+
+<!-- <div class="header pb-8 pt-5 bg-primary">
     <div class="container-fluid">
         <div class="header-body">
             <div class="col-6">
@@ -29,9 +44,9 @@ padding: 1.25rem 1.5rem;
             </div>
         </div>
     </div>
-</div>
+</div> -->
 
-<div class="container-fluid mt--7 bg-secondary">
+<div class="container-fluid">
 
     <div class="row">
         <div class="col">

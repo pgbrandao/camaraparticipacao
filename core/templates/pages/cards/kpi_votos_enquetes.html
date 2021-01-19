@@ -6,7 +6,9 @@
             <div class="col">
                 <h4 class="card-title text-muted mb-0">Votos nas enquetes</h5>
                     <span class="h2 font-weight-bold mb-0">{{ stats.poll_votes | intcomma }}</span>
-                    <span class="text-sm">em <mark>{{ period_humanized }}</mark></span>
+                    {% if period_humanized %}
+                        <span class="text-sm">em <mark>{{ period_humanized }}</mark></span>
+                    {% endif %}
                        
             </div>
             <div class="col-auto">
