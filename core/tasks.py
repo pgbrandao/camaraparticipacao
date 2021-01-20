@@ -1,4 +1,5 @@
 from app import dataloader
+from app import cache
 from celery import shared_task
 
 @shared_task
@@ -17,3 +18,4 @@ def dataloader_task():
     dataloader.preprocess_proposicoes()
     dataloader.preprocess_noticias()
     dataloader.db_dump()
+    cache.rebuild_caches()

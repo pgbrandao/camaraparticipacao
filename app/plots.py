@@ -364,9 +364,10 @@ def proposicao_heatmap(proposicao):
 
     return values
 
-def raiox_anual(year, metric_field, dimension):
+def raiox_anual(initial_date, final_date, metric_field, dimension):
     """
-    year: int
+    initial_date
+    final_date
     metric_field: any metric field in ProposicaoAggregated
     dimension: 'tema', 'autor', 'relator', 'situacao', 'indexacao' or 'proposicao'
     """
@@ -387,12 +388,11 @@ def raiox_anual(year, metric_field, dimension):
     else:
         return 'Não disponível'
 
-
-    initial = datetime.date(year=int(year), month=1, day=1)
-    final = datetime.date(year=int(year), month=12, day=31)
-
-    qs = ProposicaoAggregated.objects.filter(date__gte=initial, date__lte=final, **{metric_field+'__gt': 0}).values(metric_field, 'date', dimension_field)
+    qs = ProposicaoAggregated.objects.filter(date__gte=initial_date, date__lte=final_date, **{metric_field+'__gt': 0}).values(metric_field, 'date', dimension_field)
     df = pd.DataFrame.from_records(qs)
+
+    if df.shape[0] == 0:
+        return ''
 
     # if dimension == 'indexacao':
     #     def comma_split(x):
@@ -451,7 +451,7 @@ def raiox_anual(year, metric_field, dimension):
 
     # Sums have to be calculated separately, since proposicoes repeat amongst various categories
     # The same process as above is repeated, but without the categorical dimension
-    qs = ProposicaoAggregated.objects.filter(date__gte=initial, date__lte=final, **{metric_field+'__gt': 0}).values(metric_field, 'date')
+    qs = ProposicaoAggregated.objects.filter(date__gte=initial_date, date__lte=final_date, **{metric_field+'__gt': 0}).values(metric_field, 'date')
     df = pd.DataFrame.from_records(qs)
 
     df = df.rename(columns={metric_field: 'metric'})
@@ -488,7 +488,7 @@ def raiox_anual(year, metric_field, dimension):
         rangemode='tozero',
     )
     fig.update_layout(
-        width=1200,
+        width=1020,
         height=750,
         hovermode='closest',
         hoverdistance=1000,
@@ -511,9 +511,9 @@ def raiox_anual(year, metric_field, dimension):
     fig.append_trace(t2, 2, 1)
     fig.update_traces(xaxis='x2')
 
-    plot_div = plotly.io.to_html(fig, include_plotlyjs='cdn', full_html=False)
+    plot_json = plotly.io.to_json(fig)
 
-    return plot_div
+    return plot_json
     
 def raiox_mensal(date_min, date_max, metric_field, dimension, plot_type="sunburst"):
     """
@@ -608,6 +608,6 @@ def raiox_mensal(date_min, date_max, metric_field, dimension, plot_type="sunburs
             }
         });
     """.replace('base_url', base_url)
-    plot_div = plotly.io.to_html(fig, include_plotlyjs='cdn', full_html=False, post_script=post_script)
+    plot_json = plotly.io.to_json(fig)
 
-    return (plot_div, total, total_plot)
+    return (plot_json, total, total_plot)

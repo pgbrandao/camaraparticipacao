@@ -1,0 +1,28 @@
+import datetime
+import json
+
+import pandas as pd
+
+from django.core.cache import cache
+
+def rebuild_caches():
+    from . import reports
+
+    for year_start in pd.date_range(start='2019-01-01', end=datetime.date.today(), freq='YS'):
+        year_end = year_start.replace(month=12, day=31)
+        year_start = year_start.to_pydatetime().date()
+        year_end = year_end.to_pydatetime().date()
+
+        reports.relatorio_consolidado(initial_date=year_start, final_date=year_end, save_cache=True)
+
+    for month_start in pd.date_range(start='2019-01-01', end=datetime.date.today(), freq='MS'):
+        month_end = month_start.replace(day=month_start.days_in_month)
+
+        month_start = month_start.to_pydatetime().date()
+        month_end = month_end.to_pydatetime().date()
+
+        reports.relatorio_consolidado(initial_date=month_start, final_date=month_end, save_cache=True)
+
+    for day in pd.date_range(start='2019-01-01', end=datetime.date.today()):
+        day = day.to_pydatetime().date()
+

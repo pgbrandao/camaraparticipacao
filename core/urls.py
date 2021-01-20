@@ -19,9 +19,9 @@ from django.urls import include, path
 
 import re
 
-prefix = re.search(r'/(.*)', settings.BASE_PATH).group(1)
+dashboard_prefix = re.search(r'/(.*)', settings.DASHBOARD_BASE_PATH).group(1)
 
 urlpatterns = [
-    path(prefix + 'admin/', admin.site.urls),
-    path(prefix + '', include('app.urls'))
+    path(dashboard_prefix + 'admin/', admin.site.urls),
+    path('', include('app.urls')),
 ]

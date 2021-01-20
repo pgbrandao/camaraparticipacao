@@ -212,6 +212,34 @@ class NoticiaAggregatedManager(models.Manager):
                     portal_comments_unauthorized=Coalesce(Sum('portal_comments_unauthorized'), 0),
                    )
 
+    def top_noticias(self, initial_date, final_date):
+        qs = self.get_queryset() \
+            .filter(date__gte=initial_date, date__lte=final_date) \
+            .values('noticia__id') \
+            .annotate(
+                    pageviews=Sum('pageviews'),
+                    portal_comments=Sum('portal_comments'),
+                    portal_comments_unchecked=Sum('portal_comments_unchecked'),
+                    portal_comments_authorized=Sum('portal_comments_authorized'),
+                    portal_comments_unauthorized=Sum('portal_comments_unauthorized'),
+            ) \
+            .order_by('-pageviews') \
+            .values('noticia__id', 'noticia__link', 'noticia__titulo', 'pageviews', 'portal_comments', 'portal_comments_unchecked', 'portal_comments_authorized', 'portal_comments_unauthorized')
+
+        return pd.DataFrame(qs, columns=['noticia__id', 'noticia__link', 'noticia__titulo', 'pageviews', 'portal_comments', 'portal_comments_unchecked', 'portal_comments_authorized', 'portal_comments_unauthorized']) \
+            .groupby(['noticia__id', 'noticia__link', 'noticia__titulo']) \
+            .agg({
+                'pageviews': 'sum',
+                'portal_comments': 'sum',
+                'portal_comments_unchecked': 'sum',
+                'portal_comments_authorized': 'sum',
+                'portal_comments_unauthorized': 'sum',
+            }) \
+            .reset_index() \
+            .sort_values('pageviews', ascending=False) \
+            .to_dict('records')
+
+
 
 class NoticiaAggregated(models.Model):
     noticia = models.ForeignKey('Noticia', on_delete=models.CASCADE)
@@ -465,16 +493,6 @@ class PortalComentarioManager(models.Manager):
             .count()
 
             
-    def get_top_news(self,initial_date,final_date):
-        final_date += datetime.timedelta(days=1) # Final date is advanced by one day for DateTimeField
-        return self.get_queryset() \
-            .filter(data__gte=initial_date, data__lt=final_date) \
-            .values('url__id') \
-            .annotate(comments=Count('id')) \
-            .values('url__link', 'url__titulo', 'comments') \
-            .order_by('-comments')
-
-
 class PortalComentario(models.Model):
     id = models.CharField(primary_key=True, max_length=500)
     usuario_id = models.CharField(max_length=100)

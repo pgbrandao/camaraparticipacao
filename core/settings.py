@@ -20,9 +20,10 @@ import core.tasks
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Base path which will be prepended to all URLs. Should include trailing slash
-BASE_PATH = os.environ.get('BASE_PATH', default='/')
+DASHBOARD_BASE_PATH = os.environ.get('DASHBOARD_BASE_PATH', default='/')
+REPORTS_BASE_PATH = os.environ.get('REPORTS_BASE_PATH', default='/')
 
-LOGIN_URL = BASE_PATH + 'login/'
+LOGIN_URL = DASHBOARD_BASE_PATH + 'login/'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
@@ -79,7 +80,7 @@ TEMPLATES = [
     },
 ]
 
-STATIC_URL = BASE_PATH + 'static/'
+STATIC_URL = DASHBOARD_BASE_PATH + 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'core/static'),
@@ -208,5 +209,3 @@ CACHES = {
         }
     }
 }
-
-USE_CACHE = os.environ.get('USE_CACHE', default=False) == 'True'
