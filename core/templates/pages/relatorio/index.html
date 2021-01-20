@@ -1,191 +1,34 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}Relatório consolidado da participação{% endblock title %}
+{% block title %}Relatórios da participação{% endblock title %}
+
+{% block sidenav %}
+{% endblock sidenav %}
 
 {% block content %}
-<div class="header pt-4">
-    <div class="container-fluid">
-        <div class="col">
-            <h1>Relatório consolidado da participação</h1><br />
+<div class="header pt-lg-9">
+    <div class="container">
+        <div class="header-body text-center mb-7">
+            <div class="row justify-content-center">
+                <div class="col-xl-5 col-lg-6 col-md-8">
+                    <h1 class="display-1">Relatórios de participação</h1>
+                    <p class="text-lead">Saiba mais sobre a participação cidadã na Câmara!</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-
-<div id="app">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-lg-4">
-                {% include "pages/cards/selecionar_periodo.html" %}
-            </div>
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="btn-wrapper text-center">
+            <a href="{% url 'relatorio_ano' year=2020 %}" class="btn btn-neutral">
+                <h3 class="display-3">2020</h2>
+            </a>
         </div>
-
-        {% if stats %}
-        <!-- dados gerais-->
-        <div class="row">
-            <div class="col">
-                <h3>
-                    Quantitativos gerais
-                </h3>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-xl-3 col-lg-6">
-                {% include "pages/cards/kpi_votos_enquetes.html" %}
-            </div>
-
-            <div class="col-xl-3 col-lg-6">
-                {% include "pages/cards/kpi_comentarios_enquetes.html" %}
-            </div>
-
-            <div class="col-xl-3 col-lg-6">
-                {% include "pages/cards/kpi_comentarios_portal.html" %}
-            </div>
-
-            <div class="col-xl-3 col-lg-6">
-                {% include "pages/cards/kpi_demandas_prisma.html" %}
-            </div>
-
-        </div>
-        <!-- enquetes -->
-        <div class="row">
-            <div class="col">
-                <h1>
-                    Proposições e enquetes
-                </h1>
-                {% include "pages/cards/ficha_enquete_summary_plot.html" %}
-            </div>
-        </div>
-    
-        <div class="row">
-            <div class="col-xl-3 col-lg-6">
-                {% include "pages/cards/aprovacao_comentarios_enquetes.html" %}
-            </div>
-            <div class="col-xl-6 col-lg-12">
-                {% include "pages/cards/top_proposicoes_enquetes.html" %}
-            </div>
-        </div>
-
-        <!-- prisma -->
-        <div class="row">
-            <div class="col">
-                <h1>
-                    Central de Comunicação Interativa
-                </h1>
-                {% include "pages/cards/prisma_summary_plot.html" %}
-            </div>
-        </div>
-
-        <div class="row">
-
-            <div class="col-xl-6 col-lg-12">
-                {% include "pages/cards/categorias_prisma.html" %}
-            </div>
-
-            <div class="col-xl-6 col-lg-12">
-                {% include "pages/cards/proposicoes_prisma.html" %}
-            </div>
-
-
-            <div class="col-xl-3 col-lg-6">
-                {% include "pages/cards/canais_prisma.html" %}
-            </div>
-
-            <div class="col-xl-3 col-lg-6">
-                {% include "pages/cards/tipos_prisma.html" %}
-            </div>
-
-            <div class="col-xl-6 col-lg-12">
-                {% include "pages/cards/sexo_idade_prisma.html" %}
-            </div>
-
-
-        </div>
-
-        <!-- noticias -->
-        <div class="row">
-            <div class="col">
-                <h1>
-                    Notícias
-                </h1>
-                {% include "pages/cards/noticia_summary_plot.html" %}
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-xl-3 col-lg-6">
-                {% include "pages/cards/aprovacao_comentarios_noticias.html" %}
-            </div>
-            <div class="col-xl-6 col-lg-12">
-                {% include "pages/cards/materias_mais_comentadas.html" %}
-            </div>
-        </div>
-
-        {% endif %}
-
-        {% include "includes/footer.html" %}
-
     </div>
 </div>
-
 {% endblock content %}
 
 <!-- Specific JS goes HERE -->
 {% block javascripts %}
-<script>
-    Vue.config.ignoredElements = [
-        'plotly'
-    ];
-    var app = new Vue({
-        delimiters: ['[[', ']]'],
-        el: '#app',
-        vuetify: new Vuetify(),
-        data: {
-            period_type: '{{ period_type|escapejs }}',
-            {% if stats %}
-                top_proposicoes: {{ stats.top_proposicoes | safe }},
-                top_news: {{ stats.top_news | safe }},
-                top_prisma_categorias: {{ stats.top_prisma_categorias | safe}},
-                top_prisma_proposicoes: {{ stats.top_prisma_proposicoes | safe}},
-            {% endif %}
-            top_proposicoes_headers: [
-                { text: 'Proposição', align: 'start', sortable: false, value: 'proposicao_nome_processado', },
-                { text: 'Votos', value: 'poll_votes' },
-                { text: 'Comentários', value: 'poll_comments' },
-                { text: 'Visualizações (ficha de tramitação)', value: 'ficha_pageviews' },
-            ],
-            top_news_headers: [
-                { text: 'Notícia', align: 'start', sortable: false, value: 'title', },
-                { text: 'Comentários', value: 'comments' },
-            ],
-            top_prisma_categorias_headers: [
-                { text: 'Macrotema', value: 'prismacategoria__macrotema', },
-                { text: 'Tema', value: 'prismacategoria__tema', },
-                { text: 'Subtema', value: 'prismacategoria__subtema', },
-                { text: 'Demandas', value: 'count', },
-            ],
-            top_prisma_proposicoes_headers: [
-                { text: 'Proposição', value: 'prismacategoria__categoria_tema_proposição', },
-                { text: 'Demandas', value: 'iddemanda__count', },
-            ]
-        },
-    });
-
-    {% if stats %}
-        Plotly.setPlotConfig({"displayModeBar": false, "responsive": true});
-
-        var ficha_enquete_summary_plot = {{ stats.ficha_enquete_summary_plot | safe}};
-        Plotly.plot('ficha_enquete_summary_plot', ficha_enquete_summary_plot, {});
-
-        var prisma_summary_plot = {{ stats.prisma_summary_plot | safe}};
-        Plotly.plot('prisma_summary_plot', prisma_summary_plot, {});
-
-        var noticia_summary_plot = {{ stats.noticia_summary_plot | safe}};
-        Plotly.plot('noticia_summary_plot', noticia_summary_plot, {});
-
-        var prisma_sexo_idade_plot = {{ stats.prisma_sexo_idade_plot | safe}};
-        Plotly.plot('prisma_sexo_idade_plot', prisma_sexo_idade_plot, {});
-
-        {% endif %}
-
-</script>
 {% endblock javascripts %}

@@ -114,7 +114,7 @@
                             Sem dados para o período.
                         {% else %}
                             {% autoescape off %}
-                            {{ plot_div }}
+                            <div id="plot_div" v-pre></div>
                             {% endautoescape %}
                             {% if period_type == 'month' %}
                                 Total: {{ total|intcomma }} ({{ percent_plot|floatformat:2 }}% considerados para a geração do gráfico)
@@ -143,5 +143,13 @@
             dimension: '{{ dimension|escapejs }}',
         }
     });
+
+    {% if plot_div %}
+        Plotly.setPlotConfig({"displayModeBar": false, "responsive": true});
+
+        var plot_div = {{ plot_div | safe}};
+        Plotly.plot('plot_div', plot_div, {});
+    {% endif %}
+
 </script>
 {% endblock javascripts %}

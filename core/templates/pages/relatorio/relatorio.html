@@ -2,66 +2,25 @@
 
 {% block title %}Relatório consolidado da participação{% endblock title %}
 
-{% block sidenav %}{% endblock sidenav %}
-
 {% block content %}
 <div class="header pt-4">
-    <div class="container-sm">
+    <div class="container-fluid">
         <div class="col">
-            <h1>Participação na Câmara em 2020</h1><br />
+            <h1>Relatório consolidado da participação</h1><br />
         </div>
     </div>
 </div>
 
 <div id="app">
-    <div class="container-sm">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-lg-4">
+                {% include "pages/cards/selecionar_periodo.html" %}
+            </div>
+        </div>
+
         {% if stats %}
         <!-- dados gerais-->
-        <div class="row">
-            <div class="col">
-                <div class="card">
-                    <div class="card-body">
-                        <p>
-                            Esta página apresenta um retrato da participação observada na Câmara. A Câmara disponibiliza inúmeros instrumentos de participação à sociedade, e para as finalidades deste relatório, são considerados os seguintes:
-                        </p>
-                        <h4>Comunicação Interativa</h4>
-                        <ul class="list-unstyled">
-                            <li>Fale Conosco;</li>
-                            <li>Disque Câmara;</li>
-                            <li>Comentários nas notícias do Portal da Câmara;</li>
-                        </ul>
-                        <h4>Relacionamento com o público infantojuvenil</h4>
-                        <ul class="list-unstyled">
-                            <li>Parlamento Jovem Brasileiro – PJB</li>
-                            <li>Plenarinho</li>
-                        </ul>
-                        <h4>Canais de participação popular</h4>
-                        <ul class="list-unstyled">
-                            <li>Enquetes legislativas</li>
-                        </ul>
-
-                    </div>
-                </div>
-
-            </div>
-        </div>
-        <div class="row">
-            <div class="col">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="row">
-                            <div class="col">
-                                <h2>Eventos marcantes <span class="text-sm">em <mark>{{ period_humanized }}</mark></span></h2>
-                            </div>
-                        </div>
-                    </div>
-                
-                    <div class="card-body">
-                        <iframe src='https://cdn.knightlab.com/libs/timeline3/latest/embed/index.html?source=1Pu1BSyQZcVPpuI7FibrNVL3Yb4zxkhpc8oNKU0vUebo&font=Default&lang=en&initial_zoom=2&height=650' width='100%' height='650' webkitallowfullscreen mozallowfullscreen allowfullscreen frameborder='0'></iframe>
-                    </div>
-                </div>
-            </div>
-        </div>
         <div class="row">
             <div class="col">
                 <h1>
@@ -104,10 +63,10 @@
         </div>
 
         <div class="row">
-            <div class="col-6">
+            <div class="col-xl-3 col-lg-6">
                 {% include "pages/cards/aprovacao_comentarios_enquetes.html" %}
             </div>
-            <div class="col-6">
+            <div class="col-xl-6 col-lg-12">
                 {% include "pages/cards/top_proposicoes_enquetes.html" %}
             </div>
         </div>
@@ -124,15 +83,24 @@
 
         <div class="row">
 
-            <div class="col-6">
+            <div class="col-xl-6 col-lg-12">
+                {% include "pages/cards/categorias_prisma.html" %}
+            </div>
+
+            <div class="col-xl-6 col-lg-12">
+                {% include "pages/cards/proposicoes_prisma.html" %}
+            </div>
+
+
+            <div class="col-xl-3 col-lg-6">
                 {% include "pages/cards/canais_prisma.html" %}
             </div>
 
-            <div class="col-6">
+            <div class="col-xl-3 col-lg-6">
                 {% include "pages/cards/tipos_prisma.html" %}
             </div>
 
-            <div class="col-12">
+            <div class="col-xl-6 col-lg-12">
                 {% include "pages/cards/sexo_idade_prisma.html" %}
             </div>
 
@@ -149,15 +117,17 @@
         </div>
 
         <div class="row">
-            <div class="col-6">
+            <div class="col-xl-3 col-lg-6">
                 {% include "pages/cards/aprovacao_comentarios_noticias.html" %}
             </div>
-            <div class="col-6">
+            <div class="col-xl-6 col-lg-12">
                 {% include "pages/cards/materias_mais_comentadas.html" %}
             </div>
         </div>
 
         {% endif %}
+
+        {% include "includes/footer.html" %}
 
     </div>
 </div>
@@ -208,7 +178,7 @@
 
     {% if stats %}
         Plotly.setPlotConfig({"displayModeBar": false, "responsive": true});
-
+        
         var proposicoes_pageviews_plot = {{ stats.proposicoes_pageviews_plot | safe}};
         Plotly.plot('proposicoes_pageviews_plot', proposicoes_pageviews_plot, {});
 
