@@ -275,16 +275,24 @@ class ProposicaoAggregatedManager(models.Manager):
                     ficha_pageviews=Sum('ficha_pageviews'),
                     poll_votes=Sum('poll_votes'),
                     poll_comments=Sum('poll_comments'),
+                    poll_comments_unchecked=Sum('poll_comments_unchecked'),
+                    poll_comments_checked=Sum('poll_comments_checked'),
+                    poll_comments_authorized=Sum('poll_comments_authorized'),
+                    poll_comments_unauthorized=Sum('poll_comments_unauthorized'),
             ) \
             .order_by('-poll_votes') \
-            .values('proposicao__id', 'proposicao__nome_processado', 'ficha_pageviews', 'poll_votes', 'poll_comments')
+            .values('proposicao__id', 'proposicao__nome_processado', 'ficha_pageviews', 'poll_votes', 'poll_comments', 'poll_comments_unchecked', 'poll_comments_checked', 'poll_comments_authorized', 'poll_comments_unauthorized')
 
-        return pd.DataFrame(qs, columns=['proposicao__id', 'proposicao__nome_processado', 'ficha_pageviews', 'poll_votes', 'poll_comments']) \
+        return pd.DataFrame(qs, columns=['proposicao__id', 'proposicao__nome_processado', 'ficha_pageviews', 'poll_votes', 'poll_comments', 'poll_comments_unchecked', 'poll_comments_checked', 'poll_comments_authorized', 'poll_comments_unauthorized']) \
             .groupby(['proposicao__nome_processado', 'proposicao__id']) \
             .agg({
                 'ficha_pageviews': 'sum',
                 'poll_votes': 'sum',
                 'poll_comments': 'sum',
+                'poll_comments_unchecked': 'sum',
+                'poll_comments_checked': 'sum',
+                'poll_comments_authorized': 'sum',
+                'poll_comments_unauthorized': 'sum',
             }) \
             .reset_index() \
             .sort_values('poll_votes', ascending=False) \

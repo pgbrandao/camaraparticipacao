@@ -93,8 +93,7 @@ def relatorio_consolidado(initial_date, final_date, save_cache=False):
             'top_proposicoes': [{
                 'proposicao_nome_processado': row['proposicao__nome_processado'],
                 'link': reverse('proposicao_detail', args=[row['proposicao__id']]),
-                'poll_votes': row['poll_votes'],
-                'poll_comments': row['poll_comments'],
+                'poll_comments_authorized': row['poll_comments_authorized'],
                 'ficha_pageviews': row['ficha_pageviews'],
             } for row in qs]
         })
@@ -114,7 +113,7 @@ def relatorio_consolidado(initial_date, final_date, save_cache=False):
                 'title': row['noticia__titulo'] or '',
                 'link': row['noticia__link'] or '',
                 'pageviews': row['pageviews'],
-                'comments': row['portal_comments'],
+                'comments_authorized': row['portal_comments_authorized'],
             } for row in qs]
         })
 

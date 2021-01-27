@@ -181,8 +181,8 @@ USE_L10N = True
 
 USE_TZ = False
 
-# import locale
-# locale.setlocale(locale.LC_ALL, 'pt_BR')
+import locale
+locale.setlocale(locale.LC_TIME, 'pt_BR')
 
 STRFTIME_SHORT_DATE_FORMAT = '%d/%m/%Y'
 

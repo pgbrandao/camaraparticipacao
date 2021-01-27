@@ -184,12 +184,12 @@ def summary_plot(group_by, height, proposicao=None, initial_date=None, final_dat
             x=df.date,
             y=df.atendimentos_total,
             customdata=df.api_params,
-            name='Atendimentos pela Central de Comunicação Interativa (Fale Conosco e Disque Câmara)',
+            name='Atendimentos',
             fill='tozeroy',
             )
         subplots_list.append({
             'traces': [atendimentos_trace],
-            'title': 'Atendimentos pela Central de Comunicação Interativa (Fale Conosco e Disque Câmara)',
+            'title': 'Atendimentos',
         })
 
 

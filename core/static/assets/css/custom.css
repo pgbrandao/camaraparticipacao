@@ -19,3 +19,12 @@ body {
 p {
   font-weight: 400 !important;
 }
+
+a[href*="//"]:not([href*="midias.camara.leg.br"]):after { 
+  font-family: FontAwesome;
+  content: "\f08e";
+  padding-left: 7px;
+}
+a.linked-img:after {
+display: none;
+}
