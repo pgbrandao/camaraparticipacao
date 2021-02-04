@@ -5,6 +5,74 @@ from django.urls import reverse
 from . import plots
 from .models import *
 
+def enquetes_temas(initial_date, final_date, save_cache=False):
+    stats = {}
+
+    cache_name = 'enquetes_temas-{}-{}'.format(initial_date.toordinal(), final_date.toordinal())
+    stats = cache.get(cache_name, None)
+
+    if not stats or save_cache:
+        stats = {}
+        
+        stats['plot_div'] = plots.enquetes_temas(initial_date, final_date)
+        
+        if save_cache:
+            print("Saving cache for {} {}-{}".format(cache_name, initial_date, final_date))
+            cache.set(cache_name, stats, 172800)
+
+    return stats
+
+def proposicoes_temas(initial_date, final_date, save_cache=False):
+    stats = {}
+
+    cache_name = 'proposicoes_temas-{}-{}'.format(initial_date.toordinal(), final_date.toordinal())
+    stats = cache.get(cache_name, None)
+
+    if not stats or save_cache:
+        stats = {}
+        
+        stats['plot_div'] = plots.proposicoes_temas(initial_date, final_date)
+
+        if save_cache:
+            print("Saving cache for {} {}-{}".format(cache_name, initial_date, final_date))
+            cache.set(cache_name, stats, 172800)
+
+    return stats
+
+def noticias_temas(initial_date, final_date, save_cache=False):
+    stats = {}
+
+    cache_name = 'noticias_temas-{}-{}'.format(initial_date.toordinal(), final_date.toordinal())
+    stats = cache.get(cache_name, None)
+
+    if not stats or save_cache:
+        stats = {}
+        
+        stats['plot_div'] = plots.noticias_temas(initial_date, final_date)
+
+        if save_cache:
+            print("Saving cache for {} {}-{}".format(cache_name, initial_date, final_date))
+            cache.set(cache_name, stats, 172800)
+
+    return stats
+
+def noticias_tags(initial_date, final_date, save_cache=False):
+    stats = {}
+
+    cache_name = 'noticias_tags-{}-{}'.format(initial_date.toordinal(), final_date.toordinal())
+    stats = cache.get(cache_name, None)
+
+    if not stats or save_cache:
+        stats = {}
+        
+        stats['plot_div'] = plots.noticias_tags(initial_date, final_date)
+
+        if save_cache:
+            print("Saving cache for {} {}-{}".format(cache_name, initial_date, final_date))
+            cache.set(cache_name, stats, 172800)
+
+    return stats
+
 def relatorio_consolidado(initial_date, final_date, save_cache=False):
     stats = {}
     if not (initial_date and final_date):
@@ -99,10 +167,10 @@ def relatorio_consolidado(initial_date, final_date, save_cache=False):
         })
 
         # proposicoes pageviews plot
-        proposicoes_pageviews_plot = plots.raiox_anual(initial_date=initial_date, final_date=final_date, metric_field='ficha_pageviews', dimension='tema')
+        proposicoes_temas_plot = plots.proposicoes_temas(initial_date=initial_date, final_date=final_date)
 
         stats.update({
-            'proposicoes_pageviews_plot': proposicoes_pageviews_plot
+            'proposicoes_temas_plot': proposicoes_temas_plot
         })
 
         # top news
@@ -118,7 +186,7 @@ def relatorio_consolidado(initial_date, final_date, save_cache=False):
         })
 
         if save_cache:
-            print("Saving cache for {}-{}".format(initial_date, final_date))
+            print("Saving cache for {} {}-{}".format(cache_name, initial_date, final_date))
             cache.set(cache_name, stats, 172800)
 
     return stats

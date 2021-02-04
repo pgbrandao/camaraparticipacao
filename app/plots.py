@@ -364,66 +364,85 @@ def proposicao_heatmap(proposicao):
 
     return values
 
-def raiox_anual(initial_date, final_date, metric_field, dimension):
-    """
-    initial_date
-    final_date
-    metric_field: any metric field in ProposicaoAggregated
-    dimension: 'tema', 'autor', 'relator', 'situacao', 'indexacao' or 'proposicao'
-    """
+def enquetes_temas(initial_date, final_date):
+    metric_field = 'poll_votes'
+    dimension_field = 'proposicao__tema__nome'
 
-    if dimension == 'tema':
-        dimension_field = 'proposicao__tema__nome'
-    elif dimension == 'autor':
-        dimension_field = 'proposicao__autor__nome_processado'
-    elif dimension == 'relator':
-        dimension_field = 'proposicao__ultimo_status_relator__nome'
-    elif dimension == 'indexacao':
-        return 'Não disponível'
+    # First step: prepare df_dimension
+    df_dimension = ProposicaoAggregated.objects.get_metric_date_dimension_df(initial_date, final_date, metric_field, dimension_field)
 
-        # Muiitos problemas a serem corrigidos nessa visualização.
-        # dimension_field = 'proposicao__keywords'
-    elif dimension == 'situacao':
-        dimension_field = 'proposicao__ultimo_status_situacao_descricao'
+    # Second step: prepare df_sum
+    df_sum = ProposicaoAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
+
+    if not df_dimension.empty and not df_sum.empty:
+        return raiox_anual_plot(df_dimension, df_sum, dimension_field, metric_field)
     else:
-        return 'Não disponível'
-
-    qs = ProposicaoAggregated.objects.filter(date__gte=initial_date, date__lte=final_date, **{metric_field+'__gt': 0}).values(metric_field, 'date', dimension_field)
-    df = pd.DataFrame.from_records(qs)
-
-    if df.shape[0] == 0:
         return ''
 
-    # if dimension == 'indexacao':
-    #     def comma_split(x):
-    #         x = x.split(',')
-    #         x = [y for y in x if not y.isspace()]
-    #         if not any(x):
-    #             x = ['Sem indexação']
-    #         return x
-    #     df['proposicao__keywords'] = df['proposicao__keywords'].apply(comma_split)
-    #     df = df.explode('proposicao__keywords')
+def proposicoes_temas(initial_date, final_date):
+    metric_field = 'ficha_pageviews'
+    dimension_field = 'proposicao__tema__nome'
 
-    df = df.rename(columns={metric_field: 'metric'})
+    # First step: prepare df_dimension
+    df_dimension = ProposicaoAggregated.objects.get_metric_date_dimension_df(initial_date, final_date, metric_field, dimension_field)
 
-    df['date'] = pd.to_datetime(df['date'])
-    dfg = df.groupby([pd.Grouper(key='date', freq='M'), dimension_field]).metric.agg('sum')
-    dfg = dfg.reset_index()
+    # Second step: prepare df_sum
+    df_sum = ProposicaoAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
-    dfg['metric_normalized'] = dfg.groupby('date')['metric'].transform(lambda x: 100*x/x.sum())
-    dfg['metric_normalized'] = dfg['metric_normalized'].map('{:.2f} %'.format)
-    # dfg = dfg.sort_values('metric_normalized', ascending=False)
+    if not df_dimension.empty and not df_sum.empty:
+        return raiox_anual_plot(df_dimension, df_sum, dimension_field, metric_field)
+    else:
+        return ''
+
+
+def noticias_temas(initial_date, final_date):
+    metric_field = 'pageviews'
+    dimension_field = 'noticia__tema_principal__titulo'
+
+    # First step: prepare df_dimension
+    df_dimension = NoticiaAggregated.objects.get_metric_date_dimension_df(initial_date, final_date, metric_field, dimension_field)
+
+    # Second step: prepare df_sum
+    df_sum = NoticiaAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
+
+    if not df_dimension.empty and not df_sum.empty:
+        return raiox_anual_plot(df_dimension, df_sum, dimension_field, metric_field)
+    else:
+        return ''
+
+def noticias_tags(initial_date, final_date):
+    metric_field = 'pageviews'
+    dimension_field = 'noticia__tags_conteudo__nome'
+
+    # First step: prepare df_dimension
+    df_dimension = NoticiaAggregated.objects.get_metric_date_dimension_df(initial_date, final_date, metric_field, dimension_field)
+
+    # Second step: prepare df_sum
+    df_sum = NoticiaAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
+
+    if not df_dimension.empty and not df_sum.empty:
+        return raiox_anual_plot(df_dimension, df_sum, dimension_field, metric_field)
+    else:
+        return ''
+
+def raiox_anual_plot(df_dimension, df_sum, dimension_field, metric_field):
+    """
+    df_dimension: columns: ['date', 'date_formatted', dimension_field, metric_field]
+    df_sum: columns: ['date', 'date_formatted', metric_field]
+    """
+    # Calculate normalized metrics
+    metric_normalized_field = '{}_normalized'.format(metric_field)
+    df_dimension[metric_normalized_field] = df_dimension.groupby('date')[metric_field].transform(lambda x: 100*x/x.sum())
+    df_dimension[metric_normalized_field] = df_dimension[metric_normalized_field].map('{:.2f} %'.format)
+
 
     # To calculate top dimensions, the metric is summed over the entire period and inversely sorted
-    top_dimensions = dfg \
-        .groupby(dimension_field)['metric'] \
+    top_dimensions = df_dimension \
+        .groupby(dimension_field)[metric_field] \
         .sum() \
         .reset_index() \
-        .sort_values('metric', ascending=False) \
+        .sort_values(metric_field, ascending=False) \
         .reset_index(drop=True)
-    
-    if dimension == 'indexacao':
-        top_dimensions = top_dimensions[:500]
 
     traces_dimensions = []
     for i, row in top_dimensions.iterrows():
@@ -435,38 +454,23 @@ def raiox_anual(initial_date, final_date, metric_field, dimension):
         else:
             color = px.colors.qualitative.T10[-1]
 
-        dfg_dimension = dfg[dfg[dimension_field] == dimension_value]
-
-        dfg_dimension['date_formatted'] = dfg_dimension['date'].dt.strftime('%B %Y')
+        df_this_dimension = df_dimension[df_dimension[dimension_field] == dimension_value]
 
         traces_dimensions.append(
             go.Bar(
-                x=dfg_dimension.date_formatted,
-                y=dfg_dimension.metric_normalized,
+                x=df_this_dimension['date_formatted'],
+                y=df_this_dimension[metric_normalized_field],
                 name=dimension_value,
                 marker_color=color,
                 showlegend=most_important,
             )
         )
 
-    # Sums have to be calculated separately, since proposicoes repeat amongst various categories
-    # The same process as above is repeated, but without the categorical dimension
-    qs = ProposicaoAggregated.objects.filter(date__gte=initial_date, date__lte=final_date, **{metric_field+'__gt': 0}).values(metric_field, 'date')
-    df = pd.DataFrame.from_records(qs)
-
-    df = df.rename(columns={metric_field: 'metric'})
-
-    df['date'] = pd.to_datetime(df['date'])
-    dfg = df.groupby(pd.Grouper(key='date', freq='M')).metric.agg('sum')
-    dfg = dfg.reset_index()
-    dfg['date_formatted'] = dfg['date'].dt.strftime('%B %Y')
-
-    t2 = go.Scatter(
-        x=dfg.date_formatted,
-        y=dfg.metric,
+    t2 = go.Bar(
+        x=df_sum['date_formatted'],
+        y=df_sum[metric_field],
         name='Total da métrica',
         marker_color='#f5365c',
-        mode='lines+markers',
     )
 
     # Now we can finally start plotting
@@ -515,99 +519,3 @@ def raiox_anual(initial_date, final_date, metric_field, dimension):
 
     return plot_json
     
-def raiox_mensal(date_min, date_max, metric_field, dimension, plot_type="sunburst"):
-    """
-    date_min: date
-    date_max: date
-    metric_field: any metric field in ProposicaoAggregated
-    dimension: 'tema', 'autor', 'relator', 'situacao', 'indexacao' or 'proposicao'
-    plot_type: 'sunburst' or 'treemap'
-    """
-    qs = ProposicaoAggregated.objects \
-        .filter(date__gte=date_min, date__lte=date_max, **{metric_field+'__gt': 0}) \
-        .annotate(metric_total=Sum(metric_field))
-    
-    if dimension == 'tema':
-        qs = qs.values('proposicao__pk', 'proposicao__nome_processado', 'metric_total', 'proposicao__tema__nome')
-    elif dimension == 'autor':
-        qs = qs.values('proposicao__pk', 'proposicao__nome_processado', 'metric_total', 'proposicao__autor__nome_processado')
-    elif dimension == 'relator':
-        qs = qs.values('proposicao__pk', 'proposicao__nome_processado', 'metric_total', 'proposicao__ultimo_status_relator__nome')
-    elif dimension == 'situacao':
-        qs = qs.values('proposicao__pk', 'proposicao__nome_processado', 'metric_total', 'proposicao__ultimo_status_situacao_descricao')
-    elif dimension == 'indexacao':
-        qs = qs.values('proposicao__pk', 'proposicao__nome_processado', 'metric_total', 'proposicao__keywords')
-    elif dimension == 'proposicao':
-        qs = qs.values('proposicao__pk', 'proposicao__nome_processado', 'metric_total')
-    
-    df = pd.DataFrame.from_records(qs)
-
-    if df.empty:
-        return (' ', 0, 0)
-    df['proposicao__pk'] = df['proposicao__pk'].astype(str)
-
-    if dimension == 'tema':
-        path = ['proposicao__tema__nome', 'proposicao__nome_processado']
-        df['proposicao__tema__nome'] = df['proposicao__tema__nome'].fillna('Não classificado')
-    elif dimension == 'autor':
-        path = ['proposicao__autor__nome_processado', 'proposicao__nome_processado']
-        df['proposicao__autor__nome_processado'] = df['proposicao__autor__nome_processado'].fillna('Sem deputado autor')
-    elif dimension == 'relator':
-        path = ['proposicao__ultimo_status_relator__nome', 'proposicao__nome_processado']
-        df['proposicao__ultimo_status_relator__nome'] = df['proposicao__ultimo_status_relator__nome'].fillna('Sem relator')
-    elif dimension == 'situacao':
-        path = ['proposicao__ultimo_status_situacao_descricao', 'proposicao__nome_processado']
-        df['proposicao__ultimo_status_situacao_descricao'] = df['proposicao__ultimo_status_situacao_descricao'].replace(r'^\s*$', 'Sem situação', regex=True)
-        df['proposicao__ultimo_status_situacao_descricao'] = df['proposicao__ultimo_status_situacao_descricao'].fillna('Sem situação')
-    elif dimension == 'indexacao':
-        path = ['proposicao__keywords', 'proposicao__nome_processado']
-
-        def comma_split(x):
-            x = x.split(',')
-            x = [y for y in x if not y.isspace()]
-            if not any(x):
-                x = ['Sem indexação']
-            return x
-        df['proposicao__keywords'] = df['proposicao__keywords'].apply(comma_split)
-        df = df.explode('proposicao__keywords')
-        
-    elif dimension == 'proposicao':
-        path = ['proposicao__nome_processado']
-
-    # Group proposicoes lower than threshold
-
-    # TODO: Maybe this can be improved by:
-    # 1. Grouping the excluded items and showing them in the graph for precision
-    # 2. Considering the threshold inside each dimension item.
-
-    total = df['metric_total'].sum()
-    threshold = 0.0001 * total
-    df = df[df['metric_total'] >= threshold]
-    total_plot = df['metric_total'].sum()
-
-    if plot_type=='treemap':
-        fig = px.treemap(df, path=path, values='metric_total', custom_data=['proposicao__pk'])
-        fig.update_layout(
-            width=1200,
-            height=900
-        )
-    else: # Sunburst is the fallback
-        fig = px.sunburst(df, path=path, values='metric_total', custom_data=['proposicao__pk'])
-        fig.update_layout(
-            width=900,
-            height=900
-        )
-
-    from django.urls import reverse
-    base_url = reverse('proposicao_detail', args=[0])
-
-    post_script = """
-        document.getElementById('{plot_id}').on('plotly_click', function(data){
-            if(!isNaN(data.points[0].customdata[0])) {
-                window.location.href='base_url'.replace('0', data.points[0].customdata[0]);
-            }
-        });
-    """.replace('base_url', base_url)
-    plot_json = plotly.io.to_json(fig)
-
-    return (plot_json, total, total_plot)

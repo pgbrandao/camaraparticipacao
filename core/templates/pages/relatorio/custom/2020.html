@@ -22,7 +22,7 @@
                 <div class="card">
                     <div class="card-body">
                         <p>
-                            Esta página apresenta alguns eventos importantes e os dados da participação popular nos seguintes canais da Câmara dos Deputados em 2020:
+                            Esta página apresenta parte do retrato da participação popular observada na Câmara. A Câmara disponibiliza inúmeros instrumentos de participação à sociedade, e para as finalidades deste relatório, são considerados os seguintes:
                         </p>
                         <h4>Canais de participação popular</h4>
                         <ul class="list-unstyled">
@@ -58,7 +58,7 @@
                     <div class="card-header">
                         <div class="row">
                             <div class="col">
-                                <h2>Eventos marcantes <span class="text-sm">em <mark>{{ period_humanized }}</mark></span></h2>
+                                <h2>A Câmara <span class="text-sm">em <mark>{{ period_humanized }}</mark></span></h2>
                             </div>
                         </div>
                     </div>
@@ -114,7 +114,7 @@
 
         <div class="row">
             <div class="col">
-                {% include "pages/cards/proposicoes_pageviews_plot.html" %}
+                {% include "pages/cards/proposicoes_temas_plot.html" %}
             </div>
         </div>
 
@@ -221,8 +221,8 @@
     {% if stats %}
         Plotly.setPlotConfig({"displayModeBar": false, "responsive": true});
 
-        var proposicoes_pageviews_plot = {{ stats.proposicoes_pageviews_plot | safe}};
-        Plotly.plot('proposicoes_pageviews_plot', proposicoes_pageviews_plot, {});
+        var proposicoes_temas_plot = {{ stats.proposicoes_temas_plot | safe}};
+        Plotly.plot('proposicoes_temas_plot', proposicoes_temas_plot, {});
 
         var ficha_enquete_summary_plot = {{ stats.ficha_enquete_summary_plot | safe}};
         Plotly.plot('ficha_enquete_summary_plot', ficha_enquete_summary_plot, {});

@@ -1,0 +1,79 @@
+{% extends 'layouts/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="header pt-4">
+    <div class="container-fluid">
+        <div class="col">
+            <h1>{% block title %}{% endblock title %}</h1><br />
+        </div>
+    </div>
+</div>
+
+<div id="app">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-lg-4">
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col">
+                                <h3>Selecione o período</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body ">
+                        {% for value, text in year_choices %}
+                            <a href="{% url view_name value %}" class="btn {% if value == year %}btn-default{% else %}btn-secondary{% endif %}">{{ text }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+
+        {% if stats.plot_div %}
+            <div class="row">
+                <div class="col">
+                    <div class="card">
+                        <div class="card-body ">
+                            {% if total == 0 %}
+                                Sem dados para o período.
+                            {% else %}
+                                {% autoescape off %}
+                                <div id="plot_div" v-pre></div>
+                                {% endautoescape %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {% include "includes/footer.html" %}
+
+    </div>
+</div>
+
+{% endblock content %}
+
+<!-- Specific JS goes HERE -->
+{% block javascripts %}
+<script>
+    var app = new Vue({
+        delimiters: ['[[', ']]'],
+        el: '#app',
+        data: {
+        }
+    });
+
+    {% if stats.plot_div %}
+        Plotly.setPlotConfig({"displayModeBar": false, "responsive": true});
+
+        var plot_div = {{ stats.plot_div | safe}};
+        Plotly.plot('plot_div', plot_div, {});
+    {% endif %}
+
+</script>
+{% endblock javascripts %}

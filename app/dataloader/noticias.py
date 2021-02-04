@@ -64,6 +64,37 @@ def load_noticia(id):
             except get_model('Deputado').DoesNotExist:
                 pass
 
+    tema_principal = None
+    if j.get('tema_principal'):
+        try:
+            tema_id = j.get('tema_principal')['id']
+            tema_titulo = j.get('tema_principal')['titulo']
+        except KeyError:
+            tema_id = None
+    
+        if tema_id:
+            try:
+                tema_principal = get_model('NoticiaTema').objects.get(pk=tema_id)
+            except NoticiaTema.DoesNotExist:
+                tema_principal = get_model('NoticiaTema').objects.create(pk=tema_id, titulo=tema_titulo)
+    
+    tags_conteudo_list = []
+    if j.get('tags_conteudo'):
+        for tag in j.get('tags_conteudo'):
+            try:
+                tag_id = tag['id']
+                tag_nome = tag['nome']
+                tag_slug = tag['slug']
+            except KeyError:
+                tag_id = None
+
+            if tag_id:
+                try:
+                    noticia_tag = NoticiaTag.objects.get(pk=tag_id)
+                except NoticiaTag.DoesNotExist:
+                    noticia_tag = NoticiaTag.objects.create(pk=tag_id, nome=tag_nome, slug=tag_slug)
+            tags_conteudo_list.append(noticia_tag)
+
 
     noticia = get_model('Noticia').objects.create(
         pk = noticia_id,
@@ -74,9 +105,11 @@ def load_noticia(id):
         data_atualizacao = datetime.datetime.utcfromtimestamp(data_atualizacao) if data_atualizacao else None,
         conteudo = conteudo,
         resumo = resumo,
+        tema_principal = tema_principal,
         raw_data = j
     )
     noticia.proposicoes.set(proposicoes_list)
     noticia.deputados.set(deputados_list)
+    noticia.tags_conteudo.set(tags_conteudo_list)
 
     return True

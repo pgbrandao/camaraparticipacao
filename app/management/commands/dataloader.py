@@ -49,11 +49,6 @@ class Command(BaseCommand):
             help='Pre-processes data'
         )
         parser.add_argument(
-            '--db-dump',
-            action='store_true',
-            help='Generates database dump'
-        )
-        parser.add_argument(
             '--initial-date',
             nargs=1,
             type=str,
@@ -70,7 +65,6 @@ class Command(BaseCommand):
             options['analytics_fichas'],
             options['analytics_noticias'],
             options['preprocess'],
-            options['db_dump'],
         ]):
             raise CommandError('No option specified.')
 
@@ -99,5 +93,3 @@ class Command(BaseCommand):
             dataloader.preprocess_daily_summary()
             dataloader.preprocess_noticias()
             dataloader.preprocess_proposicoes()
-        if options['all'] or options['db_dump']:
-            dataloader.db_dump()

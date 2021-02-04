@@ -58,7 +58,7 @@
     
         <div class="row">
             <div class="col">
-                {% include "pages/cards/proposicoes_pageviews_plot.html" %}
+                {% include "pages/cards/proposicoes_temas_plot.html" %}
             </div>
         </div>
 
@@ -179,8 +179,8 @@
     {% if stats %}
         Plotly.setPlotConfig({"displayModeBar": false, "responsive": true});
         
-        var proposicoes_pageviews_plot = {{ stats.proposicoes_pageviews_plot | safe}};
-        Plotly.plot('proposicoes_pageviews_plot', proposicoes_pageviews_plot, {});
+        var proposicoes_temas_plot = {{ stats.proposicoes_temas_plot | safe}};
+        Plotly.plot('proposicoes_temas_plot', proposicoes_temas_plot, {});
 
         var ficha_enquete_summary_plot = {{ stats.ficha_enquete_summary_plot | safe}};
         Plotly.plot('ficha_enquete_summary_plot', ficha_enquete_summary_plot, {});

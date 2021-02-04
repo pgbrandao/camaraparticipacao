@@ -14,6 +14,10 @@ def rebuild_caches():
         year_end = year_end.to_pydatetime().date()
 
         reports.relatorio_consolidado(initial_date=year_start, final_date=year_end, save_cache=True)
+        reports.enquetes_temas(initial_date=year_start, final_date=year_end, save_cache=True)
+        reports.proposicoes_temas(initial_date=year_start, final_date=year_end, save_cache=True)
+        reports.noticias_temas(initial_date=year_start, final_date=year_end, save_cache=True)
+        reports.noticias_tags(initial_date=year_start, final_date=year_end, save_cache=True)
 
     for month_start in pd.date_range(start='2019-01-01', end=datetime.date.today(), freq='MS'):
         month_end = month_start.replace(day=month_start.days_in_month)

@@ -120,67 +120,74 @@ def api_top_proposicoes(request):
         } for _, row in df.iterrows()]
     })
 
-def raiox(request):
-    # if dimension not in ('tema', 'autor', 'relator', 'situacao', 'indexacao', 'proposicao'):
-    #     return Http404
-
-    dimension = request.GET.get('dimension')
-    metric_field = request.GET.get('metric_field')
-    period_type = request.GET.get('period_type') or 'month'
-    year = request.GET.get('year')
-    month_year = request.GET.get('month_year')
-    plot_type = request.GET.get('plot_type')
-
-    if metric_field and period_type:
-        if period_type == 'month' and month_year:
-            dt = datetime.datetime.strptime(month_year, '%m-%Y')
-            _, num_days = calendar.monthrange(
-                int(dt.strftime('%Y')), int(dt.strftime('%m')))
-
-            initial_date = dt
-            final_date = dt.replace(day=num_days)
-
-            plot_div, total, total_plot = plots.raiox_mensal(
-                initial_date, final_date, metric_field, dimension, plot_type)
-
-            percent_plot = total_plot / total * 100 if total else 0
-        elif period_type == 'year' and year:
-            initial_date = datetime.date(year=int(year), month=1, day=1)
-            final_date = datetime.date(year=int(year), month=12, day=31)
-
-            plot_div = plots.raiox_anual(initial_date, final_date, metric_field, dimension)
-
-    month_year_choices = [
-        (x.strftime('%m-%Y'), x.strftime('%B-%Y'))
-        for x in pd.date_range('2019-01-01', datetime.date.today(), freq='MS').to_series()
-    ]
-    month_year_choices = month_year_choices[::-1]
+def enquetes_temas(request, year=None):
+    if not year:
+        return redirect('enquetes_temas', year=datetime.date.today().year)
 
     year_choices = [
         (x.strftime('%Y'), x.strftime('%Y'))
         for x in pd.date_range('2019-01-01', datetime.date.today(), freq='YS').to_series()
     ]
-    year_choices = year_choices[::-1]
 
-    dimension_choices = [
-        ('tema', 'Tema'),
-        ('autor', 'Autor'),
-        ('relator', 'Relator'),
-        ('situacao', 'Situação'),
-        ('indexacao', 'Indexação (apenas mensal)'),
-        ('proposicao', 'Proposição (apenas mensal)'),
-    ]
-    metric_field_choices = [
-        ('poll_votes', 'Votos nas enquetes'),
-        ('ficha_pageviews', 'Visualizações na ficha de tramitação'),
-    ]
-    plot_type_choices = [
-        ('sunburst', 'Circular (sunburst)'),
-        ('treemap', 'Retangular (treemap)'),
-    ]
+    initial_date = datetime.date(year=int(year), month=1, day=1)
+    final_date = datetime.date(year=int(year), month=12, day=31)
+
+    stats = reports.enquetes_temas(initial_date, final_date)
 
 
-    return render(request, 'pages/raiox.html', locals())
+    view_name = 'enquetes_temas'
+    return render(request, 'pages/enquetes_temas.html', locals())
+
+def proposicoes_temas(request, year=None):
+    if not year:
+        return redirect('proposicoes_temas', year=datetime.date.today().year)
+
+    year_choices = [
+        (x.strftime('%Y'), x.strftime('%Y'))
+        for x in pd.date_range('2019-01-01', datetime.date.today(), freq='YS').to_series()
+    ]
+
+    initial_date = datetime.date(year=int(year), month=1, day=1)
+    final_date = datetime.date(year=int(year), month=12, day=31)
+
+    stats = reports.proposicoes_temas(initial_date, final_date)
+
+    view_name = 'proposicoes_temas'
+    return render(request, 'pages/proposicoes_temas.html', locals())
+
+def noticias_temas(request, year=None):
+    if not year:
+        return redirect('noticias_temas', year=datetime.date.today().year)
+
+    year_choices = [
+        (x.strftime('%Y'), x.strftime('%Y'))
+        for x in pd.date_range('2019-01-01', datetime.date.today(), freq='YS').to_series()
+    ]
+
+    initial_date = datetime.date(year=int(year), month=1, day=1)
+    final_date = datetime.date(year=int(year), month=12, day=31)
+
+    stats = reports.noticias_temas(initial_date, final_date)
+
+    view_name = 'noticias_temas'
+    return render(request, 'pages/noticias_temas.html', locals())
+
+def noticias_tags(request, year=None):
+    if not year:
+        return redirect('noticias_tags', year=datetime.date.today().year)
+
+    year_choices = [
+        (x.strftime('%Y'), x.strftime('%Y'))
+        for x in pd.date_range('2019-01-01', datetime.date.today(), freq='YS').to_series()
+    ]
+
+    initial_date = datetime.date(year=int(year), month=1, day=1)
+    final_date = datetime.date(year=int(year), month=12, day=31)
+
+    stats = reports.noticias_tags(initial_date, final_date)
+
+    view_name = 'noticias_tags'
+    return render(request, 'pages/noticias_tags.html', locals())
 
 def relatorios_index(request):
     return render(request, 'pages/relatorio/index.html', locals())
@@ -198,7 +205,6 @@ def relatorio_ano(request, year):
     except:
         raise Http404
     
-@xframe_options_exempt
 def relatorio_consolidado(request, custom):
     year = request.GET.get('year')
     month_year = request.GET.get('month_year')
@@ -276,16 +282,6 @@ def enquetes_exportar_comentarios(request,):
     return JsonResponse({
         'posicionamentos': list(posicionamentos)
     })
-
-@login_required
-def db_dump(request,):
-    dump_path = Path(settings.DB_DUMP_PATH) / Path('latest_dump.gz')
-    f = open(dump_path, 'rb')
-    response = FileResponse(f)
-    response["Content-Disposition"] = "attachment; filename="+str('latest_dump.gz')
-    return response
-
-
 
 def busca_proposicao(request,):
     if request.method == "POST":

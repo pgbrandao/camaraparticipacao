@@ -180,6 +180,8 @@ class Noticia(models.Model):
     data_atualizacao = models.DateTimeField(blank=True, null=True)
     deputados = models.ManyToManyField('Deputado')
     proposicoes = models.ManyToManyField('Proposicao')
+    tags_conteudo = models.ManyToManyField('NoticiaTag')
+    tema_principal = models.ForeignKey('NoticiaTema', null=True, on_delete=models.CASCADE)
 
     raw_data = JSONField(blank=True, null=True)
 
@@ -196,6 +198,13 @@ class Noticia(models.Model):
     def comments_unauthorized(self):
         return self.portalcomentario_set.filter(situacao='REPROVADO').aggregate(Count('id'))['id__count']
 
+class NoticiaTag(models.Model):
+    nome = models.TextField(blank=True, null=True)
+    slug = models.TextField(blank=True, null=True)
+
+class NoticiaTema(models.Model):
+    titulo = models.TextField(blank=True, null=True)
+
 class DailySummary(models.Model):
     date = models.DateField(db_index=True, unique=True)
     atendimentos = models.IntegerField(default=0)
@@ -211,6 +220,47 @@ class NoticiaAggregatedManager(models.Manager):
                     portal_comments_authorized=Coalesce(Sum('portal_comments_authorized'), 0),
                     portal_comments_unauthorized=Coalesce(Sum('portal_comments_unauthorized'), 0),
                    )
+
+    def get_metric_date_dimension_df(self, initial_date, final_date, metric_field, dimension_field):
+        """
+        Groups date periods by month
+        Outputs DataFrame[metric_field, 'date', 'date_formatted', dimension_field]
+        """
+        qs = self.get_queryset() \
+            .filter(date__gte=initial_date, date__lte=final_date, **{metric_field+'__gt': 0}) \
+            .values(metric_field, 'date', dimension_field)
+        df = pd.DataFrame.from_records(qs)
+
+        if df.empty:
+            return df
+        
+        df['date'] = pd.to_datetime(df['date'])
+        df = df.groupby([pd.Grouper(key='date', freq='M'), dimension_field])[metric_field].agg('sum')
+        df = df.reset_index()
+        df['date_formatted'] = df['date'].dt.strftime('%B %Y')
+
+        return df
+
+    def get_metric_date_df(self, initial_date, final_date, metric_field):
+        """
+        Groups date periods by month
+        Outputs DataFrame[metric_field, 'date', 'date_formatted']
+        """
+        qs = self.get_queryset() \
+            .filter(date__gte=initial_date, date__lte=final_date, **{metric_field+'__gt': 0}) \
+            .values(metric_field, 'date')
+        df = pd.DataFrame.from_records(qs)
+
+        if df.empty:
+            return df
+        
+        df['date'] = pd.to_datetime(df['date'])
+        df = df.groupby([pd.Grouper(key='date', freq='M')])[metric_field].agg('sum')
+        df = df.reset_index()
+        df['date_formatted'] = df['date'].dt.strftime('%B %Y')
+
+        return df
+
 
     def top_noticias(self, initial_date, final_date):
         qs = self.get_queryset() \
@@ -267,6 +317,46 @@ class ProposicaoAggregatedManager(models.Manager):
                     poll_comments_unauthorized=Coalesce(Sum('poll_comments_unauthorized'), 0),
                    )
 
+    def get_metric_date_dimension_df(self, initial_date, final_date, metric_field, dimension_field):
+        """
+        Groups date periods by month
+        Outputs DataFrame[metric_field, 'date', 'date_formatted', dimension_field]
+        """
+        qs = self.get_queryset() \
+            .filter(date__gte=initial_date, date__lte=final_date, **{metric_field+'__gt': 0}) \
+            .values(metric_field, 'date', dimension_field)
+        df = pd.DataFrame.from_records(qs)
+
+        if df.empty:
+            return df
+        
+        df['date'] = pd.to_datetime(df['date'])
+        df = df.groupby([pd.Grouper(key='date', freq='M'), dimension_field])[metric_field].agg('sum')
+        df = df.reset_index()
+        df['date_formatted'] = df['date'].dt.strftime('%B %Y')
+
+        return df
+
+    def get_metric_date_df(self, initial_date, final_date, metric_field):
+        """
+        Groups date periods by month
+        Outputs DataFrame[metric_field, 'date', 'date_formatted']
+        """
+        qs = self.get_queryset() \
+            .filter(date__gte=initial_date, date__lte=final_date, **{metric_field+'__gt': 0}) \
+            .values(metric_field, 'date')
+        df = pd.DataFrame.from_records(qs)
+
+        if df.empty:
+            return df
+        
+        df['date'] = pd.to_datetime(df['date'])
+        df = df.groupby([pd.Grouper(key='date', freq='M')])[metric_field].agg('sum')
+        df = df.reset_index()
+        df['date_formatted'] = df['date'].dt.strftime('%B %Y')
+
+        return df
+        
     def top_proposicoes(self, initial_date, final_date):
         qs = self.get_queryset() \
             .filter(date__gte=initial_date, date__lte=final_date) \

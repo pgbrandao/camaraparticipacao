@@ -17,5 +17,4 @@ def dataloader_task():
     dataloader.preprocess_daily_summary()
     dataloader.preprocess_proposicoes()
     dataloader.preprocess_noticias()
-    dataloader.db_dump()
     cache.rebuild_caches()

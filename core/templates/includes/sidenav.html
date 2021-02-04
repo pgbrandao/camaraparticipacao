@@ -18,7 +18,7 @@
                 <!-- Navigation -->
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class=" nav-link active" href="{% url 'index' %}">
+                        <a class="nav-link" href="{% url 'index' %}">
                             <i class="fas fa-home text-default "></i>Visão geral
                         </a>
                     </li>
@@ -32,37 +32,70 @@
 
                 <hr class="my-3">
 
-                <ul class="navbar-nav">
-
-                    <li class="nav-item tables-item">
-                        <a class="nav-link" href="{% url 'relatorio_consolidado' %}">
-                            <i class="fas fa-chart-pie text-default"></i>Relatório consolidado
-                        </a>
-                    </li>
-
-                    <li class="nav-item tables-item">
-                        <a class="nav-link" href="{% url 'raiox' %}">
-                            <i class="fas fa-chart-pie text-default"></i>Raio-X das proposições
-                        </a>
-                    </li>
-
-                </ul>
-
-                <hr class="my-3">
-
                 <h6 class="navbar-heading p-0 text-muted">
-                    <span class="docs-normal">Buscas</span>
+                    <span class="docs-normal">Enquetes</span>
                 </h6>
 
                 <ul class="navbar-nav">
 
                     <li class="nav-item maps-item">
-                        <a class="nav-link" href="{% url 'busca_proposicao' %}">
-                            <i class="fas fa-search text-default"></i>Por proposição
+                        <a class="nav-link" href="{% url 'enquetes_temas' %}">
+                            <i class="fas fa-chart-pie text-default"></i>Temas mais populares
                         </a>
                     </li>
                 </ul>
 
+                <hr class="my-3">
+
+                <h6 class="navbar-heading p-0 text-muted">
+                    <span class="docs-normal">Notícias</span>
+                </h6>
+
+                <ul class="navbar-nav">
+
+                    <li class="nav-item maps-item">
+                        <a class="nav-link" href="{% url 'noticias_temas' %}">
+                            <i class="fas fa-chart-pie text-default"></i>Temas mais populares
+                        </a>
+                    </li>
+                    <li class="nav-item maps-item">
+                        <a class="nav-link" href="{% url 'noticias_tags' %}">
+                            <i class="fas fa-chart-pie text-default"></i>Tags mais populares
+                        </a>
+                    </li>
+                </ul>
+
+                <hr class="my-3">
+
+                <h6 class="navbar-heading p-0 text-muted">
+                    <span class="docs-normal">Proposições</span>
+                </h6>
+
+                <ul class="navbar-nav">
+
+                    <li class="nav-item maps-item">
+                        <a class="nav-link" href="{% url 'proposicoes_temas' %}">
+                            <i class="fas fa-chart-pie text-default"></i>Temas mais populares
+                        </a>
+                    </li>
+                    <li class="nav-item maps-item">
+                        <a class="nav-link" href="{% url 'busca_proposicao' %}">
+                            <i class="fas fa-search text-default"></i>Busca por proposição
+                        </a>
+                    </li>
+                </ul>
+
+                <hr class="my-3">
+
+                <ul class="navbar-nav">
+
+                    <li class="nav-item tables-item">
+                        <a class="nav-link" href="{% url 'relatorio_consolidado' %}">
+                            <i class="fas fa-newspaper text-default"></i>Relatório consolidado
+                        </a>
+                    </li>
+
+                </ul>
 
                 <hr class="my-3">
 

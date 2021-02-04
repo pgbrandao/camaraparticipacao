@@ -86,8 +86,6 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'core/static'),
 ]
 
-DB_DUMP_PATH = '/usr/src/app/db_dump'
-
 WSGI_APPLICATION = 'core.wsgi.application'
 
 
