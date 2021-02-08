@@ -1,4 +1,24 @@
 {% extends 'pages/graph_view.html' %}
 
 {% block title %}Enquetes: temas mais populares por votos{% endblock title %}
+
 {% block sidebar_title %}Enquetes mais votadas{% endblock %}
+
+{% block sidebar_headers %}
+{ text: 'Proposição', align: 'start', sortable: false, value: 'nome_processado', },
+{ text: 'Votos', value: 'poll_votes' },
+{ text: 'Comentários', value: 'poll_comments' },
+{% endblock %}
+
+{% block sidebar_datatable %}
+<v-data-table :headers="sidebar_headers" :items="sidebar_contents.top_proposicoes" :items-per-page="10" :sort-by="['poll_votes']" :sort-desc="[true]">
+    <template #item.nome_processado="{ item }">
+        <a :href="item.link_ficha_tramitacao">
+        [[ item.nome_processado ]]
+        </a><br />
+        [[ item.temas ]]
+    </template>
+</v-data-table>
+{% endblock %}
+
+{% block sidebar_api_url %}{% url "api_top_proposicoes" %}{% endblock %}

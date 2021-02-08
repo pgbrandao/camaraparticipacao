@@ -35,16 +35,44 @@
 
         {% if stats.plot_div %}
             <div class="row">
-                <div class="col">
+                <div class="col-7">
                     <div class="card">
                         <div class="card-body ">
                             {% if total == 0 %}
                                 Sem dados para o período.
                             {% else %}
                                 {% autoescape off %}
-                                <div id="plot_div" v-pre></div>
+                                <div id="plot_div" style="height: 700px;" v-pre></div>
                                 {% endautoescape %}
                             {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-5">
+                    <div class="card">
+                        <div class="card-body">
+                            <h2 class="card-title">{% block sidebar_title %}{% endblock %} <div v-if="sidebar_contents.period_humanized"><span class="text-sm">em <mark>[[ sidebar_contents.period_humanized ]]</mark></span></div></h2>
+                            <select name="sidebar_api_params" v-model="sidebar_api_params" class="form-control">
+                                <option disabled value="">Clique para selecionar um período</option>
+                                {% for value, text in dropdown_choices %}
+                                    <option value="{{ value }}">{{ text }}</option>
+                                {% endfor %}
+                            </select>
+                            <div v-if="loading_sidebar_contents" class="text-center">
+                                <v-progress-circular
+                                indeterminate
+                                color="primary">
+                            </div>
+
+                            <div v-if="sidebar_contents.top_proposicoes">
+                                <template>
+                                    {% block sidebar_datatable %}{% endblock %}
+                                </template>
+                            </div>
+
+
+
+
                         </div>
                     </div>
                 </div>
@@ -64,8 +92,31 @@
     var app = new Vue({
         delimiters: ['[[', ']]'],
         el: '#app',
+        vuetify: new Vuetify(),
         data: {
-        }
+            loading_sidebar_contents: false,
+            sidebar_contents: [],
+            sidebar_api_params: '',
+            sidebar_headers: [
+                {% block sidebar_headers %}{% endblock %}
+            ],
+
+        },
+        watch: {
+            sidebar_api_params: function (val) {
+                app.loading_sidebar_contents = true;
+                app.sidebar_contents = [];
+
+                fetch('{% block sidebar_api_url %}{% endblock %}?' + val, {
+                    method: 'GET'
+                }).then((res) => res.json())
+                    .then((data) => {
+                        app.sidebar_contents = data;
+                        app.loading_sidebar_contents = false;
+                    })
+                    .catch((err) => console.error(err));
+            }
+        },
     });
 
     {% if stats.plot_div %}

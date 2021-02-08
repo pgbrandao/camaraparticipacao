@@ -193,7 +193,7 @@ def summary_plot(group_by, height, proposicao=None, initial_date=None, final_dat
         })
 
 
-    fig = plotly.tools.make_subplots(
+    fig = plotly.subplots.make_subplots(
         rows=len(subplots_list),
         cols=1,
         shared_xaxes=True,
@@ -446,7 +446,7 @@ def raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_f
     # Calculate normalized metrics
     metric_normalized_field = '{}_normalized'.format(metric_field)
     df_dimension[metric_normalized_field] = df_dimension.groupby('date')[metric_field].transform(lambda x: 100*x/x.sum())
-    df_dimension[metric_normalized_field] = df_dimension[metric_normalized_field].map('{:.2f} %'.format)
+    # df_dimension[metric_normalized_field] = df_dimension[metric_normalized_field].map('{:.2f} %'.format)
 
 
     # To calculate top dimensions, the metric is summed over the entire period and inversely sorted
@@ -503,7 +503,7 @@ def raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_f
     )
 
     # Now we can finally start plotting
-    fig = plotly.tools.make_subplots(
+    fig = plotly.subplots.make_subplots(
         rows=2,
         cols=1,
         row_heights=[0.9,0.1],
@@ -521,8 +521,6 @@ def raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_f
         rangemode='tozero',
     )
     fig.update_layout(
-        width=850,
-        height=750,
         hovermode='closest',
         hoverdistance=1000,
         margin={
@@ -550,6 +548,8 @@ def raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_f
         fig.append_trace(trace, 1, 1)
     fig.append_trace(t2, 2, 1)
     fig.update_traces(xaxis='x2')
+
+    # for date_formatted in df_sum['date_formatted']:
 
     plot_json = plotly.io.to_json(fig)
 

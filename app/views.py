@@ -80,7 +80,7 @@ def api_top_proposicoes(request):
 
     if date:
         filter_params = {
-            'date': date
+            'date': date,
         }
         requires_grouping = False
     elif initial_date and final_date:
@@ -92,11 +92,29 @@ def api_top_proposicoes(request):
 
     qs = ProposicaoAggregated.objects \
         .filter(**filter_params) \
+        .prefetch_related('proposicao__tema') \
         .values('proposicao__id') \
         .annotate(ficha_pageviews=Sum('ficha_pageviews'), noticia_pageviews=Sum('noticia_pageviews'), poll_votes=Sum('poll_votes'), poll_comments=Sum('poll_comments')) \
-        .values('proposicao__nome_processado', 'proposicao__id', 'ficha_pageviews', 'noticia_pageviews', 'poll_votes', 'poll_comments')
+        .values('proposicao__nome_processado', 'proposicao__id', 'ficha_pageviews', 'noticia_pageviews', 'poll_votes', 'poll_comments') \
 
-    df = pd.DataFrame(qs)
+    # Dictionary of temas for speed
+    temas_dict = {}
+    for p in Proposicao.objects.all().values('id', 'tema__nome'):
+        if temas_dict.get(p['id']):
+            temas_dict[p['id']].append(p['tema__nome'])
+        else:
+            temas_dict[p['id']] = [p['tema__nome']]
+
+    df = pd.DataFrame([
+        {
+            'proposicao__nome_processado': q['proposicao__nome_processado'],
+            'proposicao__id': q['proposicao__id'],
+            'temas': temas_dict[q['proposicao__id']],
+            'ficha_pageviews': q['ficha_pageviews'],
+            'noticia_pageviews': q['noticia_pageviews'],
+            'poll_votes': q['poll_votes'],
+            'poll_comments': q['poll_comments'],
+        } for q in qs])
     
     df['score'] = (df.ficha_pageviews / df.ficha_pageviews.max()).fillna(0) + \
         (df.noticia_pageviews / df.noticia_pageviews.max()).fillna(0) + \
@@ -108,12 +126,20 @@ def api_top_proposicoes(request):
 
     df = df[:100]
 
+    extra_params = {}
+    if date:
+        extra_params['period_humanized'] = date
+    elif initial_date and final_date:
+        extra_params['period_humanized'] = helpers.period_humanized(initial_date, final_date)
+
     return JsonResponse({
+        **extra_params,
         **filter_params,
         'top_proposicoes': [{
             'nome_processado': row.proposicao__nome_processado,
             'link_ficha_tramitacao': 'https://www.camara.leg.br/propostas-legislativas/{}'.format(row.proposicao__id),
             'link': reverse('proposicao_detail', args=[row.proposicao__id]),
+            'temas': row.temas,
             'ficha_pageviews': row.ficha_pageviews,
             'noticia_pageviews': row.noticia_pageviews,
             'poll_votes': row.poll_votes,

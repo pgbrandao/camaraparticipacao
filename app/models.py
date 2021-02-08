@@ -6,7 +6,6 @@ from django.db.models.functions import Coalesce
 
 import datetime
 
-import altair as alt
 import pandas as pd
 import numpy as np
 
