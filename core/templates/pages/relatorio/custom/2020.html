@@ -69,17 +69,6 @@
                 </div>
             </div>
         </div>
-        <div class="row">
-
-            <div class="col-6">
-                {% include "pages/cards/kpi_comentarios_portal.html" %}
-            </div>
-
-            <div class="col-6">
-                {% include "pages/cards/kpi_demandas_prisma.html" %}
-            </div>
-
-        </div>
         <!-- enquetes -->
         <div class="row">
             <div class="col">
@@ -88,21 +77,12 @@
                 </h1>
             </div>
         </div>
-        <div class="row">
-            <div class="col">
-                <h1>
-                    Proposições e enquetes
-                </h1>
-            </div>
-        </div>
 
         <div class="row">
-            <div class="col">
-                {% include "pages/cards/ficha_enquete_summary_plot.html" %}
+            <div class="col-6">
+                {% include "pages/cards/kpi_ficha_pageviews.html" %}
             </div>
-        </div>
 
-        <div class="row">
             <div class="col-6">
                 {% include "pages/cards/kpi_votos_enquetes.html" %}
             </div>
@@ -114,7 +94,19 @@
 
         <div class="row">
             <div class="col">
+                {% include "pages/cards/ficha_enquete_summary_plot.html" %}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
                 {% include "pages/cards/proposicoes_temas_plot.html" %}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                {% include "pages/cards/enquetes_temas_plot.html" %}
             </div>
         </div>
 
@@ -130,6 +122,17 @@
                 <h1>
                     Central de Comunicação Interativa
                 </h1>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-6">
+                {% include "pages/cards/kpi_demandas_prisma.html" %}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
                 {% include "pages/cards/prisma_summary_plot.html" %}
             </div>
         </div>
@@ -137,15 +140,11 @@
         <div class="row">
 
             <div class="col-6">
-                {% include "pages/cards/canais_prisma.html" %}
-            </div>
-
-            <div class="col-6">
                 {% include "pages/cards/tipos_prisma.html" %}
             </div>
 
-            <div class="col-12">
-                {% include "pages/cards/sexo_idade_prisma.html" %}
+            <div class="col-6">
+                {% include "pages/cards/sexo_prisma.html" %}
             </div>
 
         </div>
@@ -156,14 +155,31 @@
                 <h1>
                     Notícias
                 </h1>
-                {% include "pages/cards/noticia_summary_plot.html" %}
             </div>
         </div>
 
         <div class="row">
             <div class="col-6">
-                {% include "pages/cards/aprovacao_comentarios_noticias.html" %}
+                {% include "pages/cards/kpi_noticia_pageviews.html" %}
             </div>
+            <div class="col-6">
+                {% include "pages/cards/kpi_comentarios_portal.html" %}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                {% include "pages/cards/noticia_summary_plot.html" %}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                {% include "pages/cards/noticias_temas_plot.html" %}
+            </div>
+        </div>
+
+        <div class="row">
             <div class="col-6">
                 {% include "pages/cards/materias_mais_comentadas.html" %}
             </div>
@@ -190,7 +206,7 @@
             period_type: '{{ period_type|escapejs }}',
             {% if stats %}
                 top_proposicoes: {{ stats.top_proposicoes | safe }},
-                top_news: {{ stats.top_news | safe }},
+                top_noticias: {{ stats.top_noticias | safe }},
                 top_prisma_categorias: {{ stats.top_prisma_categorias | safe}},
                 top_prisma_proposicoes: {{ stats.top_prisma_proposicoes | safe}},
             {% endif %}
@@ -200,7 +216,7 @@
                 { text: 'Comentários aprovados', value: 'poll_comments_authorized' },
                 { text: 'Visualizações (ficha de tramitação)', value: 'ficha_pageviews' },
             ],
-            top_news_headers: [
+            top_noticias_headers: [
                 { text: 'Notícia', align: 'start', sortable: false, value: 'title', },
                 { text: 'Visualizações', value: 'pageviews' },
                 { text: 'Comentários aprovados', value: 'comments_authorized' },
@@ -221,20 +237,23 @@
     {% if stats %}
         Plotly.setPlotConfig({"displayModeBar": false, "responsive": true});
 
+        var enquetes_temas_plot = {{ stats.enquetes_temas_plot | safe}};
+        Plotly.plot('enquetes_temas_plot', enquetes_temas_plot, {});
+
         var proposicoes_temas_plot = {{ stats.proposicoes_temas_plot | safe}};
         Plotly.plot('proposicoes_temas_plot', proposicoes_temas_plot, {});
+
+        var noticias_temas_plot = {{ stats.noticias_temas_plot | safe}};
+        Plotly.plot('noticias_temas_plot', noticias_temas_plot, {});
 
         var ficha_enquete_summary_plot = {{ stats.ficha_enquete_summary_plot | safe}};
         Plotly.plot('ficha_enquete_summary_plot', ficha_enquete_summary_plot, {});
 
-        var prisma_summary_plot = {{ stats.prisma_summary_plot | safe}};
-        Plotly.plot('prisma_summary_plot', prisma_summary_plot, {});
-
         var noticia_summary_plot = {{ stats.noticia_summary_plot | safe}};
         Plotly.plot('noticia_summary_plot', noticia_summary_plot, {});
 
-        var prisma_sexo_idade_plot = {{ stats.prisma_sexo_idade_plot | safe}};
-        Plotly.plot('prisma_sexo_idade_plot', prisma_sexo_idade_plot, {});
+        var prisma_sexo_plot = {{ stats.prisma_sexo_plot | safe}};
+        Plotly.plot('prisma_sexo_plot', prisma_sexo_plot, {});
 
     {% endif %}
 

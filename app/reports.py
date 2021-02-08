@@ -105,6 +105,7 @@ def relatorio_consolidado(initial_date, final_date, save_cache=False):
         comentarios_camara_count = PortalComentario.objects.get_comentarios_camara_count(initial_date, final_date)
         qs = NoticiaAggregated.objects.get_aggregated(initial_date, final_date)
         stats.update({
+            'noticia_pageviews': qs['pageviews'],
             'portal_comments': qs['portal_comments'],
             'portal_comments_unchecked': qs['portal_comments_unchecked'],
             'portal_comments_authorized': qs['portal_comments_authorized'],
@@ -148,7 +149,12 @@ def relatorio_consolidado(initial_date, final_date, save_cache=False):
             'top_prisma_proposicoes': [row for row in qs]
         })
 
-        # prisma sexo
+        # prisma sexo / sexo idade
+        prisma_sexo_plot = plots.prisma_sexo(initial_date, final_date)
+        stats.update({
+            'prisma_sexo_plot': prisma_sexo_plot,
+        })
+
         prisma_sexo_idade_plot = plots.prisma_sexo_idade(initial_date, final_date)
         stats.update({
             'prisma_sexo_idade_plot': prisma_sexo_idade_plot,
@@ -166,18 +172,32 @@ def relatorio_consolidado(initial_date, final_date, save_cache=False):
             } for row in qs]
         })
 
-        # proposicoes pageviews plot
+        # proposicoes temas plot
         proposicoes_temas_plot = plots.proposicoes_temas(initial_date=initial_date, final_date=final_date)
 
         stats.update({
             'proposicoes_temas_plot': proposicoes_temas_plot
         })
 
-        # top news
+        # enquetes temas plot
+        enquetes_temas_plot = plots.enquetes_temas(initial_date=initial_date, final_date=final_date)
+
+        stats.update({
+            'enquetes_temas_plot': enquetes_temas_plot
+        })
+
+        # noticias temas plot
+        noticias_temas_plot = plots.noticias_temas(initial_date=initial_date, final_date=final_date)
+
+        stats.update({
+            'noticias_temas_plot': noticias_temas_plot
+        })
+
+        # top noticias
         qs = NoticiaAggregated.objects.top_noticias(initial_date, final_date)[:500]
 
         stats.update({
-            'top_news': [{
+            'top_noticias': [{
                 'title': row['noticia__titulo'] or '',
                 'link': row['noticia__link'] or '',
                 'pageviews': row['pageviews'],

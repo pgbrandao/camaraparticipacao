@@ -132,7 +132,7 @@
                 </div>
             </div>
         </div>
-        <div class="row">
+        <!-- <div class="row">
             <div class="col">
                 <div class="card">
                     <div class="card-body">
@@ -140,7 +140,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
     </div>
 </div>
 
@@ -195,7 +195,7 @@
                 }).then((res) => res.json())
                     .then((data) => app.top_proposicoes = data)
                     .then(() => app.loading_proposicoes = false)
-                    .catch((err) => console.error(err))
+                    .catch((err) => console.error(err));
             }
         },
         methods: {

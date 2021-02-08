@@ -10,6 +10,7 @@ from django.views.decorators.clickjacking import xframe_options_exempt
 
 import calendar
 import datetime
+from . import helpers
 from . import plots
 from . import reports
 
@@ -111,6 +112,7 @@ def api_top_proposicoes(request):
         **filter_params,
         'top_proposicoes': [{
             'nome_processado': row.proposicao__nome_processado,
+            'link_ficha_tramitacao': 'https://www.camara.leg.br/propostas-legislativas/{}'.format(row.proposicao__id),
             'link': reverse('proposicao_detail', args=[row.proposicao__id]),
             'ficha_pageviews': row.ficha_pageviews,
             'noticia_pageviews': row.noticia_pageviews,
@@ -132,8 +134,20 @@ def enquetes_temas(request, year=None):
     initial_date = datetime.date(year=int(year), month=1, day=1)
     final_date = datetime.date(year=int(year), month=12, day=31)
 
-    stats = reports.enquetes_temas(initial_date, final_date)
+    # [(value, text)]
+    dropdown_choices = [
+        (helpers.get_api_params(initial_date, final_date),
+        '{}-{}'.format(initial_date.strftime('%B %Y'), final_date.strftime('%B %Y')))
+    ] + [
+        (
+            helpers.get_api_params(initial_date, final_date), 
+            initial_date.strftime('%B %Y')
+        ) 
+        for initial_date, final_date
+        in zip(pd.date_range(initial_date, final_date, freq='MS'), pd.date_range(initial_date, final_date, freq='M'))
+    ]
 
+    stats = reports.enquetes_temas(initial_date, final_date)
 
     view_name = 'enquetes_temas'
     return render(request, 'pages/enquetes_temas.html', locals())

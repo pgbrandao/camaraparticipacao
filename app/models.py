@@ -508,6 +508,18 @@ class PrismaDemandaManager(models.Manager):
             .sort_values('count', ascending=False) \
             .to_dict('records')
 
+    def get_sexo_counts(self,initial_date,final_date):
+        final_date += datetime.timedelta(days=1) # Final date is advanced by one day for DateTimeField
+        qs = self.get_queryset() \
+            .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lt=final_date) \
+            .values('iddemandante__demandante_sexo')
+        df = pd.DataFrame(qs)
+        return df['iddemandante__demandante_sexo'] \
+            .value_counts() \
+            .to_frame('count') \
+            .rename_axis('sexo') \
+            .reset_index()
+
     def get_sexo_idade_counts(self,initial_date,final_date):
         final_date += datetime.timedelta(days=1) # Final date is advanced by one day for DateTimeField
         qs = self.get_queryset() \

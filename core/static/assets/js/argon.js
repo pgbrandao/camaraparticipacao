@@ -49,16 +49,16 @@ var Layout = (function() {
 
     // Set sidenav state from cookie
 
-    var $sidenavState = Cookies.get('sidenav-state') ? Cookies.get('sidenav-state') : 'pinned';
+    // var $sidenavState = Cookies.get('sidenav-state') ? Cookies.get('sidenav-state') : 'pinned';
 
     if($(window).width() > 1200) {
-        if($sidenavState == 'pinned') {
-            pinSidenav()
-        }
+        // if($sidenavState == 'pinned') {
+        //     pinSidenav()
+        // }
 
-        if(Cookies.get('sidenav-state') == 'unpinned') {
-            unpinSidenav()
-        }
+        // if(Cookies.get('sidenav-state') == 'unpinned') {
+        //     unpinSidenav()
+        // }
 
         $(window).resize(function() {
             if( $('body').hasClass('g-sidenav-show') && !$('body').hasClass('g-sidenav-pinned')) {

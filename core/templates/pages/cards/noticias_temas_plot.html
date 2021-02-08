@@ -1,0 +1,16 @@
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col">
+                <h2>Temas das visualizações das notícias <span class="text-sm">em <mark>{{ period_humanized }}</mark></span></h2>
+                <p>No gráfico abaixo é possível observar, mês a mês, os principais interesses da sociedade com base nos acessos às notícias, organizados por tema. </p>
+            </div>
+        </div>
+    </div>
+
+    <plotly>
+        <div class="card-body">
+            <div id="noticias_temas_plot" v-pre></div>
+        </div>
+    </plotly>
+</div>

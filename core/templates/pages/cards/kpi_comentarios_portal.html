@@ -4,10 +4,9 @@
     <div class="card-body">
         <div class="row">
             <div class="col">
-                <h4 class="card-title text-muted mb-0">Comentários no portal</h5>
-                    <span class="h2 font-weight-bold mb-0">{{ stats.portal_comments|intcomma }}</span>
+                <h4 class="card-title text-muted mb-0">Comentários aprovados nas notícias do portal</h5>
+                    <span class="h2 font-weight-bold mb-0">{{ stats.portal_comments_authorized|intcomma }}</span>
                     <span class="text-sm">em <mark>{{ period_humanized }}</mark></span>
-
             </div>
             <div class="col-auto">
                 <div class="icon icon-shape bg-primary text-white rounded-circle shadow">

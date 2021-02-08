@@ -319,6 +319,19 @@ def poll_votes(proposicao):
     
     return plot_div
 
+def prisma_sexo(initial_date, final_date):
+    df = PrismaDemanda.objects.get_sexo_counts(initial_date, final_date)
+    fig = go.Figure()
+    fig.add_trace(
+        go.Bar(
+            x=df['sexo'],
+            y=df['count']
+        )
+    )
+    plot_json = plotly.io.to_json(fig)
+    return plot_json
+
+
 def prisma_sexo_idade(initial_date, final_date):
     df = PrismaDemanda.objects.get_sexo_idade_counts(initial_date, final_date)
 
@@ -375,7 +388,7 @@ def enquetes_temas(initial_date, final_date):
     df_sum = ProposicaoAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
     if not df_dimension.empty and not df_sum.empty:
-        return raiox_anual_plot(df_dimension, df_sum, dimension_field, metric_field)
+        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field)
     else:
         return ''
 
@@ -390,7 +403,7 @@ def proposicoes_temas(initial_date, final_date):
     df_sum = ProposicaoAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
     if not df_dimension.empty and not df_sum.empty:
-        return raiox_anual_plot(df_dimension, df_sum, dimension_field, metric_field)
+        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field)
     else:
         return ''
 
@@ -406,7 +419,7 @@ def noticias_temas(initial_date, final_date):
     df_sum = NoticiaAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
     if not df_dimension.empty and not df_sum.empty:
-        return raiox_anual_plot(df_dimension, df_sum, dimension_field, metric_field)
+        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field)
     else:
         return ''
 
@@ -421,11 +434,11 @@ def noticias_tags(initial_date, final_date):
     df_sum = NoticiaAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
     if not df_dimension.empty and not df_sum.empty:
-        return raiox_anual_plot(df_dimension, df_sum, dimension_field, metric_field)
+        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field)
     else:
         return ''
 
-def raiox_anual_plot(df_dimension, df_sum, dimension_field, metric_field):
+def raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field):
     """
     df_dimension: columns: ['date', 'date_formatted', dimension_field, metric_field]
     df_sum: columns: ['date', 'date_formatted', metric_field]
@@ -456,6 +469,22 @@ def raiox_anual_plot(df_dimension, df_sum, dimension_field, metric_field):
 
         df_this_dimension = df_dimension[df_dimension[dimension_field] == dimension_value]
 
+        # Create missing dates
+        for date in (set(pd.date_range(initial_date, final_date, freq='M')) - set(df_this_dimension['date'].to_list())):
+            df_this_dimension = df_this_dimension \
+                .append(
+                    {
+                        'date': date,
+                        'date_formatted': date.strftime('%B %Y'),
+                        dimension_field: dimension_value,
+                        metric_field: 0,
+                        metric_normalized_field: '0.00 %'
+                    },
+                    ignore_index=True
+                ) \
+                .sort_values(by='date') \
+                .reset_index(drop=True)
+        
         traces_dimensions.append(
             go.Bar(
                 x=df_this_dimension['date_formatted'],
@@ -492,7 +521,7 @@ def raiox_anual_plot(df_dimension, df_sum, dimension_field, metric_field):
         rangemode='tozero',
     )
     fig.update_layout(
-        width=1020,
+        width=850,
         height=750,
         hovermode='closest',
         hoverdistance=1000,
@@ -509,6 +538,13 @@ def raiox_anual_plot(df_dimension, df_sum, dimension_field, metric_field):
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
         dragmode=False,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        ),
     )
     for trace in traces_dimensions:
         fig.append_trace(trace, 1, 1)
