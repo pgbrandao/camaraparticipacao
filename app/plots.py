@@ -391,7 +391,7 @@ def enquetes_temas(initial_date, final_date):
     # Second step: prepare df_sum
     df_sum = ProposicaoAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
-    if df_dimension and df_sum:
+    if df_dimension is not None and df_sum is not None:
         return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Votos nas enquetes")
     else:
         return None
@@ -406,7 +406,7 @@ def proposicoes_temas(initial_date, final_date):
     # Second step: prepare df_sum
     df_sum = ProposicaoAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
-    if df_dimension and df_sum:
+    if df_dimension is not None and df_sum is not None:
         return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Visualizações das proposições")
     else:
         return None
@@ -422,7 +422,7 @@ def noticias_temas(initial_date, final_date):
     # Second step: prepare df_sum
     df_sum = NoticiaAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
-    if df_dimension and df_sum:
+    if df_dimension is not None and df_sum is not None:
         return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Visualizações das notícias")
     else:
         return None
@@ -437,7 +437,7 @@ def noticias_tags(initial_date, final_date):
     # Second step: prepare df_sum
     df_sum = NoticiaAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
-    if df_dimension and df_sum:
+    if df_dimension is not None and df_sum is not None:
         return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Visualizações das notícias")
     else:
         return None
