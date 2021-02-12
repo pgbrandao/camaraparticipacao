@@ -1,3 +1,27 @@
 {% extends 'pages/graph_view.html' %}
 
-{% block title %}Proposições: temas mais populares por acessos{% endblock title %}
+{% block title %}Proposições: temas mais populares por acesso{% endblock title %}
+
+{% block sidebar_title %}Proposições mais acessadas{% endblock %}
+
+{% block sidebar_headers %}
+{ text: 'Proposição', align: 'start', sortable: false, value: 'nome_processado', },
+{ text: 'Visualizações', value: 'ficha_pageviews' },
+{% endblock %}
+
+{% block sidebar_datatable %}
+<v-data-table :headers="sidebar_headers" :items="sidebar_contents.rows" :items-per-page="10" :sort-by="['pageviews']" :sort-desc="[true]">
+    <template #item.nome_processado="{ item }">
+        <a :href="item.link_ficha_tramitacao">
+        [[ item.nome_processado ]]
+        </a>
+        <div v-for="tema in item.temas">
+            <div :style="'background-color: '+dimension_color(tema)" class="tag">
+                [[ tema ]]
+            </div>
+        </div>
+    </template>
+</v-data-table>
+{% endblock %}
+
+{% block sidebar_api_url %}{% url "api_top_proposicoes" %}{% endblock %}

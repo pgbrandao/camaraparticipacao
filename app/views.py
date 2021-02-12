@@ -31,121 +31,48 @@ def index(request):
 
     return render(request, 'pages/index.html', locals())
 
-def api_top_noticias(request):
-    date = datetime.datetime.strptime(request.GET['date'], settings.STRFTIME_SHORT_DATE_FORMAT).date() if request.GET.get('date') else None
-    initial_date = datetime.datetime.strptime(request.GET['initial_date'], settings.STRFTIME_SHORT_DATE_FORMAT).date() if request.GET.get('initial_date') else None
-    final_date = datetime.datetime.strptime(request.GET['final_date'], settings.STRFTIME_SHORT_DATE_FORMAT).date() if request.GET.get('final_date') else None
+def api_top_noticias(request, initial_date, final_date=None):
+    initial_date = datetime.datetime.strptime(initial_date, settings.STRFTIME_SHORT_DATE_FORMAT_URL).date()
 
-    if date:
-        filter_params = {
-            'date': date
-        }
-        requires_grouping = False
-    elif initial_date and final_date:
-        filter_params = {
-            'date__gte': initial_date,
-            'date__lte': final_date,
-        }
-        requires_grouping = True
+    params = {}
+    if final_date:
+        final_date = datetime.datetime.strptime(final_date, settings.STRFTIME_SHORT_DATE_FORMAT_URL).date()
+        params['date__gte'] = initial_date
+        params['date__lte'] = final_date
+        params['period_humanized'] = helpers.period_humanized(initial_date, final_date)
+    else:
+        final_date = initial_date
+        params['date'] = initial_date
+        params['period_humanized'] = initial_date
 
-    qs = NoticiaAggregated.objects.filter(**filter_params).values('noticia__id').annotate(pageviews=Sum('pageviews'), portal_comments=Sum('portal_comments')).values('noticia__titulo', 'noticia__link', 'noticia__tipo_conteudo', 'pageviews', 'portal_comments')
-    df = pd.DataFrame(qs)
-
-    if requires_grouping:
-        df = df.groupby(['noticia__titulo', 'noticia__link', 'noticia__tipo_conteudo']) \
-            .agg({
-                'pageviews': 'sum',
-                'portal_comments': 'sum',
-            }) \
-            .reset_index()
-
-    df.sort_values('pageviews', ascending=False, inplace=True)
-    df = df[:100]
+    stats = reports.api_top_noticias(initial_date, final_date)
 
     return JsonResponse({
-        **filter_params,
-        'top_noticias': [{
-            'titulo': row['noticia__titulo'],
-            'link': row['noticia__link'],
-            'pageviews': row['pageviews'],
-            'portal_comments': row['portal_comments'],
-            'tipo_conteudo': row['noticia__tipo_conteudo']
-        } for _, row in df.iterrows()]
+        **params,
+        'rows': stats['rows']
     })
 
-def api_top_proposicoes(request):
-    date = datetime.datetime.strptime(request.GET['date'], settings.STRFTIME_SHORT_DATE_FORMAT).date() if request.GET.get('date') else None
-    initial_date = datetime.datetime.strptime(request.GET['initial_date'], settings.STRFTIME_SHORT_DATE_FORMAT).date() if request.GET.get('initial_date') else None
-    final_date = datetime.datetime.strptime(request.GET['final_date'], settings.STRFTIME_SHORT_DATE_FORMAT).date() if request.GET.get('final_date') else None
 
-    if date:
-        filter_params = {
-            'date': date,
-        }
-        requires_grouping = False
-    elif initial_date and final_date:
-        filter_params = {
-            'date__gte': initial_date,
-            'date__lte': final_date,
-        }
-        requires_grouping = True
+def api_top_proposicoes(request, initial_date, final_date=None):
+    initial_date = datetime.datetime.strptime(initial_date, settings.STRFTIME_SHORT_DATE_FORMAT_URL).date()
 
-    qs = ProposicaoAggregated.objects \
-        .filter(**filter_params) \
-        .prefetch_related('proposicao__tema') \
-        .values('proposicao__id') \
-        .annotate(ficha_pageviews=Sum('ficha_pageviews'), noticia_pageviews=Sum('noticia_pageviews'), poll_votes=Sum('poll_votes'), poll_comments=Sum('poll_comments')) \
-        .values('proposicao__nome_processado', 'proposicao__id', 'ficha_pageviews', 'noticia_pageviews', 'poll_votes', 'poll_comments') \
+    params = {}
+    if final_date:
+        final_date = datetime.datetime.strptime(final_date, settings.STRFTIME_SHORT_DATE_FORMAT_URL).date()
+        params['date__gte'] = initial_date
+        params['date__lte'] = final_date
+        params['period_humanized'] = helpers.period_humanized(initial_date, final_date)
+    else:
+        final_date = initial_date
+        params['date'] = initial_date
+        params['period_humanized'] = initial_date
 
-    # Dictionary of temas for speed
-    temas_dict = {}
-    for p in Proposicao.objects.all().values('id', 'tema__nome'):
-        if temas_dict.get(p['id']):
-            temas_dict[p['id']].append(p['tema__nome'])
-        else:
-            temas_dict[p['id']] = [p['tema__nome']]
 
-    df = pd.DataFrame([
-        {
-            'proposicao__nome_processado': q['proposicao__nome_processado'],
-            'proposicao__id': q['proposicao__id'],
-            'temas': temas_dict[q['proposicao__id']],
-            'ficha_pageviews': q['ficha_pageviews'],
-            'noticia_pageviews': q['noticia_pageviews'],
-            'poll_votes': q['poll_votes'],
-            'poll_comments': q['poll_comments'],
-        } for q in qs])
-    
-    df['score'] = (df.ficha_pageviews / df.ficha_pageviews.max()).fillna(0) + \
-        (df.noticia_pageviews / df.noticia_pageviews.max()).fillna(0) + \
-        (df.poll_votes / df.poll_votes.max()).fillna(0) + \
-        (df.poll_comments / df.poll_comments.max()).fillna(0)
-    df['score'] = df['score'].map('{:,.2f}'.format)
-
-    df.sort_values('score', ascending=False, inplace=True)
-
-    df = df[:100]
-
-    extra_params = {}
-    if date:
-        extra_params['period_humanized'] = date
-    elif initial_date and final_date:
-        extra_params['period_humanized'] = helpers.period_humanized(initial_date, final_date)
+    stats = reports.api_top_proposicoes(initial_date, final_date)
 
     return JsonResponse({
-        **extra_params,
-        **filter_params,
-        'top_proposicoes': [{
-            'nome_processado': row.proposicao__nome_processado,
-            'link_ficha_tramitacao': 'https://www.camara.leg.br/propostas-legislativas/{}'.format(row.proposicao__id),
-            'link': reverse('proposicao_detail', args=[row.proposicao__id]),
-            'temas': row.temas,
-            'ficha_pageviews': row.ficha_pageviews,
-            'noticia_pageviews': row.noticia_pageviews,
-            'poll_votes': row.poll_votes,
-            'poll_comments': row.poll_comments,
-            'score': row.score,
-        } for _, row in df.iterrows()]
+        **params,
+        'rows': stats['rows']
     })
 
 def enquetes_temas(request, year=None):
@@ -161,7 +88,7 @@ def enquetes_temas(request, year=None):
     final_date = datetime.date(year=int(year), month=12, day=31)
 
     # [(value, text)]
-    dropdown_choices = [
+    sidebar_api_params = [
         (helpers.get_api_params(initial_date, final_date),
         '{}-{}'.format(initial_date.strftime('%B %Y'), final_date.strftime('%B %Y')))
     ] + [
@@ -190,6 +117,18 @@ def proposicoes_temas(request, year=None):
     initial_date = datetime.date(year=int(year), month=1, day=1)
     final_date = datetime.date(year=int(year), month=12, day=31)
 
+    sidebar_api_params = [
+        (helpers.get_api_params(initial_date, final_date),
+        '{}-{}'.format(initial_date.strftime('%B %Y'), final_date.strftime('%B %Y')))
+    ] + [
+        (
+            helpers.get_api_params(initial_date, final_date), 
+            initial_date.strftime('%B %Y')
+        ) 
+        for initial_date, final_date
+        in zip(pd.date_range(initial_date, final_date, freq='MS'), pd.date_range(initial_date, final_date, freq='M'))
+    ]
+
     stats = reports.proposicoes_temas(initial_date, final_date)
 
     view_name = 'proposicoes_temas'
@@ -207,6 +146,18 @@ def noticias_temas(request, year=None):
     initial_date = datetime.date(year=int(year), month=1, day=1)
     final_date = datetime.date(year=int(year), month=12, day=31)
 
+    sidebar_api_params = [
+        (helpers.get_api_params(initial_date, final_date),
+        '{}-{}'.format(initial_date.strftime('%B %Y'), final_date.strftime('%B %Y')))
+    ] + [
+        (
+            helpers.get_api_params(initial_date, final_date), 
+            initial_date.strftime('%B %Y')
+        ) 
+        for initial_date, final_date
+        in zip(pd.date_range(initial_date, final_date, freq='MS'), pd.date_range(initial_date, final_date, freq='M'))
+    ]
+
     stats = reports.noticias_temas(initial_date, final_date)
 
     view_name = 'noticias_temas'
@@ -223,6 +174,18 @@ def noticias_tags(request, year=None):
 
     initial_date = datetime.date(year=int(year), month=1, day=1)
     final_date = datetime.date(year=int(year), month=12, day=31)
+
+    sidebar_api_params = [
+        (helpers.get_api_params(initial_date, final_date),
+        '{}-{}'.format(initial_date.strftime('%B %Y'), final_date.strftime('%B %Y')))
+    ] + [
+        (
+            helpers.get_api_params(initial_date, final_date), 
+            initial_date.strftime('%B %Y')
+        ) 
+        for initial_date, final_date
+        in zip(pd.date_range(initial_date, final_date, freq='MS'), pd.date_range(initial_date, final_date, freq='M'))
+    ]
 
     stats = reports.noticias_tags(initial_date, final_date)
 

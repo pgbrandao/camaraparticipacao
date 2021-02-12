@@ -1,3 +1,27 @@
 {% extends 'pages/graph_view.html' %}
 
-{% block title %}Notícias: tags mais populares por acessos{% endblock title %}
+{% block title %}Notícias: tags mais populares por acesso{% endblock title %}
+
+{% block sidebar_title %}Notícias mais acessadas{% endblock %}
+
+{% block sidebar_headers %}
+{ text: 'Notícia', align: 'start', sortable: false, value: 'titulo', },
+{ text: 'Visualizações', value: 'pageviews' },
+{% endblock %}
+
+{% block sidebar_datatable %}
+<v-data-table :headers="sidebar_headers" :items="sidebar_contents.rows" :items-per-page="10" :sort-by="['pageviews']" :sort-desc="[true]">
+    <template #item.titulo="{ item }">
+        <a :href="item.link">
+        [[ item.titulo ]]
+        </a>
+        <div v-for="tag in item.tags_conteudo">
+            <div :style="'background-color: '+dimension_color(tag)" class="tag">
+                [[ tag ]]
+            </div>
+        </div>
+    </template>
+</v-data-table>
+{% endblock %}
+
+{% block sidebar_api_url %}{% url "api_top_noticias" %}{% endblock %}

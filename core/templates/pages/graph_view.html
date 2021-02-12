@@ -33,7 +33,7 @@
             </div>
         </div>
 
-        {% if stats.plot_div %}
+        {% if stats.graph %}
             <div class="row">
                 <div class="col-7">
                     <div class="card">
@@ -42,7 +42,7 @@
                                 Sem dados para o período.
                             {% else %}
                                 {% autoescape off %}
-                                <div id="plot_div" style="height: 700px;" v-pre></div>
+                                <div id="graph_div" style="height: 700px;" v-pre></div>
                                 {% endautoescape %}
                             {% endif %}
                         </div>
@@ -53,8 +53,8 @@
                         <div class="card-body">
                             <h2 class="card-title">{% block sidebar_title %}{% endblock %} <div v-if="sidebar_contents.period_humanized"><span class="text-sm">em <mark>[[ sidebar_contents.period_humanized ]]</mark></span></div></h2>
                             <select name="sidebar_api_params" v-model="sidebar_api_params" class="form-control">
-                                <option disabled value="">Clique para selecionar um período</option>
-                                {% for value, text in dropdown_choices %}
+                                <option value="" disabled>Clique para selecionar um período</option>
+                                {% for value, text in sidebar_api_params %}
                                     <option value="{{ value }}">{{ text }}</option>
                                 {% endfor %}
                             </select>
@@ -64,7 +64,7 @@
                                 color="primary">
                             </div>
 
-                            <div v-if="sidebar_contents.top_proposicoes">
+                            <div v-if="sidebar_contents.rows">
                                 <template>
                                     {% block sidebar_datatable %}{% endblock %}
                                 </template>
@@ -100,14 +100,15 @@
             sidebar_headers: [
                 {% block sidebar_headers %}{% endblock %}
             ],
-
+            sidebar_default_color: '{{ stats.graph.default_color }}',
+            sidebar_dimension_colors: {{ stats.graph.dimension_colors | safe }},
         },
         watch: {
             sidebar_api_params: function (val) {
                 app.loading_sidebar_contents = true;
                 app.sidebar_contents = [];
 
-                fetch('{% block sidebar_api_url %}{% endblock %}?' + val, {
+                fetch('{% block sidebar_api_url %}{% endblock %}' + val, {
                     method: 'GET'
                 }).then((res) => res.json())
                     .then((data) => {
@@ -117,13 +118,23 @@
                     .catch((err) => console.error(err));
             }
         },
+        methods: {
+            dimension_color(dimension) {
+                if (dimension in app.sidebar_dimension_colors) {
+                    return app.sidebar_dimension_colors[dimension];
+                } else {
+                    return app.sidebar_default_color;
+                }
+            }
+        },
+
     });
 
-    {% if stats.plot_div %}
+    {% if stats.graph %}
         Plotly.setPlotConfig({"displayModeBar": false, "responsive": true});
 
-        var plot_div = {{ stats.plot_div | safe}};
-        Plotly.plot('plot_div', plot_div, {});
+        var graph = {{ stats.graph.json | safe}};
+        Plotly.plot('graph_div', graph, {});
     {% endif %}
 
 </script>

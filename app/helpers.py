@@ -1,9 +1,9 @@
 from django.conf import settings
 from calendar import monthrange
 def get_api_params(initial_date, final_date):
-    return 'initial_date={}&final_date={}'.format(
-        initial_date.strftime(settings.STRFTIME_SHORT_DATE_FORMAT),
-        final_date.strftime(settings.STRFTIME_SHORT_DATE_FORMAT)
+    return '{}/{}/'.format(
+        initial_date.strftime(settings.STRFTIME_SHORT_DATE_FORMAT_URL),
+        final_date.strftime(settings.STRFTIME_SHORT_DATE_FORMAT_URL)
     )
 
 def period_humanized(initial_date, final_date):
@@ -17,7 +17,7 @@ def period_humanized(initial_date, final_date):
         initial_date.day == 1 and final_date.year == 31:
         return initial_date.strftime('%Y')
     else:
-        return '{}-{}'.format(
+        return '{} a {}'.format(
             initial_date.strftime(settings.STRFTIME_SHORT_DATE_FORMAT),
             final_date.strftime(settings.STRFTIME_SHORT_DATE_FORMAT)
         )

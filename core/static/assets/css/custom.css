@@ -28,3 +28,17 @@ a[href*="//"]:not([href*="midias.camara.leg.br"]):after {
 a.linked-img:after {
 display: none;
 }
+
+.tag {
+  color: #ffffff !important;
+  margin: .1rem;
+  font-size: .7rem;
+  background-color: #000;
+  border-radius: .25rem;
+  vertical-align: middle;
+  text-align: center;
+  padding: .125rem .75rem;
+  display: inline-block;
+  line-height: 1.5;
+  font-weight: 600;
+}

@@ -3,6 +3,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import Count, Sum, Q
 from django.db.models.functions import Coalesce
+from django.urls import reverse
 
 import datetime
 
@@ -231,10 +232,12 @@ class NoticiaAggregatedManager(models.Manager):
         df = pd.DataFrame.from_records(qs)
 
         if df.empty:
-            return df
+            return None
         
         df['date'] = pd.to_datetime(df['date'])
-        df = df.groupby([pd.Grouper(key='date', freq='M'), dimension_field])[metric_field].agg('sum')
+        df[dimension_field] = df[dimension_field].astype('category')
+
+        df = df.groupby([pd.Grouper(key='date', freq='M'), dimension_field], observed=True)[metric_field].agg('sum')
         df = df.reset_index()
         df['date_formatted'] = df['date'].dt.strftime('%B %Y')
 
@@ -251,10 +254,10 @@ class NoticiaAggregatedManager(models.Manager):
         df = pd.DataFrame.from_records(qs)
 
         if df.empty:
-            return df
+            return None
         
         df['date'] = pd.to_datetime(df['date'])
-        df = df.groupby([pd.Grouper(key='date', freq='M')])[metric_field].agg('sum')
+        df = df.groupby([pd.Grouper(key='date', freq='M')], observed=True)[metric_field].agg('sum')
         df = df.reset_index()
         df['date_formatted'] = df['date'].dt.strftime('%B %Y')
 
@@ -262,31 +265,34 @@ class NoticiaAggregatedManager(models.Manager):
 
 
     def top_noticias(self, initial_date, final_date):
-        qs = self.get_queryset() \
+        qs = NoticiaAggregated.objects \
             .filter(date__gte=initial_date, date__lte=final_date) \
             .values('noticia__id') \
-            .annotate(
-                    pageviews=Sum('pageviews'),
-                    portal_comments=Sum('portal_comments'),
-                    portal_comments_unchecked=Sum('portal_comments_unchecked'),
-                    portal_comments_authorized=Sum('portal_comments_authorized'),
-                    portal_comments_unauthorized=Sum('portal_comments_unauthorized'),
-            ) \
+            .annotate(pageviews=Sum('pageviews'), portal_comments=Sum('portal_comments'), portal_comments_unchecked=Sum('portal_comments_unchecked'), portal_comments_authorized=Sum('portal_comments_authorized'), portal_comments_unauthorized=Sum('portal_comments_unauthorized')) \
             .order_by('-pageviews') \
-            .values('noticia__id', 'noticia__link', 'noticia__titulo', 'pageviews', 'portal_comments', 'portal_comments_unchecked', 'portal_comments_authorized', 'portal_comments_unauthorized')
+            .values('noticia__id', 'noticia__titulo', 'noticia__link', 'noticia__tipo_conteudo', 'noticia__tema_principal__titulo', 'pageviews', 'portal_comments', 'portal_comments_unchecked', 'portal_comments_authorized', 'portal_comments_unauthorized')
 
-        return pd.DataFrame(qs, columns=['noticia__id', 'noticia__link', 'noticia__titulo', 'pageviews', 'portal_comments', 'portal_comments_unchecked', 'portal_comments_authorized', 'portal_comments_unauthorized']) \
-            .groupby(['noticia__id', 'noticia__link', 'noticia__titulo']) \
-            .agg({
-                'pageviews': 'sum',
-                'portal_comments': 'sum',
-                'portal_comments_unchecked': 'sum',
-                'portal_comments_authorized': 'sum',
-                'portal_comments_unauthorized': 'sum',
-            }) \
-            .reset_index() \
-            .sort_values('pageviews', ascending=False) \
-            .to_dict('records')
+        # Dictionary of tags for speed
+        tags = {}
+        for n in Noticia.objects.all().values('id', 'tags_conteudo__nome'):
+            if tags.get(n['id']):
+                tags[n['id']].append(n['tags_conteudo__nome'])
+            else:
+                tags[n['id']] = [n['tags_conteudo__nome']]
+
+        return [{
+                'titulo': q['noticia__titulo'],
+                'link': q['noticia__link'],
+                'tags_conteudo': tags[q['noticia__id']],
+                'pageviews': q['pageviews'],
+                'tema_principal': q['noticia__tema_principal__titulo'],
+                'portal_comments': q['portal_comments'],
+                'portal_comments_unchecked': q['portal_comments_unchecked'],
+                'portal_comments_authorized': q['portal_comments_authorized'],
+                'portal_comments_unauthorized': q['portal_comments_unauthorized'],
+                'tipo_conteudo': q['noticia__tipo_conteudo']
+            } for q in qs[:500]]
+
 
 
 
@@ -327,7 +333,7 @@ class ProposicaoAggregatedManager(models.Manager):
         df = pd.DataFrame.from_records(qs)
 
         if df.empty:
-            return df
+            return None
         
         df['date'] = pd.to_datetime(df['date'])
         df = df.groupby([pd.Grouper(key='date', freq='M'), dimension_field])[metric_field].agg('sum')
@@ -347,7 +353,7 @@ class ProposicaoAggregatedManager(models.Manager):
         df = pd.DataFrame.from_records(qs)
 
         if df.empty:
-            return df
+            return None
         
         df['date'] = pd.to_datetime(df['date'])
         df = df.groupby([pd.Grouper(key='date', freq='M')])[metric_field].agg('sum')
@@ -357,40 +363,63 @@ class ProposicaoAggregatedManager(models.Manager):
         return df
         
     def top_proposicoes(self, initial_date, final_date):
-        qs = self.get_queryset() \
+        qs = ProposicaoAggregated.objects \
             .filter(date__gte=initial_date, date__lte=final_date) \
             .values('proposicao__id') \
-            .annotate(
-                    ficha_pageviews=Sum('ficha_pageviews'),
-                    poll_votes=Sum('poll_votes'),
-                    poll_comments=Sum('poll_comments'),
-                    poll_comments_unchecked=Sum('poll_comments_unchecked'),
-                    poll_comments_checked=Sum('poll_comments_checked'),
-                    poll_comments_authorized=Sum('poll_comments_authorized'),
-                    poll_comments_unauthorized=Sum('poll_comments_unauthorized'),
-            ) \
-            .order_by('-poll_votes') \
-            .values('proposicao__id', 'proposicao__nome_processado', 'ficha_pageviews', 'poll_votes', 'poll_comments', 'poll_comments_unchecked', 'poll_comments_checked', 'poll_comments_authorized', 'poll_comments_unauthorized')
+            .annotate(ficha_pageviews=Sum('ficha_pageviews'), noticia_pageviews=Sum('noticia_pageviews'), poll_votes=Sum('poll_votes'), poll_comments=Sum('poll_comments'), poll_comments_unchecked=Sum('poll_comments_unchecked'), poll_comments_checked=Sum('poll_comments_checked'), poll_comments_authorized=Sum('poll_comments_authorized'), poll_comments_unauthorized=Sum('poll_comments_unauthorized')) \
+            .values('proposicao__nome_processado', 'proposicao__id', 'ficha_pageviews', 'noticia_pageviews', 'poll_votes', 'poll_comments', 'poll_comments_unchecked', 'poll_comments_checked', 'poll_comments_authorized', 'poll_comments_unauthorized')
 
-        return pd.DataFrame(qs, columns=['proposicao__id', 'proposicao__nome_processado', 'ficha_pageviews', 'poll_votes', 'poll_comments', 'poll_comments_unchecked', 'poll_comments_checked', 'poll_comments_authorized', 'poll_comments_unauthorized']) \
-            .groupby(['proposicao__nome_processado', 'proposicao__id']) \
-            .agg({
-                'ficha_pageviews': 'sum',
-                'poll_votes': 'sum',
-                'poll_comments': 'sum',
-                'poll_comments_unchecked': 'sum',
-                'poll_comments_checked': 'sum',
-                'poll_comments_authorized': 'sum',
-                'poll_comments_unauthorized': 'sum',
-            }) \
-            .reset_index() \
-            .sort_values('poll_votes', ascending=False) \
-            .to_dict('records')
+        # Dictionary of temas for speed
+        temas_dict = {}
+        for p in Proposicao.objects.all().values('id', 'tema__nome'):
+            if temas_dict.get(p['id']):
+                temas_dict[p['id']].append(p['tema__nome'])
+            else:
+                temas_dict[p['id']] = [p['tema__nome']]
 
+        df = pd.DataFrame([
+            {
+                'proposicao__nome_processado': q['proposicao__nome_processado'],
+                'proposicao__id': q['proposicao__id'],
+                'temas': temas_dict[q['proposicao__id']],
+                'ficha_pageviews': q['ficha_pageviews'],
+                'noticia_pageviews': q['noticia_pageviews'],
+                'poll_votes': q['poll_votes'],
+                'poll_comments': q['poll_comments'],
+                'poll_comments_unchecked': q['poll_comments_unchecked'],
+                'poll_comments_checked': q['poll_comments_checked'],
+                'poll_comments_authorized': q['poll_comments_authorized'],
+                'poll_comments_unauthorized': q['poll_comments_unauthorized'],
+            } for q in qs])
 
+        if df.empty:
+            return None
 
+        df['score'] = (df.ficha_pageviews / df.ficha_pageviews.max()).fillna(0) + \
+            (df.noticia_pageviews / df.noticia_pageviews.max()).fillna(0) + \
+            (df.poll_votes / df.poll_votes.max()).fillna(0) + \
+            (df.poll_comments / df.poll_comments.max()).fillna(0)
+        df['score'] = df['score'].map('{:,.2f}'.format)
 
+        df.sort_values('score', ascending=False, inplace=True)
 
+        df = df[:500]
+
+        return [{
+            'nome_processado': row.proposicao__nome_processado,
+            'link_ficha_tramitacao': 'https://www.camara.leg.br/propostas-legislativas/{}'.format(row.proposicao__id),
+            'link': reverse('proposicao_detail', args=[row.proposicao__id]),
+            'temas': row.temas,
+            'ficha_pageviews': row.ficha_pageviews,
+            'noticia_pageviews': row.noticia_pageviews,
+            'poll_votes': row.poll_votes,
+            'poll_comments': row.poll_comments,
+            'poll_comments_unchecked': row.poll_comments_unchecked,
+            'poll_comments_checked': row.poll_comments_checked,
+            'poll_comments_authorized': row.poll_comments_authorized,
+            'poll_comments_unauthorized': row.poll_comments_unauthorized,
+            'score': row.score,
+        } for _, row in df.iterrows()]
 
 class ProposicaoAggregated(models.Model):
     proposicao = models.ForeignKey('Proposicao', on_delete=models.CASCADE)

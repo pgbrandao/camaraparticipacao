@@ -2,8 +2,38 @@ from django.core.cache import cache
 from django.conf import settings
 from django.urls import reverse
 
+import pandas as pd
+
 from . import plots
 from .models import *
+
+def api_top_proposicoes(initial_date, final_date, save_cache=False):
+    cache_name = 'api_top_proposicoes-{}-{}'.format(initial_date.toordinal(), final_date.toordinal())
+    stats = cache.get(cache_name, None)
+
+    if not stats or save_cache:
+        stats = {}
+
+        stats['rows'] = ProposicaoAggregated.objects.top_proposicoes(initial_date, final_date)
+        if save_cache:
+            print("Saving cache for {} {}-{}".format(cache_name, initial_date, final_date))
+            cache.set(cache_name, stats, 172800)
+
+    return stats
+
+def api_top_noticias(initial_date, final_date, save_cache=False):
+    cache_name = 'api_top_noticias-{}-{}'.format(initial_date.toordinal(), final_date.toordinal())
+    stats = cache.get(cache_name, None)
+
+    if not stats or save_cache:
+        stats = {}
+
+        stats['rows'] = NoticiaAggregated.objects.top_noticias(initial_date, final_date)
+        if save_cache:
+            print("Saving cache for {} {}-{}".format(cache_name, initial_date, final_date))
+            cache.set(cache_name, stats, 172800)
+
+    return stats
 
 def enquetes_temas(initial_date, final_date, save_cache=False):
     stats = {}
@@ -14,7 +44,7 @@ def enquetes_temas(initial_date, final_date, save_cache=False):
     if not stats or save_cache:
         stats = {}
         
-        stats['plot_div'] = plots.enquetes_temas(initial_date, final_date)
+        stats['graph'] = plots.enquetes_temas(initial_date, final_date)
         
         if save_cache:
             print("Saving cache for {} {}-{}".format(cache_name, initial_date, final_date))
@@ -31,7 +61,7 @@ def proposicoes_temas(initial_date, final_date, save_cache=False):
     if not stats or save_cache:
         stats = {}
         
-        stats['plot_div'] = plots.proposicoes_temas(initial_date, final_date)
+        stats['graph'] = plots.proposicoes_temas(initial_date, final_date)
 
         if save_cache:
             print("Saving cache for {} {}-{}".format(cache_name, initial_date, final_date))
@@ -48,7 +78,7 @@ def noticias_temas(initial_date, final_date, save_cache=False):
     if not stats or save_cache:
         stats = {}
         
-        stats['plot_div'] = plots.noticias_temas(initial_date, final_date)
+        stats['graph'] = plots.noticias_temas(initial_date, final_date)
 
         if save_cache:
             print("Saving cache for {} {}-{}".format(cache_name, initial_date, final_date))
@@ -65,7 +95,7 @@ def noticias_tags(initial_date, final_date, save_cache=False):
     if not stats or save_cache:
         stats = {}
         
-        stats['plot_div'] = plots.noticias_tags(initial_date, final_date)
+        stats['graph'] = plots.noticias_tags(initial_date, final_date)
 
         if save_cache:
             print("Saving cache for {} {}-{}".format(cache_name, initial_date, final_date))
@@ -160,18 +190,6 @@ def relatorio_consolidado(initial_date, final_date, save_cache=False):
             'prisma_sexo_idade_plot': prisma_sexo_idade_plot,
         })
 
-
-        # top polls
-        qs = ProposicaoAggregated.objects.top_proposicoes(initial_date, final_date)[:500]
-        stats.update({
-            'top_proposicoes': [{
-                'proposicao_nome_processado': row['proposicao__nome_processado'],
-                'link': reverse('proposicao_detail', args=[row['proposicao__id']]),
-                'poll_comments_authorized': row['poll_comments_authorized'],
-                'ficha_pageviews': row['ficha_pageviews'],
-            } for row in qs]
-        })
-
         # proposicoes temas plot
         proposicoes_temas_plot = plots.proposicoes_temas(initial_date=initial_date, final_date=final_date)
 
@@ -191,18 +209,6 @@ def relatorio_consolidado(initial_date, final_date, save_cache=False):
 
         stats.update({
             'noticias_temas_plot': noticias_temas_plot
-        })
-
-        # top noticias
-        qs = NoticiaAggregated.objects.top_noticias(initial_date, final_date)[:500]
-
-        stats.update({
-            'top_noticias': [{
-                'title': row['noticia__titulo'] or '',
-                'link': row['noticia__link'] or '',
-                'pageviews': row['pageviews'],
-                'comments_authorized': row['portal_comments_authorized'],
-            } for row in qs]
         })
 
         if save_cache:

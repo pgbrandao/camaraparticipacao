@@ -263,7 +263,7 @@ def poll_votes(proposicao):
     df = pd.DataFrame(qs)
 
     if df.empty:
-        return (' ')
+        return None
 
     df = df['num_indice_opcao'].value_counts().reset_index().sort_values('index')
     df = df.rename(columns={'index': 'num_indice_opcao', 'num_indice_opcao': 'votes_count'})
@@ -388,9 +388,9 @@ def enquetes_temas(initial_date, final_date):
     df_sum = ProposicaoAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
     if not df_dimension.empty and not df_sum.empty:
-        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field)
+        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Votos nas enquetes")
     else:
-        return ''
+        return None
 
 def proposicoes_temas(initial_date, final_date):
     metric_field = 'ficha_pageviews'
@@ -403,9 +403,9 @@ def proposicoes_temas(initial_date, final_date):
     df_sum = ProposicaoAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
     if not df_dimension.empty and not df_sum.empty:
-        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field)
+        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Visualizações das proposições")
     else:
-        return ''
+        return None
 
 
 def noticias_temas(initial_date, final_date):
@@ -419,9 +419,9 @@ def noticias_temas(initial_date, final_date):
     df_sum = NoticiaAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
     if not df_dimension.empty and not df_sum.empty:
-        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field)
+        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Visualizações das notícias")
     else:
-        return ''
+        return None
 
 def noticias_tags(initial_date, final_date):
     metric_field = 'pageviews'
@@ -434,11 +434,11 @@ def noticias_tags(initial_date, final_date):
     df_sum = NoticiaAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
     if not df_dimension.empty and not df_sum.empty:
-        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field)
+        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Visualizações das notícias")
     else:
-        return ''
+        return None
 
-def raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field):
+def raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, metric_label):
     """
     df_dimension: columns: ['date', 'date_formatted', dimension_field, metric_field]
     df_sum: columns: ['date', 'date_formatted', metric_field]
@@ -451,21 +451,24 @@ def raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_f
 
     # To calculate top dimensions, the metric is summed over the entire period and inversely sorted
     top_dimensions = df_dimension \
-        .groupby(dimension_field)[metric_field] \
+        .groupby(dimension_field)[metric_normalized_field] \
         .sum() \
         .reset_index() \
-        .sort_values(metric_field, ascending=False) \
+        .sort_values(metric_normalized_field, ascending=False) \
         .reset_index(drop=True)
 
     traces_dimensions = []
+    dimension_colors = {}
     for i, row in top_dimensions.iterrows():
         dimension_value = row[dimension_field]
         most_important = i < len(px.colors.qualitative.T10) - 1
 
         if most_important:
             color = px.colors.qualitative.T10[i]
+            dimension_colors[dimension_value] = color
         else:
             color = px.colors.qualitative.T10[-1]
+            default_color = color
 
         df_this_dimension = df_dimension[df_dimension[dimension_field] == dimension_value]
 
@@ -498,7 +501,7 @@ def raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_f
     t2 = go.Bar(
         x=df_sum['date_formatted'],
         y=df_sum[metric_field],
-        name='Total da métrica',
+        name=metric_label,
         marker_color='#f5365c',
     )
 
@@ -537,11 +540,11 @@ def raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_f
         plot_bgcolor='rgba(0,0,0,0)',
         dragmode=False,
         legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1
+            orientation="v",
+            xanchor="left",
+            yanchor="top",
+            x=1.01,
+            y=1,
         ),
     )
     for trace in traces_dimensions:
@@ -553,5 +556,9 @@ def raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_f
 
     plot_json = plotly.io.to_json(fig)
 
-    return plot_json
+    return {
+        'json': plot_json,
+        'dimension_colors': dimension_colors,
+        'default_color': default_color,
+    }
     

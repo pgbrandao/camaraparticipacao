@@ -90,9 +90,9 @@ def load_noticia(id):
 
             if tag_id:
                 try:
-                    noticia_tag = NoticiaTag.objects.get(pk=tag_id)
-                except NoticiaTag.DoesNotExist:
-                    noticia_tag = NoticiaTag.objects.create(pk=tag_id, nome=tag_nome, slug=tag_slug)
+                    noticia_tag = get_model('NoticiaTag').objects.get(pk=tag_id)
+                except get_model('NoticiaTag').DoesNotExist:
+                    noticia_tag = get_model('NoticiaTag').objects.create(pk=tag_id, nome=tag_nome, slug=tag_slug)
             tags_conteudo_list.append(noticia_tag)
 
 

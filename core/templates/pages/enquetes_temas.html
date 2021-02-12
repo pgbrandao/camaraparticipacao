@@ -1,6 +1,6 @@
 {% extends 'pages/graph_view.html' %}
 
-{% block title %}Enquetes: temas mais populares por votos{% endblock title %}
+{% block title %}Enquetes: temas mais populares por voto{% endblock title %}
 
 {% block sidebar_title %}Enquetes mais votadas{% endblock %}
 
@@ -11,12 +11,16 @@
 {% endblock %}
 
 {% block sidebar_datatable %}
-<v-data-table :headers="sidebar_headers" :items="sidebar_contents.top_proposicoes" :items-per-page="10" :sort-by="['poll_votes']" :sort-desc="[true]">
+<v-data-table :headers="sidebar_headers" :items="sidebar_contents.rows" :items-per-page="10" :sort-by="['poll_votes']" :sort-desc="[true]">
     <template #item.nome_processado="{ item }">
         <a :href="item.link_ficha_tramitacao">
         [[ item.nome_processado ]]
-        </a><br />
-        [[ item.temas ]]
+        </a>
+        <div v-for="tema in item.temas">
+            <div :style="'background-color: '+dimension_color(tema)" class="tag">
+                [[ tema ]]
+            </div>
+        </div>
     </template>
 </v-data-table>
 {% endblock %}

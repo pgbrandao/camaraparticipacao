@@ -183,6 +183,7 @@ import locale
 locale.setlocale(locale.LC_TIME, 'pt_BR')
 
 STRFTIME_SHORT_DATE_FORMAT = '%d/%m/%Y'
+STRFTIME_SHORT_DATE_FORMAT_URL = '%d-%m-%Y'
 
 ANALYTICS_CREDENTIALS = os.environ['ANALYTICS_CREDENTIALS']
 

@@ -13,6 +13,8 @@ def rebuild_caches():
         year_start = year_start.to_pydatetime().date()
         year_end = year_end.to_pydatetime().date()
 
+        reports.api_top_noticias(initial_date=year_start, final_date=year_end, save_cache=True)
+        reports.api_top_proposicoes(initial_date=year_start, final_date=year_end, save_cache=True)
         reports.enquetes_temas(initial_date=year_start, final_date=year_end, save_cache=True)
         reports.proposicoes_temas(initial_date=year_start, final_date=year_end, save_cache=True)
         reports.noticias_temas(initial_date=year_start, final_date=year_end, save_cache=True)
@@ -25,8 +27,13 @@ def rebuild_caches():
         month_start = month_start.to_pydatetime().date()
         month_end = month_end.to_pydatetime().date()
 
+        reports.api_top_noticias(initial_date=month_start, final_date=month_end, save_cache=True)
+        reports.api_top_proposicoes(initial_date=month_start, final_date=month_end, save_cache=True)
         reports.relatorio_consolidado(initial_date=month_start, final_date=month_end, save_cache=True)
 
     for day in pd.date_range(start='2019-01-01', end=datetime.date.today()):
         day = day.to_pydatetime().date()
+
+        reports.api_top_noticias(initial_date=day, final_date=day, save_cache=True)
+        reports.api_top_proposicoes(initial_date=day, final_date=day, save_cache=True)
 

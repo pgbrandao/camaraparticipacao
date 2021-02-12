@@ -25,8 +25,8 @@ dashboard_urls = [
 
     path('relatorio-consolidado/', views.relatorio_consolidado, {'custom': False}, name='relatorio_consolidado'),
 
-    path('api/top-noticias/', views.api_top_noticias, name='api_top_noticias'),
-    path('api/top-proposicoes/', views.api_top_proposicoes, name='api_top_proposicoes'),
+    re_path(r'api/top-proposicoes/(?:(?P<initial_date>[\d-]+)/)?(?:(?P<final_date>[\d-]+)/)?$', views.api_top_proposicoes, name='api_top_proposicoes'),
+    re_path(r'api/top-noticias/(?:(?P<initial_date>[\d-]+)/)?(?:(?P<final_date>[\d-]+)/)?$', views.api_top_noticias, name='api_top_noticias'),
 
     path('login/', LoginView.as_view(template_name='admin/login.html')),
 ]
