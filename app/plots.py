@@ -10,6 +10,7 @@ from plotly.graph_objs import Layout
 import datetime
 
 from .models import *
+from . import helpers
 
 
 def summary_plot(group_by, height, proposicao=None, initial_date=None, final_date=None, subplots='all', show_legend=False):
@@ -81,29 +82,25 @@ def summary_plot(group_by, height, proposicao=None, initial_date=None, final_dat
 
     # Set api_params (this can be moved to the client-side in the future)
     if group_by == 'year':
-        df['api_params'] = df.apply(lambda x:
-            'initial_date={}&final_date={}'.format(
-                x['date'].replace(day=1).replace(month=1).strftime(settings.STRFTIME_SHORT_DATE_FORMAT),
-                x['date'].strftime(settings.STRFTIME_SHORT_DATE_FORMAT)
-            ),
-            axis=1)
+        df['api_params'] = df.apply(lambda x: helpers.get_api_params(
+                x['date'].replace(day=1).replace(month=1),
+                x['date']
+        ), axis=1)
 
         df['date'] = df['date'].dt.strftime('%Y')
     elif group_by == 'month':
-        df['api_params'] = df.apply(lambda x:
-            'initial_date={}&final_date={}'.format(
-                x['date'].replace(day=1).strftime(settings.STRFTIME_SHORT_DATE_FORMAT),
-                x['date'].strftime(settings.STRFTIME_SHORT_DATE_FORMAT)
-            ),
-            axis=1)
+        df['api_params'] = df.apply(lambda x: helpers.get_api_params(
+                x['date'].replace(day=1),
+                x['date']
+        ), axis=1)
 
         df['date'] = df['date'].dt.strftime('%B %Y')
     elif group_by == 'day':
-        df['api_params'] = df.apply(lambda x:
-            'date={}'.format(
-                x['date'].strftime(settings.STRFTIME_SHORT_DATE_FORMAT)
-            ),
-            axis=1)
+        df['api_params'] = df.apply(lambda x: helpers.get_api_params(
+                x['date'],
+                x['date']
+        ), axis=1)
+
 
     subplots_list = []
     if subplots == 'all' or 'ficha' in subplots:
@@ -321,6 +318,10 @@ def poll_votes(proposicao):
 
 def prisma_sexo(initial_date, final_date):
     df = PrismaDemanda.objects.get_sexo_counts(initial_date, final_date)
+
+    if df is None:
+        return None
+
     fig = go.Figure()
     fig.add_trace(
         go.Bar(
@@ -334,6 +335,9 @@ def prisma_sexo(initial_date, final_date):
 
 def prisma_sexo_idade(initial_date, final_date):
     df = PrismaDemanda.objects.get_sexo_idade_counts(initial_date, final_date)
+
+    if df is None:
+        return None
 
     fig = go.Figure(data=[
         go.Bar(
@@ -387,7 +391,7 @@ def enquetes_temas(initial_date, final_date):
     # Second step: prepare df_sum
     df_sum = ProposicaoAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
-    if not df_dimension.empty and not df_sum.empty:
+    if df_dimension and df_sum:
         return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Votos nas enquetes")
     else:
         return None
@@ -402,7 +406,7 @@ def proposicoes_temas(initial_date, final_date):
     # Second step: prepare df_sum
     df_sum = ProposicaoAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
-    if not df_dimension.empty and not df_sum.empty:
+    if df_dimension and df_sum:
         return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Visualizações das proposições")
     else:
         return None
@@ -418,7 +422,7 @@ def noticias_temas(initial_date, final_date):
     # Second step: prepare df_sum
     df_sum = NoticiaAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
-    if not df_dimension.empty and not df_sum.empty:
+    if df_dimension and df_sum:
         return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Visualizações das notícias")
     else:
         return None
@@ -433,7 +437,7 @@ def noticias_tags(initial_date, final_date):
     # Second step: prepare df_sum
     df_sum = NoticiaAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
-    if not df_dimension.empty and not df_sum.empty:
+    if df_dimension and df_sum:
         return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Visualizações das notícias")
     else:
         return None

@@ -542,6 +542,10 @@ class PrismaDemandaManager(models.Manager):
             .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lt=final_date) \
             .values('iddemandante__demandante_sexo')
         df = pd.DataFrame(qs)
+
+        if df.empty:
+            return None
+        
         return df['iddemandante__demandante_sexo'] \
             .value_counts() \
             .to_frame('count') \
