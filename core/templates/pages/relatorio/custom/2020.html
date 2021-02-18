@@ -1,261 +1,57 @@
-{% extends 'layouts/base.html' %}
+{% extends 'pages/relatorio/custom/base_report.html' %}
 
-{% block title %}Relatório consolidado da participação{% endblock title %}
-
-{% block sidenav %}{% endblock sidenav %}
-
-{% block content %}
-<div class="header pt-4">
-    <div class="container-sm">
+{% block report_extra %}
+    <div class="row">
         <div class="col">
-            <h1>Participação na Câmara em 2020</h1><br />
+            <div class="card">
+                <div class="card-body">
+                    <p>
+                        Esta página apresenta parte do retrato da participação popular observada na Câmara. A Câmara disponibiliza inúmeros instrumentos de participação à sociedade, e para as finalidades deste relatório, são considerados os seguintes:
+                    </p>
+                    <h4>Canais de participação popular</h4>
+                    <ul class="list-unstyled">
+                        <li><a href="https://www.camara.leg.br/enquetes">Enquetes legislativas</a></li>
+                    </ul>
+                    <!-- <h4>Redes sociais</h4>
+                    <ul class="list-unstyled">
+                        <li><a href="https://t.me/CamaradosDeputados">Telegram</a></li>
+                        <li><a href="https://twitter.com/camaradeputados">Twitter</a></li>
+                        <li><a href="https://www.youtube.com/camaradosdeputadosoficial">YouTube</a></li>
+                        <li><a href="https://pt-br.facebook.com/camaradeputados/">Facebook</a></li>
+                        <li><a href="https://www.instagram.com/camaradeputados/?hl=pt-br">Instagram</a></li>
+                    </ul> -->
+                    <h4>Comunicação Interativa</h4>
+                    <ul class="list-unstyled">
+                        <li><a href="https://camara.custhelp.com/">Fale Conosco</a></li>
+                        <li><a href="https://www2.camara.leg.br/transparencia/servicos-ao-cidadao/canais-de-atendimento-ao-cidadao/disque-camara">Disque Câmara: 0800 0 619 619</a></li>
+                        <li><a href="https://www.camara.leg.br/noticias">Acessos e comentários às notícias do Portal da Câmara</a></li>
+                    </ul>
+                    <!-- <h4>Relacionamento com o público infantojuvenil</h4>
+                    <ul class="list-unstyled">
+                        <li><a href="https://www.camara.leg.br/pjb/">Parlamento Jovem Brasileiro – PJB</a></li>
+                        <li><a href="https://plenarinho.leg.br">Plenarinho</a></li>
+                    </ul> -->
+                </div>
+            </div>
+
         </div>
     </div>
-</div>
-
-<div id="app">
-    <div class="container-sm">
-        {% if stats %}
-        <!-- dados gerais-->
-        <div class="row">
-            <div class="col">
-                <div class="card">
-                    <div class="card-body">
-                        <p>
-                            Esta página apresenta parte do retrato da participação popular observada na Câmara. A Câmara disponibiliza inúmeros instrumentos de participação à sociedade, e para as finalidades deste relatório, são considerados os seguintes:
-                        </p>
-                        <h4>Canais de participação popular</h4>
-                        <ul class="list-unstyled">
-                            <li><a href="https://www.camara.leg.br/enquetes">Enquetes legislativas</a></li>
-                        </ul>
-                        <h4>Redes sociais</h4>
-                        <ul class="list-unstyled">
-                            <li><a href="https://t.me/CamaradosDeputados">Telegram</a></li>
-                            <li><a href="https://twitter.com/camaradeputados">Twitter</a></li>
-                            <li><a href="https://www.youtube.com/camaradosdeputadosoficial">YouTube</a></li>
-                            <li><a href="https://pt-br.facebook.com/camaradeputados/">Facebook</a></li>
-                            <li><a href="https://www.instagram.com/camaradeputados/?hl=pt-br">Instagram</a></li>
-                        </ul>
-                        <h4>Comunicação Interativa</h4>
-                        <ul class="list-unstyled">
-                            <li><a href="https://camara.custhelp.com/">Fale Conosco</a></li>
-                            <li>Disque Câmara: 0800 0 619 619</li>
-                            <li><a href="https://www.camara.leg.br/noticias">Acessos e comentários às notícias do Portal da Câmara</a></li>
-                        </ul>
-                        <h4>Relacionamento com o público infantojuvenil</h4>
-                        <ul class="list-unstyled">
-                            <li><a href="https://www.camara.leg.br/pjb/">Parlamento Jovem Brasileiro – PJB</a></li>
-                            <li><a href="https://plenarinho.leg.br">Plenarinho</a></li>
-                        </ul>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-        <div class="row">
-            <div class="col">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="row">
-                            <div class="col">
-                                <h2>A Câmara <span class="text-sm">em <mark>{{ period_humanized }}</mark></span></h2>
-                            </div>
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <div class="row">
+                        <div class="col">
+                            <h2>A Câmara <span class="text-sm">em <mark>{{ period_humanized }}</mark></span></h2>
                         </div>
                     </div>
-                
-                    <div class="card-body">
-                        <iframe src='https://cdn.knightlab.com/libs/timeline3/latest/embed/index.html?source=1Pu1BSyQZcVPpuI7FibrNVL3Yb4zxkhpc8oNKU0vUebo&font=Default&lang=pt-br&initial_zoom=2&height=700' width='100%' height='700' webkitallowfullscreen mozallowfullscreen allowfullscreen frameborder='0'></iframe>
-                    </div>
+                </div>
+            
+                <div class="card-body">
+                    <iframe src='https://cdn.knightlab.com/libs/timeline3/latest/embed/index.html?source=1Pu1BSyQZcVPpuI7FibrNVL3Yb4zxkhpc8oNKU0vUebo&font=Default&lang=pt-br&initial_zoom=2&height=700' width='100%' height='700' webkitallowfullscreen mozallowfullscreen allowfullscreen frameborder='0'></iframe>
                 </div>
             </div>
         </div>
-        <!-- enquetes -->
-        <div class="row">
-            <div class="col">
-                <h1>
-                    Proposições e enquetes
-                </h1>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-6">
-                {% include "pages/cards/kpi_ficha_pageviews.html" %}
-            </div>
-
-            <div class="col-6">
-                {% include "pages/cards/kpi_votos_enquetes.html" %}
-            </div>
-
-            <div class="col-6">
-                {% include "pages/cards/kpi_comentarios_enquetes.html" %}
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col">
-                {% include "pages/cards/ficha_enquete_summary_plot.html" %}
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col">
-                {% include "pages/cards/proposicoes_temas_plot.html" %}
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col">
-                {% include "pages/cards/enquetes_temas_plot.html" %}
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-6">
-                {% include "pages/cards/top_proposicoes_enquetes.html" %}
-            </div>
-        </div>
-
-        <!-- prisma -->
-        <div class="row">
-            <div class="col">
-                <h1>
-                    Central de Comunicação Interativa
-                </h1>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-6">
-                {% include "pages/cards/kpi_demandas_prisma.html" %}
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col">
-                {% include "pages/cards/prisma_summary_plot.html" %}
-            </div>
-        </div>
-
-        <div class="row">
-
-            <div class="col-6">
-                {% include "pages/cards/tipos_prisma.html" %}
-            </div>
-
-            <div class="col-6">
-                {% include "pages/cards/sexo_prisma.html" %}
-            </div>
-
-        </div>
-
-        <!-- noticias -->
-        <div class="row">
-            <div class="col">
-                <h1>
-                    Notícias
-                </h1>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-6">
-                {% include "pages/cards/kpi_noticia_pageviews.html" %}
-            </div>
-            <div class="col-6">
-                {% include "pages/cards/kpi_comentarios_portal.html" %}
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col">
-                {% include "pages/cards/noticia_summary_plot.html" %}
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col">
-                {% include "pages/cards/noticias_temas_plot.html" %}
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-6">
-                {% include "pages/cards/materias_mais_comentadas.html" %}
-            </div>
-        </div>
-
-        {% endif %}
-
     </div>
-</div>
+{% endblock report_extra %}
 
-{% endblock content %}
-
-<!-- Specific JS goes HERE -->
-{% block javascripts %}
-<script>
-    Vue.config.ignoredElements = [
-        'plotly'
-    ];
-    var app = new Vue({
-        delimiters: ['[[', ']]'],
-        el: '#app',
-        vuetify: new Vuetify(),
-        data: {
-            period_type: '{{ period_type|escapejs }}',
-            {% if stats %}
-                top_proposicoes: {{ stats.top_proposicoes | safe }},
-                top_noticias: {{ stats.top_noticias | safe }},
-                top_prisma_categorias: {{ stats.top_prisma_categorias | safe}},
-                top_prisma_proposicoes: {{ stats.top_prisma_proposicoes | safe}},
-            {% endif %}
-            top_proposicoes_headers: [
-                { text: 'Proposição', align: 'start', sortable: false, value: 'proposicao_nome_processado', },
-                { text: 'Votos', value: 'poll_votes' },
-                { text: 'Comentários aprovados', value: 'poll_comments_authorized' },
-                { text: 'Visualizações (ficha de tramitação)', value: 'ficha_pageviews' },
-            ],
-            top_noticias_headers: [
-                { text: 'Notícia', align: 'start', sortable: false, value: 'title', },
-                { text: 'Visualizações', value: 'pageviews' },
-                { text: 'Comentários aprovados', value: 'comments_authorized' },
-            ],
-            top_prisma_categorias_headers: [
-                { text: 'Macrotema', value: 'prismacategoria__macrotema', },
-                { text: 'Tema', value: 'prismacategoria__tema', },
-                { text: 'Subtema', value: 'prismacategoria__subtema', },
-                { text: 'Demandas', value: 'count', },
-            ],
-            top_prisma_proposicoes_headers: [
-                { text: 'Proposição', value: 'prismacategoria__categoria_tema_proposição', },
-                { text: 'Demandas', value: 'iddemanda__count', },
-            ]
-        },
-    });
-
-    {% if stats %}
-        Plotly.setPlotConfig({"displayModeBar": false, "responsive": true});
-
-        var enquetes_temas_plot = {{ stats.enquetes_temas_plot | safe}};
-        Plotly.plot('enquetes_temas_plot', enquetes_temas_plot, {});
-
-        var proposicoes_temas_plot = {{ stats.proposicoes_temas_plot | safe}};
-        Plotly.plot('proposicoes_temas_plot', proposicoes_temas_plot, {});
-
-        var noticias_temas_plot = {{ stats.noticias_temas_plot | safe}};
-        Plotly.plot('noticias_temas_plot', noticias_temas_plot, {});
-
-        var ficha_enquete_summary_plot = {{ stats.ficha_enquete_summary_plot | safe}};
-        Plotly.plot('ficha_enquete_summary_plot', ficha_enquete_summary_plot, {});
-
-        var noticia_summary_plot = {{ stats.noticia_summary_plot | safe}};
-        Plotly.plot('noticia_summary_plot', noticia_summary_plot, {});
-
-        var prisma_sexo_plot = {{ stats.prisma_sexo_plot | safe}};
-        Plotly.plot('prisma_sexo_plot', prisma_sexo_plot, {});
-
-    {% endif %}
-
-</script>
-{% endblock javascripts %}

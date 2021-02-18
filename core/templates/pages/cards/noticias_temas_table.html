@@ -1,0 +1,39 @@
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col">
+                <h2>Notícias <div v-if="noticias_temas_table_contents.period_humanized"><span class="text-sm">em <mark>[[ noticias_temas_table_contents.period_humanized ]]</mark></span></div></h2>
+                    <p>Navegue, na tabela abaixo, pelas principais notícias de interesse da sociedade conforme auferidos pelo <b>número de visualizações</b> e pelo <b>número de comentários</b>. Perceba que os temas são os mesmos do gráfico ao lado!</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <select name="noticias_temas_table_api_params" v-model="noticias_temas_table_api_params" class="form-control">
+            <option value="" disabled>Clique para selecionar um período</option>
+            {% for value, text in stats.periods_api_params %}
+                <option value="{{ value }}">{{ text }}</option>
+            {% endfor %}
+        </select>
+        <div v-if="loading_noticias_temas_table" class="text-center">
+            <v-progress-circular
+            indeterminate
+            color="primary">
+        </div>
+
+        <div v-if="noticias_temas_table_contents.rows">
+            <template>
+                <v-data-table :headers="noticias_temas_table_headers" :items="noticias_temas_table_contents.rows" :items-per-page="10" :sort-by="['pageviews']" :sort-desc="[true]">
+                    <template #item.titulo="{ item }">
+                        <a :href="item.link">
+                        [[ item.titulo ]]
+                        </a>
+                        <div :style="'background-color: '+noticias_temas_dimension_color(item.tema_principal)" class="tag">
+                            [[ item.tema_principal ]]
+                        </div>
+                    </template>
+                </v-data-table>
+            </template>
+        </div>
+    </div>
+</div>

@@ -20,11 +20,16 @@
 </div>
 <div class="container-fluid">
     <div class="row justify-content-center">
-        <div class="btn-wrapper text-center">
+        <div class="btn-wrapper text-center mt-5">
             <a href="{% url 'relatorio_ano' year=2020 %}" class="btn btn-neutral">
                 <h3 class="display-3">2020</h2>
             </a>
+            <a href="{% url 'relatorio_ano' year=2021 %}" class="btn btn-neutral">
+                <h3 class="display-3">2021</h2>
+            </a>
         </div>
+        <div class="btn-wrapper text-center mt-5">
+        </div>    
     </div>
 </div>
 {% endblock content %}

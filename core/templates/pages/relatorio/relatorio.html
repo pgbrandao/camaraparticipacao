@@ -147,22 +147,9 @@
         data: {
             period_type: '{{ period_type|escapejs }}',
             {% if stats %}
-                top_proposicoes: {{ stats.top_proposicoes | safe }},
-                top_news: {{ stats.top_news | safe }},
                 top_prisma_categorias: {{ stats.top_prisma_categorias | safe}},
                 top_prisma_proposicoes: {{ stats.top_prisma_proposicoes | safe}},
             {% endif %}
-            top_proposicoes_headers: [
-                { text: 'Proposição', align: 'start', sortable: false, value: 'proposicao_nome_processado', },
-                { text: 'Votos', value: 'poll_votes' },
-                { text: 'Comentários', value: 'poll_comments' },
-                { text: 'Visualizações (ficha de tramitação)', value: 'ficha_pageviews' },
-            ],
-            top_news_headers: [
-                { text: 'Notícia', align: 'start', sortable: false, value: 'title', },
-                { text: 'Visualizações', value: 'pageviews' },
-                { text: 'Comentários', value: 'comments' },
-            ],
             top_prisma_categorias_headers: [
                 { text: 'Macrotema', value: 'prismacategoria__macrotema', },
                 { text: 'Tema', value: 'prismacategoria__tema', },

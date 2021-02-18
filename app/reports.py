@@ -5,6 +5,7 @@ from django.urls import reverse
 import pandas as pd
 
 from . import plots
+from . import helpers
 from .models import *
 
 def api_top_proposicoes(initial_date, final_date, save_cache=False):
@@ -124,6 +125,7 @@ def relatorio_consolidado(initial_date, final_date, save_cache=False):
         qs = ProposicaoAggregated.objects.get_aggregated(initial_date, final_date)
 
         stats.update({
+            'ficha_pageviews': qs['ficha_pageviews'],
             'poll_votes': qs['poll_votes'],
             'poll_comments': qs['poll_comments'],
             'poll_comments_unchecked': qs['poll_comments_unchecked'],
@@ -210,6 +212,20 @@ def relatorio_consolidado(initial_date, final_date, save_cache=False):
         stats.update({
             'noticias_temas_plot': noticias_temas_plot
         })
+
+        # periods and respective api params
+        stats['periods_api_params'] = [
+            (helpers.get_api_params(initial_date, final_date),
+            '{}-{}'.format(initial_date.strftime('%B %Y'), final_date.strftime('%B %Y')))
+        ] + [
+            (
+                helpers.get_api_params(initial_date, final_date), 
+                initial_date.strftime('%B %Y')
+            ) 
+            for initial_date, final_date
+            in zip(pd.date_range(initial_date, final_date, freq='MS'), pd.date_range(initial_date, final_date, freq='M'))
+        ]
+
 
         if save_cache:
             print("Saving cache for {} {}-{}".format(cache_name, initial_date, final_date))

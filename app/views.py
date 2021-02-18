@@ -203,10 +203,7 @@ def relatorio_ano(request, year):
 
     stats = reports.relatorio_consolidado(initial_date, final_date)
 
-    try:
-        return render(request, 'pages/relatorio/custom/{}.html'.format(year), locals())
-    except:
-        raise Http404
+    return render(request, 'pages/relatorio/custom/{}.html'.format(year), locals())
     
 def relatorio_consolidado(request, custom):
     year = request.GET.get('year')

@@ -10,7 +10,7 @@
 {% endblock %}
 
 {% block sidebar_datatable %}
-<v-data-table :headers="sidebar_headers" :items="sidebar_contents.rows" :items-per-page="10" :sort-by="['pageviews']" :sort-desc="[true]">
+<v-data-table :headers="sidebar_headers" :items="sidebar_contents.rows" :items-per-page="10" :sort-by="['ficha_pageviews']" :sort-desc="[true]">
     <template #item.nome_processado="{ item }">
         <a :href="item.link_ficha_tramitacao">
         [[ item.nome_processado ]]

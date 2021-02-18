@@ -1,0 +1,41 @@
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col">
+                <h2>Proposições <div v-if="proposicoes_temas_table_contents.period_humanized"><span class="text-sm">em <mark>[[ proposicoes_temas_table_contents.period_humanized ]]</mark></span></div></h2>
+                    <p>Navegue, na tabela abaixo, pelos principais interesses da sociedade conforme auferidos pelos acessos às proposições. Perceba que os temas são os mesmos do gráfico ao lado!</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <select name="proposicoes_temas_table_api_params" v-model="proposicoes_temas_table_api_params" class="form-control">
+            <option value="" disabled>Clique para selecionar um período</option>
+            {% for value, text in stats.periods_api_params %}
+                <option value="{{ value }}">{{ text }}</option>
+            {% endfor %}
+        </select>
+        <div v-if="loading_proposicoes_temas_table" class="text-center">
+            <v-progress-circular
+            indeterminate
+            color="primary">
+        </div>
+
+        <div v-if="proposicoes_temas_table_contents.rows">
+            <template>
+                <v-data-table :headers="proposicoes_temas_table_headers" :items="proposicoes_temas_table_contents.rows" :items-per-page="10" :sort-by="['ficha_pageviews']" :sort-desc="[true]">
+                    <template #item.nome_processado="{ item }">
+                        <a :href="item.link_ficha_tramitacao">
+                        [[ item.nome_processado ]]
+                        </a>
+                        <div v-for="tema in item.temas">
+                            <div :style="'background-color: '+proposicoes_temas_dimension_color(tema)" class="tag">
+                                [[ tema ]]
+                            </div>
+                        </div>
+                    </template>
+                </v-data-table>
+            </template>
+        </div>
+    </div>
+</div>
