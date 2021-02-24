@@ -28,23 +28,35 @@ def load_comentarios_portal():
             instance_list = []
 
             field_list = []
+            has_local_id = False
             for field in model._meta.fields:
                 if field.name == 'local_id':
-                    pass
+                    has_local_id = True
                 elif isinstance(field, models.ForeignKey):
                     field_list.append('{}_id'.format(field.name))
                 else:
                     field_list.append(field.name)
 
-            for _, _, _, qs in batch_qs(model.objects.using('comentarios_portal')):
+            if has_local_id:
+                # TODO: This needs to be yielded using a qs, like the alternative below, to avoid memory issues.
                 instance_list = []
+                for row in connections['comentarios_portal'].cursor() \
+                    .execute('SELECT * FROM "%s"'.format(model._meta.db_table)):
 
-                for instance_values in qs.values(*field_list):
                     instance_list.append(
-                        model(**instance_values)
+                        model(**row)
                     )
-
                 model.objects.using('default').bulk_create(instance_list)
+            else:
+                for _, _, _, qs in batch_qs(model.objects.using('comentarios_portal')):
+                    instance_list = []
+
+                    for instance_values in qs.values(*field_list):
+                        instance_list.append(
+                            model(**instance_values)
+                        )
+
+                    model.objects.using('default').bulk_create(instance_list)
 
             cursor.execute('ALTER TABLE public."%s" ENABLE TRIGGER ALL;' % (target_table_name,))
 
