@@ -621,6 +621,11 @@ class PrismaCategoria(models.Model):
     tema = models.TextField(db_column='Tema', blank=True, null=True)  # Field name made lowercase.
     subtema = models.TextField(db_column='Subtema', blank=True, null=True)  # Field name made lowercase.
     categoria_posicionamento = models.TextField(db_column='Categoria.Posicionamento', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    categoria_legislativo = models.TextField(db_column='Categoria.Legislativo', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    categoria_deputado = models.TextField(db_column='Categoria.Deputado', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    categoria_legislação = models.TextField(db_column='Categoria.Legislação', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    categoria_debate_nacional = models.TextField(db_column='Categoria.Debate Nacional', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    categoria_orcamento = models.TextField(db_column='Categoria.Orçamento', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
     categoria_tema_proposição = models.TextField(db_column='Categoria.Tema Proposição', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
 
     class Meta:

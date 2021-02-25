@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 
+from app import cache
 from app import dataloader
 
 import datetime
@@ -49,6 +50,11 @@ class Command(BaseCommand):
             help='Pre-processes data'
         )
         parser.add_argument(
+            '--rebuild-cache',
+            action='store_true',
+            help='Rebuilds cache'
+        )
+        parser.add_argument(
             '--initial-date',
             nargs=1,
             type=str,
@@ -93,3 +99,5 @@ class Command(BaseCommand):
             dataloader.preprocess_daily_summary()
             dataloader.preprocess_noticias()
             dataloader.preprocess_proposicoes()
+        if options['all'] or options['rebuild_cache']:
+            cache.rebuild_caches()
