@@ -549,13 +549,13 @@ class PrismaDemandaManager(models.Manager):
             if row['prismacategoria__macrotema'] == 'PROPOSIÇÃO':
                 assunto.append(row['prismacategoria__categoria_tema_proposição'])
             elif row['prismacategoria__macrotema'] == 'DEPUTADO':
-                assunto.append(row['prismacategoria__categoria_tema_proposição'])
+                assunto.append(row['prismacategoria__categoria_deputado'])
             elif row['prismacategoria__macrotema'] == 'TEMAS DE DEBATE NACIONAL':
-                assunto.append(row['prismacategoria__categoria_tema_proposição'])
+                assunto.append(row['prismacategoria__categoria_debate_nacional'])
             elif row['prismacategoria__macrotema'] == 'LEGISLAÇÃO':
-                assunto.append(row['prismacategoria__categoria_tema_proposição'])
+                assunto.append(row['prismacategoria__categoria_legislação'])
             elif row['prismacategoria__macrotema'] == 'ATIVIDADE LEGISLATIVA':
-                assunto.append(row['prismacategoria__categoria_tema_proposição'])
+                assunto.append(row['prismacategoria__categoria_legislativo'])
             else:
                 assunto.append(None)
 
@@ -567,10 +567,9 @@ class PrismaDemandaManager(models.Manager):
             .size() \
             .to_frame('count') \
             .reset_index() \
-            .sort_values('count', ascending=False) \
-            .to_dict('records')
+            .sort_values('count', ascending=False)
 
-        return df
+        return df.to_dict('records')
 
     def get_sexo_counts(self,initial_date,final_date):
         final_date += datetime.timedelta(days=1) # Final date is advanced by one day for DateTimeField
