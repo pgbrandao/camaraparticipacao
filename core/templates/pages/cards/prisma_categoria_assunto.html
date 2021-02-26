@@ -1,0 +1,16 @@
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col">
+                <h2>Categorias e assuntos das demandas <span class="text-sm">em <mark>{{ period_humanized }}</mark></span></h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <template>
+            <v-data-table :headers="prisma_categoria_assunto_headers" :items="prisma_categoria_assunto" :items-per-page="10">
+            </v-data-table>
+        </template>
+    </div>
+</div>

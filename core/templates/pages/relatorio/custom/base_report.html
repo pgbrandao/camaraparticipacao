@@ -93,6 +93,12 @@
         </div>
 
         <div class="row">
+            <div class="col">
+                {% include "pages/cards/prisma_categoria_assunto.html" %}
+            </div>
+        </div>
+
+        <div class="row">
 
             <div class="col-6">
                 {% include "pages/cards/tipos_prisma.html" %}
@@ -165,8 +171,9 @@
             {% if stats %}
                 // top_proposicoes: {{ stats.top_proposicoes | safe }},
                 // top_noticias: {{ stats.top_noticias | safe }},
-                top_prisma_categorias: {{ stats.top_prisma_categorias | safe}},
-                top_prisma_proposicoes: {{ stats.top_prisma_proposicoes | safe}},
+                top_prisma_categorias: {{ stats.top_prisma_categorias | safe }},
+                top_prisma_proposicoes: {{ stats.top_prisma_proposicoes | safe }},
+                prisma_categoria_assunto: {{ stats.prisma_categoria_assunto | safe }},
             {% endif %}
             top_proposicoes_headers: [
                 { text: 'Proposição', align: 'start', sortable: false, value: 'proposicao_nome_processado', },
@@ -188,6 +195,11 @@
             top_prisma_proposicoes_headers: [
                 { text: 'Proposição', value: 'prismacategoria__categoria_tema_proposição', },
                 { text: 'Demandas', value: 'iddemanda__count', },
+            ],
+            prisma_categoria_assunto_headers: [
+                { text: 'Macrotema', value: 'prismacategoria__macrotema', },
+                { text: 'Assunto', value: 'assunto', },
+                { text: 'Número de demandas', value: 'count', },
             ],
 
             // Proposição temas table

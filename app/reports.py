@@ -174,6 +174,14 @@ def relatorio_consolidado(initial_date, final_date, save_cache=False):
             'top_prisma_categorias': [row for row in prisma_categorias]
         })
 
+        # prisma categoria assunto
+        prisma_categoria_assunto = PrismaDemanda.objects.get_categoria_assunto(initial_date, final_date)
+
+        stats.update({
+            'prisma_categoria_assunto': [row for row in prisma_categoria_assunto]
+        })
+
+
         # prisma proposições
         qs = PrismaDemanda.objects.get_proposicao_counts(initial_date, final_date)
 

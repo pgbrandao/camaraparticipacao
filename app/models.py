@@ -536,6 +536,42 @@ class PrismaDemandaManager(models.Manager):
             .sort_values('count', ascending=False) \
             .to_dict('records')
 
+    def get_categoria_assunto(self,initial_date, final_date):
+        fields = ['prismacategoria__macrotema', 'prismacategoria__categoria_tema_proposição', 'prismacategoria__categoria_debate_nacional', 'prismacategoria__categoria_legislativo', 'prismacategoria__categoria_legislação', 'prismacategoria__categoria_deputado']
+        final_date += datetime.timedelta(days=1) # Final date is advanced by one day for DateTimeField
+        qs = self.get_queryset() \
+            .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lt=final_date) \
+            .values(*fields)
+        df = pd.DataFrame(qs, columns=fields)
+
+        assunto = []
+        for index, row in df.iterrows():
+            if row['prismacategoria__macrotema'] == 'PROPOSIÇÃO':
+                assunto.append(row['prismacategoria__categoria_tema_proposição'])
+            elif row['prismacategoria__macrotema'] == 'DEPUTADO':
+                assunto.append(row['prismacategoria__categoria_tema_proposição'])
+            elif row['prismacategoria__macrotema'] == 'TEMAS DE DEBATE NACIONAL':
+                assunto.append(row['prismacategoria__categoria_tema_proposição'])
+            elif row['prismacategoria__macrotema'] == 'LEGISLAÇÃO':
+                assunto.append(row['prismacategoria__categoria_tema_proposição'])
+            elif row['prismacategoria__macrotema'] == 'ATIVIDADE LEGISLATIVA':
+                assunto.append(row['prismacategoria__categoria_tema_proposição'])
+            else:
+                assunto.append(None)
+
+        df['assunto'] = assunto
+        df = df[df['assunto'].notnull()]
+        df = df[['prismacategoria__macrotema', 'assunto']]
+        df = df \
+            .groupby(['prismacategoria__macrotema', 'assunto']) \
+            .size() \
+            .to_frame('count') \
+            .reset_index() \
+            .sort_values('count', ascending=False) \
+            .to_dict('records')
+
+        return df
+
     def get_sexo_counts(self,initial_date,final_date):
         final_date += datetime.timedelta(days=1) # Final date is advanced by one day for DateTimeField
         qs = self.get_queryset() \

@@ -18,3 +18,7 @@ docker-compose exec -T db dropdb -U postgres camaraparticipacao
 docker-compose exec -T db createdb -U postgres camaraparticipacao
 docker-compose exec -T db psql -U postgres camaraparticipacao < dump.sql
 ```
+
+# NEEDS WORK
+
+* Models' object managers need a more standardized interface. Sometimes they return lists, sometimes DataFrames, sometimes querysets.
