@@ -1,0 +1,13 @@
+<div class="card">
+    <div class="card-header">
+        <h2>Manifestações sobre deputados <span class="text-sm">em <mark>{{ period_humanized }}</mark></span></h2>
+    </div>
+
+    <div class="card-body">
+        <template>
+            <v-data-table :headers="prisma_assuntos_headers" :items="prisma_assuntos_deputado" :items-per-page="10">
+            </v-data-table>
+        </template>
+
+    </div>
+</div>

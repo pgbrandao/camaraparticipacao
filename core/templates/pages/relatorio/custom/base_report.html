@@ -6,7 +6,7 @@
 
 {% block content %}
 <div class="header pt-4">
-    <div class="container-sm">
+    <div class="container-xl">
         <div class="col">
             <h1>Participação na Câmara em {{ period_humanized }}</h1><br />
         </div>
@@ -14,7 +14,7 @@
 </div>
 
 <div id="app">
-    <div class="container-sm">
+    <div class="container-xl">
         {% if stats %}
         <!-- dados gerais-->
         {% block report_extra %}{% endblock report_extra %}
@@ -94,7 +94,19 @@
 
         <div class="row">
             <div class="col">
-                {% include "pages/cards/prisma_categoria_assunto.html" %}
+                {% include "pages/cards/prisma_proposicoes_table.html" %}
+            </div>
+            <div class="col">
+                {% include "pages/cards/prisma_legislacao_table.html" %}
+            </div>
+            <div class="col">
+                {% include "pages/cards/prisma_deputados_table.html" %}
+            </div>
+            <div class="col">
+                {% include "pages/cards/prisma_atividade_legislativa_table.html" %}
+            </div>
+            <div class="col">
+                {% include "pages/cards/prisma_temas_de_debate_nacional_table.html" %}
             </div>
         </div>
 
@@ -168,13 +180,15 @@
         vuetify: new Vuetify(),
         data: {
             period_type: '{{ period_type|escapejs }}',
-            {% if stats %}
-                // top_proposicoes: {{ stats.top_proposicoes | safe }},
-                // top_noticias: {{ stats.top_noticias | safe }},
-                top_prisma_categorias: {{ stats.top_prisma_categorias | safe }},
-                top_prisma_proposicoes: {{ stats.top_prisma_proposicoes | safe }},
-                prisma_categoria_assunto: {{ stats.prisma_categoria_assunto | safe }},
-            {% endif %}
+            // top_proposicoes: {{ stats.top_proposicoes | safe }},
+            // top_noticias: {{ stats.top_noticias | safe }},
+            top_prisma_categorias: {{ stats.top_prisma_categorias | safe }},
+            top_prisma_proposicoes: {{ stats.top_prisma_proposicoes | safe }},
+            prisma_assuntos_proposicao: {{ stats.prisma_assuntos_proposicao | safe }},
+            prisma_assuntos_deputado: {{ stats.prisma_assuntos_deputado | safe }},
+            prisma_assuntos_temas_de_debate_nacional: {{ stats.prisma_assuntos_temas_de_debate_nacional | safe }},
+            prisma_assuntos_legislacao: {{ stats.prisma_assuntos_legislacao | safe }},
+            prisma_assuntos_atividade_legislativa: {{ stats.prisma_assuntos_atividade_legislativa | safe }},
             top_proposicoes_headers: [
                 { text: 'Proposição', align: 'start', sortable: false, value: 'proposicao_nome_processado', },
                 { text: 'Votos', value: 'poll_votes' },
@@ -196,8 +210,7 @@
                 { text: 'Proposição', value: 'prismacategoria__categoria_tema_proposição', },
                 { text: 'Demandas', value: 'iddemanda__count', },
             ],
-            prisma_categoria_assunto_headers: [
-                { text: 'Macrotema', value: 'prismacategoria__macrotema', },
+            prisma_assuntos_headers: [
                 { text: 'Assunto', value: 'assunto', },
                 { text: 'Número de demandas', value: 'count', },
             ],

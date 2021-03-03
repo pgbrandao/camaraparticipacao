@@ -536,14 +536,20 @@ class PrismaDemandaManager(models.Manager):
             .sort_values('count', ascending=False) \
             .to_dict('records')
 
-    def get_categoria_assunto(self,initial_date, final_date):
+    def get_assuntos(self,initial_date, final_date, macrotema=None):
         fields = ['prismacategoria__macrotema', 'prismacategoria__categoria_tema_proposição', 'prismacategoria__categoria_debate_nacional', 'prismacategoria__categoria_legislativo', 'prismacategoria__categoria_legislação', 'prismacategoria__categoria_deputado']
         final_date += datetime.timedelta(days=1) # Final date is advanced by one day for DateTimeField
         qs = self.get_queryset() \
-            .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lt=final_date) \
-            .values(*fields)
+            .filter(demanda_data_criação__gte=initial_date, demanda_data_criação__lt=final_date)
+
+        if macrotema:
+            qs = qs.filter(prismacategoria__macrotema=macrotema)
+        
+        qs = qs.values(*fields)
         df = pd.DataFrame(qs, columns=fields)
 
+        df['prismacategoria__categoria_tema_proposição'] = df['prismacategoria__categoria_tema_proposição'].str.split(' - ').str[0]
+        
         assunto = []
         for index, row in df.iterrows():
             if row['prismacategoria__macrotema'] == 'PROPOSIÇÃO':

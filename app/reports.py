@@ -175,10 +175,18 @@ def relatorio_consolidado(initial_date, final_date, save_cache=False):
         })
 
         # prisma categoria assunto
-        prisma_categoria_assunto = PrismaDemanda.objects.get_categoria_assunto(initial_date, final_date)
+        prisma_assuntos_proposicao = PrismaDemanda.objects.get_assuntos(initial_date, final_date, 'PROPOSIÇÃO')
+        prisma_assuntos_deputado = PrismaDemanda.objects.get_assuntos(initial_date, final_date, 'DEPUTADO')
+        prisma_assuntos_temas_de_debate_nacional = PrismaDemanda.objects.get_assuntos(initial_date, final_date, 'TEMAS DE DEBATE NACIONAL')
+        prisma_assuntos_legislacao = PrismaDemanda.objects.get_assuntos(initial_date, final_date, 'LEGISLAÇÃO')
+        prisma_assuntos_atividade_legislativa = PrismaDemanda.objects.get_assuntos(initial_date, final_date, 'ATIVIDADE LEGISLATIVA')
 
         stats.update({
-            'prisma_categoria_assunto': [row for row in prisma_categoria_assunto]
+            'prisma_assuntos_proposicao': [row for row in prisma_assuntos_proposicao],
+            'prisma_assuntos_deputado': [row for row in prisma_assuntos_deputado],
+            'prisma_assuntos_temas_de_debate_nacional': [row for row in prisma_assuntos_temas_de_debate_nacional],
+            'prisma_assuntos_legislacao': [row for row in prisma_assuntos_legislacao],
+            'prisma_assuntos_atividade_legislativa': [row for row in prisma_assuntos_atividade_legislativa],
         })
 
 

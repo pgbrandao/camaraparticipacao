@@ -42,3 +42,7 @@ display: none;
   line-height: 1.5;
   font-weight: 600;
 }
+
+.container-xl{
+  max-width: 1600px !important;
+}
