@@ -26,7 +26,7 @@ def load_prisma():
               'fields':
                 [ \
                     { 'django_field': 'iddemanda'                             , 'sql_server_field': 'IdDemanda'                          } ,
-                    { 'django_field': 'iddemandante'                          , 'sql_server_field': 'IdDemandante'                       } ,
+                    { 'django_field': 'iddemandante_id'                       , 'sql_server_field': 'IdDemandante'                       } ,
                     { 'django_field': 'demanda_protocolo'                     , 'sql_server_field': 'Demanda.Protocolo'                  } ,
                     { 'django_field': 'demanda_fila'                          , 'sql_server_field': 'Demanda.Fila'                       } ,
                     { 'django_field': 'demanda_prioridade'                    , 'sql_server_field': 'Demanda.Prioridade'                 } ,
@@ -50,38 +50,40 @@ def load_prisma():
             # get_model('PrismaDemandante'),
         ]
 
-        for m in models_list:
-            target_table_name = model._meta.db_table
+        for model in models_list:
+            target_table_name = model['model']._meta.db_table
 
             default_cursor.execute('ALTER TABLE public."%s" DISABLE TRIGGER ALL;' % (target_table_name,))
             default_cursor.execute('DELETE FROM public."%s"' % (target_table_name,))
 
             instance_list = []
 
-            fields_list = ', '.join(['"'+field['sql_server_field']+'"' for field in m['fields']])
-            table_name = m['table_name']
-            order_field = m['order_field']
+            fields_list = ', '.join(['"'+field['sql_server_field']+'"' for field in model['fields']])
+            table_name = model['table_name']
+            order_field = model['order_field']
 
-            num_rows = prisma_cursor.execute('SELECT COUNT(*) FROM {m.table_name};').fetchone()[0]
+            num_rows = prisma_cursor.execute(f'SELECT COUNT(*) FROM '+model['table_name']).fetchone()[0]
 
             for i in range(1,num_rows, 50000):
                 instance_list = []
 
-                query = f'SELECT {fields_list} ' + \
-                        f'FROM (' + \
-                            f'SELECT {fields_list}, ROW_NUMBER() OVER (ORDER BY {order_field}) AS RowNum' + \
-                        f'FROM {table_name}' + \
-                        f') AS MyDerivedTable' + \
-                        f'WHERE MyDerivedTable.RowNum BETWEEN {i} AND {i+50000}'
+                query = f"""
+                SELECT {fields_list}
+                FROM (
+                    SELECT {fields_list}, ROW_NUMBER() OVER (ORDER BY {order_field}) AS RowNum
+                    FROM {table_name}
+                ) AS MyDerivedTable
+                WHERE MyDerivedTable.RowNum BETWEEN {i} AND {i+50000}
+                """
                 rows = prisma_cursor.execute(query)
 
                 for row in rows:
                     instance_values = {}
-                    for col_number, field in enumerate(m['fields']):
+                    for col_number, field in enumerate(model['fields']):
                         instance_values[field['django_field']] = row[col_number]
 
                     instance_list.append(
-                        model(**instance_values)
+                        model['model'](**instance_values)
                     )
 
                 model.objects.using('default').bulk_create(instance_list)
