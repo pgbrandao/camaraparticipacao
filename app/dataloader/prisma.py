@@ -5,6 +5,8 @@ import tenacity
 
 from .common import *
 
+
+
 @tenacity.retry(**TENACITY_ARGUMENTS)
 @transaction.atomic
 def load_prisma():
@@ -12,45 +14,72 @@ def load_prisma():
         print('Prisma connection not available')
         return
  
-    with connections['default'].cursor() as cursor:
+    with connections['default'].cursor() as default_cursor, \
+         connections['prisma'].cursor() as prisma_cursor:
+
         models_list = [
-            get_model('PrismaAssunto'),
-            get_model('PrismaCategoria'),
-            get_model('PrismaDemanda'),
-            get_model('PrismaDemandante'),
+            # get_model('PrismaAssunto'),
+            # get_model('PrismaCategoria'),
+            { 'model': get_model('PrismaDemanda'),
+              'table_name': '"SqlProPrisma"."dbo"."vwDemanda"',
+              'order_field': '"IdDemanda"',
+              'fields':
+                [ \
+                    { 'django_field': 'iddemanda'                             , 'sql_server_field': 'IdDemanda'                          } ,
+                    { 'django_field': 'iddemandante'                          , 'sql_server_field': 'IdDemandante'                       } ,
+                    { 'django_field': 'demanda_protocolo'                     , 'sql_server_field': 'Demanda.Protocolo'                  } ,
+                    { 'django_field': 'demanda_fila'                          , 'sql_server_field': 'Demanda.Fila'                       } ,
+                    { 'django_field': 'demanda_prioridade'                    , 'sql_server_field': 'Demanda.Prioridade'                 } ,
+                    { 'django_field': 'demanda_canal'                         , 'sql_server_field': 'Demanda.Canal'                      } ,
+                    { 'django_field': 'demanda_tipo'                          , 'sql_server_field': 'Demanda.Tipo'                       } ,
+                    { 'django_field': 'demanda_data_criação'                  , 'sql_server_field': 'Demanda.Data Criação'               } ,
+                    { 'django_field': 'demanda_prazo'                         , 'sql_server_field': 'Demanda.Prazo'                      } ,
+                    { 'django_field': 'demanda_prazo_sugerido'                , 'sql_server_field': 'Demanda.Prazo Sugerido'             } ,
+                    { 'django_field': 'demanda_data_da_resposta'              , 'sql_server_field': 'Demanda.Data da Resposta'           } ,
+                    { 'django_field': 'demanda_tempo_em_aberto'               , 'sql_server_field': 'Demanda.Tempo em Aberto'            } ,
+                    { 'django_field': 'demanda_tempo_em_aberto_em_minutos'    , 'sql_server_field': 'Demanda.Tempo em Aberto em Minutos' } , 
+                    { 'django_field': 'demanda_tempo_de_trabalho'             , 'sql_server_field': 'Demanda.Tempo de Trabalho'          } ,
+                    { 'django_field': 'demanda_titulo'                        , 'sql_server_field': 'Demanda.Titulo'                     } ,
+                    { 'django_field': 'demanda_data_da_atualização'           , 'sql_server_field': 'Demanda.Data da Atualização'        } ,
+                    { 'django_field': 'demanda_status'                        , 'sql_server_field': 'Demanda.Status'                     } ,
+                    { 'django_field': 'demanda_forma_de_recebimento'          , 'sql_server_field': 'Demanda.Forma de Recebimento'       } ,
+                    { 'django_field': 'demanda_orgão_interessado'             , 'sql_server_field': 'Demanda.Orgão Interessado'          } ,
+                    { 'django_field': 'demanda_resultado_do_atendimento'      , 'sql_server_field': 'Demanda.Resultado do Atendimento'   } ,
+                ],
+            }
+            # get_model('PrismaDemandante'),
         ]
 
-        for model in models_list:
+        for m in models_list:
             target_table_name = model._meta.db_table
 
-            cursor.execute('ALTER TABLE public."%s" DISABLE TRIGGER ALL;' % (target_table_name,))
-            cursor.execute('DELETE FROM public."%s"' % (target_table_name,))
+            default_cursor.execute('ALTER TABLE public."%s" DISABLE TRIGGER ALL;' % (target_table_name,))
+            default_cursor.execute('DELETE FROM public."%s"' % (target_table_name,))
 
             instance_list = []
 
-            # Remove local_id from queries to the source table
-            field_list = []
-            for field in model._meta.fields:
-                if field.name == 'local_id':
-                    pass
-                elif isinstance(field, models.ForeignKey):
-                    field_list.append('{}_id'.format(field.name))
-                else:
-                    field_list.append(field.name)
+            fields_list = ', '.join(['"'+field['sql_server_field']+'"' for field in m['fields']])
+            table_name = m['table_name']
+            order_field = m['order_field']
 
-            # In models which would be ordered by local_id,
-            # change ordering to another foreign key
-            model_qs = model.objects.using('prisma')
-            if (model._meta.pk.name == 'local_id'):
-                fk_field = [field for field in model._meta.fields if isinstance(field, models.ForeignKey)][0]
-                model_qs = model_qs.order_by(fk_field.name)
-            else:
-                model_qs = model_qs.order_by(model._meta.pk.name)
+            num_rows = prisma_cursor.execute('SELECT COUNT(*) FROM {m.table_name};').fetchone()[0]
 
-            for _, _, _, qs in batch_qs(model_qs):
+            for i in range(1,num_rows, 50000):
                 instance_list = []
 
-                for instance_values in qs.values(*field_list):
+                query = f'SELECT {fields_list} ' + \
+                        f'FROM (' + \
+                            f'SELECT {fields_list}, ROW_NUMBER() OVER (ORDER BY {order_field}) AS RowNum' + \
+                        f'FROM {table_name}' + \
+                        f') AS MyDerivedTable' + \
+                        f'WHERE MyDerivedTable.RowNum BETWEEN {i} AND {i+50000}'
+                rows = prisma_cursor.execute(query)
+
+                for row in rows:
+                    instance_values = {}
+                    for col_number, field in enumerate(m['fields']):
+                        instance_values[field['django_field']] = row[col_number]
+
                     instance_list.append(
                         model(**instance_values)
                     )
@@ -60,3 +89,4 @@ def load_prisma():
             cursor.execute('ALTER TABLE public."%s" ENABLE TRIGGER ALL;' % (target_table_name,))
 
             print('Loaded %s' % (target_table_name,))
+
