@@ -18,8 +18,33 @@ def load_prisma():
          connections['prisma'].cursor() as prisma_cursor:
 
         models_list = [
-            # get_model('PrismaAssunto'),
-            # get_model('PrismaCategoria'),
+            { 'model': get_model('PrismaAssunto'),
+              'table_name': '"SqlProPrisma"."dbo"."vwAssunto"',
+              'order_field': '"Assunto.IdDemanda"',
+              'fields':
+                [ \
+                    { 'django_field': 'assunto_iddemanda'                     , 'sql_server_field': 'Assunto.IdDemanda'                  } ,
+                    { 'django_field': 'assunto_nome'                          , 'sql_server_field': 'Assunto.Nome'                       } ,
+                ],
+            },
+            { 'model': get_model('PrismaCategoria'),
+              'table_name': '"SqlProPrisma"."dbo"."vwCategoria"',
+              'order_field': '"IdDemanda"',
+              'fields':
+                [ \
+                    { 'django_field': 'iddemanda'                             , 'sql_server_field': 'IdDemanda'                          } ,
+                    { 'django_field': 'macrotema'                             , 'sql_server_field': 'Macrotema'                          } ,
+                    { 'django_field': 'tema'                                  , 'sql_server_field': 'Tema'                               } ,
+                    { 'django_field': 'subtema'                               , 'sql_server_field': 'Subtema'                            } ,
+                    { 'django_field': 'categoria_posicionamento'              , 'sql_server_field': 'Categoria.Posicionamento'           } ,
+                    { 'django_field': 'categoria_legislativo'                 , 'sql_server_field': 'Categoria.Legislativo'              } ,
+                    { 'django_field': 'categoria_deputado'                    , 'sql_server_field': 'Categoria.Deputado'                 } ,
+                    { 'django_field': 'categoria_legislação'                  , 'sql_server_field': 'Categoria.Legislação'               } ,
+                    { 'django_field': 'categoria_debate_nacional'             , 'sql_server_field': 'Categoria.Debate Nacional'          } ,
+                    { 'django_field': 'categoria_orcamento'                   , 'sql_server_field': 'Categoria.Orçamento'                } ,
+                    { 'django_field': 'categoria_tema_proposição'             , 'sql_server_field': 'Categoria.Tema Proposição'          } ,
+                ],
+            },
             { 'model': get_model('PrismaDemanda'),
               'table_name': '"SqlProPrisma"."dbo"."vwDemanda"',
               'order_field': '"IdDemanda"',
@@ -46,8 +71,21 @@ def load_prisma():
                     { 'django_field': 'demanda_orgão_interessado'             , 'sql_server_field': 'Demanda.Orgão Interessado'          } ,
                     { 'django_field': 'demanda_resultado_do_atendimento'      , 'sql_server_field': 'Demanda.Resultado do Atendimento'   } ,
                 ],
-            }
-            # get_model('PrismaDemandante'),
+            },
+            { 'model': get_model('PrismaDemandante'),
+              'table_name': '"SqlProPrisma"."dbo"."vwDemandante"',
+              'order_field': '"IdDemandante"',
+              'fields':
+                [ \
+                    { 'django_field': 'iddemandante'                          , 'sql_server_field': 'IdDemandante'                       } ,
+                    { 'django_field': 'demandante_data_cadastro'              , 'sql_server_field': 'Demandante.Data Cadastro'           } ,
+                    { 'django_field': 'demandante_grau_de_instrução'          , 'sql_server_field': 'Demandante.Grau de Instrução'       } ,
+                    { 'django_field': 'demandante_sexo'                       , 'sql_server_field': 'Demandante.Sexo'                    } ,
+                    { 'django_field': 'demandante_categoria'                  , 'sql_server_field': 'Demandante.Categoria'               } ,
+                    { 'django_field': 'demandante_data_de_nascimento'         , 'sql_server_field': 'Demandante.Data de Nascimento'      } ,
+                    { 'django_field': 'demandante_profissão_externa'          , 'sql_server_field': 'Demandante.Profissão Externa'       } ,
+                ],
+            },
         ]
 
         for m in models_list:
