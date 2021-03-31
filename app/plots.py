@@ -325,9 +325,42 @@ def prisma_sexo(initial_date, final_date):
     fig = go.Figure()
     fig.add_trace(
         go.Bar(
-            x=df['sexo'],
-            y=df['count']
+            name='Masculino',
+            x=[df[df['sexo'] == 'Masculino'].iloc[0,1]],
+            y=[''],
+            orientation='h'
         )
+    )
+    fig.add_trace(
+        go.Bar(
+            name='Feminino',
+            x=[df[df['sexo'] == 'Feminino'].iloc[0,1]],
+            y=[''],
+            orientation='h'
+        )
+    )
+    fig.update_traces(
+        textposition='auto'
+    )
+    fig.update_xaxes(
+        showticklabels=False,
+        hoverformat=',d',
+    )
+    fig.update_yaxes(
+        showticklabels=False
+    )
+    fig.update_layout(
+        barmode='stack',
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        hovermode=None,
+        margin={
+            'l': 0,
+            'r': 0,
+            'b': 0,
+            't': 0,
+        },
+
     )
     plot_json = plotly.io.to_json(fig)
     return plot_json
@@ -554,7 +587,10 @@ def raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_f
     for trace in traces_dimensions:
         fig.append_trace(trace, 1, 1)
     fig.append_trace(t2, 2, 1)
-    fig.update_traces(xaxis='x2')
+    fig.update_traces(
+        xaxis='x2',
+        hovertemplate='%{y:,.2f} %',
+    )
 
     # for date_formatted in df_sum['date_formatted']:
 
