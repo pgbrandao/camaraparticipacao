@@ -1,6 +1,6 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}Relatório da participação{% endblock title %}
+{% block title %}A participação popular na Câmara{% endblock title %}
 
 {% block sidenav %}{% endblock sidenav %}
 
@@ -8,7 +8,7 @@
 <div class="header pt-4">
     <div class="container-xl">
         <div class="col">
-            <h1>Participação na Câmara em {{ period_humanized }}</h1><br />
+            <h1>A participação popular na Câmara em {{ period_humanized }}</h1><br />
         </div>
     </div>
 </div>
@@ -189,11 +189,11 @@
                 { text: 'Proposição', align: 'start', sortable: false, value: 'proposicao_nome_processado', },
                 { text: 'Votos', value: 'poll_votes' },
                 { text: 'Comentários aprovados', value: 'poll_comments_authorized' },
-                { text: 'Visualizações (ficha de tramitação)', value: 'ficha_pageviews' },
+                { text: 'Acessos (ficha de tramitação)', value: 'ficha_pageviews' },
             ],
             top_noticias_headers: [
                 { text: 'Notícia', align: 'start', sortable: false, value: 'title', },
-                { text: 'Visualizações', value: 'pageviews' },
+                { text: 'Acessos', value: 'pageviews' },
                 { text: 'Comentários aprovados', value: 'comments_authorized' },
             ],
             top_prisma_categorias_headers: [
@@ -217,7 +217,7 @@
             proposicoes_temas_table_api_params: '',
             proposicoes_temas_table_headers: [
                 { text: 'Proposição', align: 'start', sortable: false, value: 'nome_processado', },
-                { text: 'Visualizações', value: 'ficha_pageviews' },
+                { text: 'Acessos', value: 'ficha_pageviews' },
             ],
             proposicoes_temas_table_default_color: '{{ stats.proposicoes_temas_plot.default_color }}',
             proposicoes_temas_table_dimension_colors: {{ stats.proposicoes_temas_plot.dimension_colors | safe }},
@@ -240,7 +240,7 @@
             noticias_temas_table_api_params: '',
             noticias_temas_table_headers: [
                 { text: 'Notícia', align: 'start', sortable: false, value: 'titulo', },
-                { text: 'Visualizações', value: 'pageviews' },
+                { text: 'Acessos', value: 'pageviews' },
             ],
             noticias_temas_table_default_color: '{{ stats.noticias_temas_plot.default_color }}',
             noticias_temas_table_dimension_colors: {{ stats.noticias_temas_plot.dimension_colors | safe }},

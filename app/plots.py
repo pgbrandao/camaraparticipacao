@@ -108,12 +108,12 @@ def summary_plot(group_by, height, proposicao=None, initial_date=None, final_dat
             x=df.date,
             y=df.ficha_pageviews_total,
             customdata=df.api_params,
-            name='Visualizações das fichas de tramitação',
+            name='Acessos às fichas de tramitação',
             fill='tozeroy',
             )
         subplots_list.append({
             'traces': [ficha_pageviews_trace],
-            'title': 'Visualizações das fichas de tramitação',
+            'title': 'Acessos às fichas de tramitação',
         })
     if subplots == 'all' or 'enquete' in subplots:
         poll_votes_trace = go.Scatter(
@@ -150,12 +150,12 @@ def summary_plot(group_by, height, proposicao=None, initial_date=None, final_dat
             x=df.date,
             y=df.noticia_pageviews_total,
             customdata=df.api_params,
-            name='Visualizações das notícias',
+            name='Acessos às notícias',
             fill='tozeroy',
             )
         subplots_list.append({
             'traces': [noticia_pageviews_trace],
-            'title': 'Visualizações das notícias',
+            'title': 'Acessos às notícias',
         })
         if not proposicao:
             portal_comments_authorized_trace = go.Scatter(
@@ -440,7 +440,7 @@ def proposicoes_temas(initial_date, final_date):
     df_sum = ProposicaoAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
     if df_dimension is not None and df_sum is not None:
-        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Visualizações das proposições")
+        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Acessos às proposições")
     else:
         return None
 
@@ -456,7 +456,7 @@ def noticias_temas(initial_date, final_date):
     df_sum = NoticiaAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
     if df_dimension is not None and df_sum is not None:
-        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Visualizações das notícias")
+        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Acessos às notícias")
     else:
         return None
 
@@ -471,7 +471,7 @@ def noticias_tags(initial_date, final_date):
     df_sum = NoticiaAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
     if df_dimension is not None and df_sum is not None:
-        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Visualizações das notícias")
+        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Acessos às notícias")
     else:
         return None
 
