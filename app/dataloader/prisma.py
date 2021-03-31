@@ -23,7 +23,7 @@ def load_prisma():
               'order_field': '"Assunto.IdDemanda"',
               'fields':
                 [ \
-                    { 'django_field': 'assunto_iddemanda'                     , 'sql_server_field': 'Assunto.IdDemanda'                  } ,
+                    { 'django_field': 'assunto_iddemanda_id'                  , 'sql_server_field': 'Assunto.IdDemanda'                  } ,
                     { 'django_field': 'assunto_nome'                          , 'sql_server_field': 'Assunto.Nome'                       } ,
                 ],
             },
@@ -32,7 +32,7 @@ def load_prisma():
               'order_field': '"IdDemanda"',
               'fields':
                 [ \
-                    { 'django_field': 'iddemanda'                             , 'sql_server_field': 'IdDemanda'                          } ,
+                    { 'django_field': 'iddemanda_id'                             , 'sql_server_field': 'IdDemanda'                          } ,
                     { 'django_field': 'macrotema'                             , 'sql_server_field': 'Macrotema'                          } ,
                     { 'django_field': 'tema'                                  , 'sql_server_field': 'Tema'                               } ,
                     { 'django_field': 'subtema'                               , 'sql_server_field': 'Subtema'                            } ,
@@ -102,18 +102,23 @@ def load_prisma():
 
             num_rows = prisma_cursor.execute(f'SELECT COUNT(*) FROM '+model['table_name']).fetchone()[0]
 
-            for i in range(1,num_rows, 50000):
+            for i in range(0,num_rows, 50000):
                 instance_list = []
 
+                # query = f"""
+                # SELECT {fields_list}
+                # FROM (
+                #     SELECT {fields_list}, ROW_NUMBER() OVER (ORDER BY {order_field}) AS RowNum
+                #     FROM {table_name}
+                # ) AS MyDerivedTable
+                # WHERE MyDerivedTable.RowNum BETWEEN {i} AND {i+50000}
+                # """
                 query = f"""
                 SELECT {fields_list}
-                FROM (
-                    SELECT {fields_list}, ROW_NUMBER() OVER (ORDER BY {order_field}) AS RowNum
-                    FROM {table_name}
-                ) AS MyDerivedTable
-                WHERE MyDerivedTable.RowNum BETWEEN {i} AND {i+50000}
+                FROM {table_name}
                 """
-                rows = prisma_cursor.execute(query)
+                # import pdb;pdb.set_trace()
+                rows = prisma_cursor.execute(query).fetchall()[i:i+50000]
 
                 for row in rows:
                     instance_values = {}
@@ -124,9 +129,9 @@ def load_prisma():
                         model['model'](**instance_values)
                     )
 
-                model.objects.using('default').bulk_create(instance_list)
+                model['model'].objects.using('default').bulk_create(instance_list, ignore_conflicts=True)
 
-            cursor.execute('ALTER TABLE public."%s" ENABLE TRIGGER ALL;' % (target_table_name,))
+            default_cursor.execute('ALTER TABLE public."%s" ENABLE TRIGGER ALL;' % (target_table_name,))
 
             print('Loaded %s' % (target_table_name,))
 
