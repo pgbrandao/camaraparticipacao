@@ -252,7 +252,7 @@ def summary_plot(group_by, height, proposicao=None, initial_date=None, final_dat
     
     # return plot_json
 
-    return df.to_json()
+    return df.to_dict('records')
 
 def poll_votes(proposicao):
     """
@@ -443,7 +443,11 @@ def proposicoes_temas(initial_date, final_date):
     df_sum = ProposicaoAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
     if df_dimension is not None and df_sum is not None:
-        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Acessos às proposições")
+        # return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Acessos às proposições")
+        return {
+            'dimension': df_dimension.to_dict('records'),
+            'sum': df_sum.to_dict('records')
+        }
     else:
         return None
 
@@ -459,7 +463,11 @@ def noticias_temas(initial_date, final_date):
     df_sum = NoticiaAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
     if df_dimension is not None and df_sum is not None:
-        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Acessos às notícias")
+        # return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Acessos às notícias")
+        return {
+            'dimension': df_dimension.to_dict('records'),
+            'sum': df_sum.to_dict('records')
+        }
     else:
         return None
 
@@ -474,7 +482,11 @@ def noticias_tags(initial_date, final_date):
     df_sum = NoticiaAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
     if df_dimension is not None and df_sum is not None:
-        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Acessos às notícias")
+        # return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Acessos às notícias")
+        return {
+            'dimension': df_dimension.to_dict('records'),
+            'sum': df_sum.to_dict('records')
+        }
     else:
         return None
 

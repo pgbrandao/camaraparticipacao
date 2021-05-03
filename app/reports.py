@@ -117,9 +117,9 @@ def relatorio_consolidado(initial_date, final_date, save_cache=False):
         stats = {}
 
         # summary plots
-        stats['ficha_enquete_summary_plot'] = plots.summary_plot(group_by='day', height=360, initial_date=initial_date, final_date=final_date, subplots=['ficha', 'enquete'], show_legend=True)
-        stats['prisma_summary_plot'] = plots.summary_plot(group_by='day', height=200, initial_date=initial_date, final_date=final_date, subplots=['prisma'], show_legend=True)
-        stats['noticia_summary_plot'] = plots.summary_plot(group_by='day', height=300, initial_date=initial_date, final_date=final_date, subplots=['noticia'], show_legend=True)
+        # stats['ficha_enquete_summary_plot'] = plots.summary_plot(group_by='day', height=360, initial_date=initial_date, final_date=final_date, subplots=['ficha', 'enquete'], show_legend=True)
+        # stats['prisma_summary_plot'] = plots.summary_plot(group_by='day', height=200, initial_date=initial_date, final_date=final_date, subplots=['prisma'], show_legend=True)
+        stats['summary'] = plots.summary_plot(group_by='day', height=300, initial_date=initial_date, final_date=final_date)
 
         # enquetes votes and comments
         qs = ProposicaoAggregated.objects.get_aggregated(initial_date, final_date)
@@ -197,36 +197,36 @@ def relatorio_consolidado(initial_date, final_date, save_cache=False):
             'top_prisma_proposicoes': [row for row in qs]
         })
 
-        # prisma sexo / sexo idade
-        prisma_sexo_plot = plots.prisma_sexo(initial_date, final_date)
-        stats.update({
-            'prisma_sexo_plot': prisma_sexo_plot,
-        })
+        # # prisma sexo / sexo idade
+        # prisma_sexo_plot = plots.prisma_sexo(initial_date, final_date)
+        # stats.update({
+        #     'prisma_sexo_plot': prisma_sexo_plot,
+        # })
 
-        prisma_sexo_idade_plot = plots.prisma_sexo_idade(initial_date, final_date)
-        stats.update({
-            'prisma_sexo_idade_plot': prisma_sexo_idade_plot,
-        })
+        # prisma_sexo_idade_plot = plots.prisma_sexo_idade(initial_date, final_date)
+        # stats.update({
+        #     'prisma_sexo_idade_plot': prisma_sexo_idade_plot,
+        # })
 
         # proposicoes temas plot
         proposicoes_temas_plot = plots.proposicoes_temas(initial_date=initial_date, final_date=final_date)
 
         stats.update({
-            'proposicoes_temas_plot': proposicoes_temas_plot
+            'proposicoes_temas': proposicoes_temas_plot
         })
 
         # enquetes temas plot
         enquetes_temas_plot = plots.enquetes_temas(initial_date=initial_date, final_date=final_date)
 
         stats.update({
-            'enquetes_temas_plot': enquetes_temas_plot
+            'enquetes_temas': enquetes_temas_plot
         })
 
         # noticias temas plot
         noticias_temas_plot = plots.noticias_temas(initial_date=initial_date, final_date=final_date)
 
         stats.update({
-            'noticias_temas_plot': noticias_temas_plot
+            'noticias_temas': noticias_temas_plot
         })
 
         # periods and respective api params
