@@ -210,17 +210,17 @@ def relatorio_consolidado(request, custom):
     month_year = request.GET.get('month_year')
     period_type = request.GET.get('period_type') or 'year'
 
-    month_year_choices = [
-        (x.strftime('%m-%Y'), x.strftime('%B-%Y'))
-        for x in pd.date_range('2019-01-01', datetime.date.today(), freq='MS').to_series()
-    ]
-    month_year_choices = month_year_choices[::-1]
+    # month_year_choices = [
+    #     (x.strftime('%m-%Y'), x.strftime('%B-%Y'))
+    #     for x in pd.date_range('2019-01-01', datetime.date.today(), freq='MS').to_series()
+    # ]
+    # month_year_choices = month_year_choices[::-1]
 
-    year_choices = [
-        (x.strftime('%Y'), x.strftime('%Y'))
-        for x in pd.date_range('2019-01-01', datetime.date.today(), freq='YS').to_series()
-    ]
-    year_choices = year_choices[::-1]
+    # year_choices = [
+    #     (x.strftime('%Y'), x.strftime('%Y'))
+    #     for x in pd.date_range('2019-01-01', datetime.date.today(), freq='YS').to_series()
+    # ]
+    # year_choices = year_choices[::-1]
 
     initial_date = None
     final_date = None
@@ -241,9 +241,10 @@ def relatorio_consolidado(request, custom):
 
         period_humanized = datetime.datetime.strftime(initial_date, '%Y')
 
-    stats = reports.relatorio_consolidado(initial_date, final_date)
+    if initial_date and final_date:
+        stats = reports.relatorio_consolidado(initial_date, final_date)
 
-    return render(request, 'pages/relatorio/relatorio.html', locals())
+        return JsonResponse(stats)
 
 
 def enquetes_busca_data(request):

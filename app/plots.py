@@ -102,154 +102,157 @@ def summary_plot(group_by, height, proposicao=None, initial_date=None, final_dat
         ), axis=1)
 
 
-    subplots_list = []
-    if subplots == 'all' or 'ficha' in subplots:
-        ficha_pageviews_trace = go.Scatter(
-            x=df.date,
-            y=df.ficha_pageviews_total,
-            customdata=df.api_params,
-            name='Acessos às fichas de tramitação',
-            fill='tozeroy',
-            )
-        subplots_list.append({
-            'traces': [ficha_pageviews_trace],
-            'title': 'Acessos às fichas de tramitação',
-        })
-    if subplots == 'all' or 'enquete' in subplots:
-        poll_votes_trace = go.Scatter(
-            x=df.date,
-            y=df.poll_votes_total,
-            customdata=df.api_params,
-            name='Votos nas enquetes',
-            fill='tozeroy',
-            )
-        subplots_list.append({
-            'traces': [poll_votes_trace],
-            'title': 'Votos nas enquetes',
-        })
-        poll_comments_authorized_trace = go.Scatter(
-            x=df.date,
-            y=df.poll_comments_authorized_total,
-            customdata=df.api_params,
-            name='Comentários aprovados nas enquetes',
-            fill='tozeroy',
-            )
-        poll_comments_unchecked_trace = go.Scatter(
-            x=df.date,
-            y=df.poll_comments_unchecked_total,
-            customdata=df.api_params,
-            name='Comentários não moderados nas enquetes',
-            fill='tozeroy',
-            )
-        subplots_list.append({
-            'traces': [poll_comments_authorized_trace, poll_comments_unchecked_trace],
-            'title': 'Comentários nas enquetes',
-        })
-    if subplots == 'all' or 'noticia' in subplots:
-        noticia_pageviews_trace = go.Scatter(
-            x=df.date,
-            y=df.noticia_pageviews_total,
-            customdata=df.api_params,
-            name='Acessos às notícias',
-            fill='tozeroy',
-            )
-        subplots_list.append({
-            'traces': [noticia_pageviews_trace],
-            'title': 'Acessos às notícias',
-        })
-        if not proposicao:
-            portal_comments_authorized_trace = go.Scatter(
-                x=df.date,
-                y=df.portal_comments_authorized_total,
-                customdata=df.api_params,
-                name='Comentários aprovados nas notícias',
-                fill='tozeroy',
-                )
-            portal_comments_unchecked_trace = go.Scatter(
-                x=df.date,
-                y=df.portal_comments_unchecked_total,
-                customdata=df.api_params,
-                name='Comentários não moderados nas notícias',
-                fill='tozeroy',
-                )
-            subplots_list.append({
-                'traces': [portal_comments_authorized_trace, portal_comments_unchecked_trace],
-                'title': 'Comentários nas notícias',
-            })
-    if (subplots == 'all' or 'prisma' in subplots) and not proposicao:
-        atendimentos_trace = go.Scatter(
-            x=df.date,
-            y=df.atendimentos_total,
-            customdata=df.api_params,
-            name='Atendimentos',
-            fill='tozeroy',
-            )
-        subplots_list.append({
-            'traces': [atendimentos_trace],
-            'title': 'Atendimentos',
-        })
+    # subplots_list = []
+    # if subplots == 'all' or 'ficha' in subplots:
+    #     ficha_pageviews_trace = go.Scatter(
+    #         x=df.date,
+    #         y=df.ficha_pageviews_total,
+    #         customdata=df.api_params,
+    #         name='Acessos às fichas de tramitação',
+    #         fill='tozeroy',
+    #         )
+    #     subplots_list.append({
+    #         'traces': [ficha_pageviews_trace],
+    #         'title': 'Acessos às fichas de tramitação',
+    #     })
+    # if subplots == 'all' or 'enquete' in subplots:
+    #     poll_votes_trace = go.Scatter(
+    #         x=df.date,
+    #         y=df.poll_votes_total,
+    #         customdata=df.api_params,
+    #         name='Votos nas enquetes',
+    #         fill='tozeroy',
+    #         )
+    #     subplots_list.append({
+    #         'traces': [poll_votes_trace],
+    #         'title': 'Votos nas enquetes',
+    #     })
+    #     poll_comments_authorized_trace = go.Scatter(
+    #         x=df.date,
+    #         y=df.poll_comments_authorized_total,
+    #         customdata=df.api_params,
+    #         name='Comentários aprovados nas enquetes',
+    #         fill='tozeroy',
+    #         )
+    #     poll_comments_unchecked_trace = go.Scatter(
+    #         x=df.date,
+    #         y=df.poll_comments_unchecked_total,
+    #         customdata=df.api_params,
+    #         name='Comentários não moderados nas enquetes',
+    #         fill='tozeroy',
+    #         )
+    #     subplots_list.append({
+    #         'traces': [poll_comments_authorized_trace, poll_comments_unchecked_trace],
+    #         'title': 'Comentários nas enquetes',
+    #     })
+    # if subplots == 'all' or 'noticia' in subplots:
+    #     noticia_pageviews_trace = go.Scatter(
+    #         x=df.date,
+    #         y=df.noticia_pageviews_total,
+    #         customdata=df.api_params,
+    #         name='Acessos às notícias',
+    #         fill='tozeroy',
+    #         )
+    #     subplots_list.append({
+    #         'traces': [noticia_pageviews_trace],
+    #         'title': 'Acessos às notícias',
+    #     })
+    #     if not proposicao:
+    #         portal_comments_authorized_trace = go.Scatter(
+    #             x=df.date,
+    #             y=df.portal_comments_authorized_total,
+    #             customdata=df.api_params,
+    #             name='Comentários aprovados nas notícias',
+    #             fill='tozeroy',
+    #             )
+    #         portal_comments_unchecked_trace = go.Scatter(
+    #             x=df.date,
+    #             y=df.portal_comments_unchecked_total,
+    #             customdata=df.api_params,
+    #             name='Comentários não moderados nas notícias',
+    #             fill='tozeroy',
+    #             )
+    #         subplots_list.append({
+    #             'traces': [portal_comments_authorized_trace, portal_comments_unchecked_trace],
+    #             'title': 'Comentários nas notícias',
+    #         })
+    # if (subplots == 'all' or 'prisma' in subplots) and not proposicao:
+    #     atendimentos_trace = go.Scatter(
+    #         x=df.date,
+    #         y=df.atendimentos_total,
+    #         customdata=df.api_params,
+    #         name='Atendimentos',
+    #         fill='tozeroy',
+    #         )
+    #     subplots_list.append({
+    #         'traces': [atendimentos_trace],
+    #         'title': 'Atendimentos',
+    #     })
 
 
-    fig = plotly.subplots.make_subplots(
-        rows=len(subplots_list),
-        cols=1,
-        shared_xaxes=True,
-        subplot_titles=list(map(lambda x: x['title'], subplots_list)),
-        x_title='Data',
-        vertical_spacing=0.08
-    )
-    i = 0
-    for subplot in subplots_list:
-        i += 1
-        for trace in subplot['traces']:
-            fig.append_trace(trace, i, 1)
-    fig.update_traces(xaxis='x{}'.format(i))
+    # fig = plotly.subplots.make_subplots(
+    #     rows=len(subplots_list),
+    #     cols=1,
+    #     shared_xaxes=True,
+    #     subplot_titles=list(map(lambda x: x['title'], subplots_list)),
+    #     x_title='Data',
+    #     vertical_spacing=0.08
+    # )
+
+    # i = 0
+    # for subplot in subplots_list:
+    #     i += 1
+    #     for trace in subplot['traces']:
+    #         fig.append_trace(trace, i, 1)
+    # fig.update_traces(xaxis='x{}'.format(i))
 
     if initial_date and final_date:
         range_param = [initial_date, final_date]
     else:
         range_param = [datetime.date.today() - datetime.timedelta(days=180), datetime.date.today()]
 
-    fig.update_xaxes(
-        range=range_param,
-        showspikes=True,
-        spikethickness=2,
-        spikedash="dot",
-        spikecolor="#999999",
-        spikemode="across+marker",
-        spikesnap="data",
-        type='category' if group_by in ('month', 'year') else 'date',
-        tickformat='%d/%m/%Y',
-    )
-    fig.update_yaxes(
-        gridcolor='#fff',
-        fixedrange=True,
-        rangemode='tozero',
-        hoverformat=',d'
-    )
-    fig.update_layout(
-        dragmode=False if initial_date and final_date else 'pan',
-        hovermode='x unified',
-        hoverdistance=1000,
-        spikedistance=-1,
-        margin={
-            'l': 50,
-            'r': 50,
-            'b': 50,
-            't': 50,
-        },
-        height=height,
-        hoverlabel=dict(
-            namelength=-1,
-        ),
-        barmode='stack',
-        showlegend=show_legend
-    )
+    # fig.update_xaxes(
+    #     range=range_param,
+    #     showspikes=True,
+    #     spikethickness=2,
+    #     spikedash="dot",
+    #     spikecolor="#999999",
+    #     spikemode="across+marker",
+    #     spikesnap="data",
+    #     type='category' if group_by in ('month', 'year') else 'date',
+    #     tickformat='%d/%m/%Y',
+    # )
+    # fig.update_yaxes(
+    #     gridcolor='#fff',
+    #     fixedrange=True,
+    #     rangemode='tozero',
+    #     hoverformat=',d'
+    # )
+    # fig.update_layout(
+    #     dragmode=False if initial_date and final_date else 'pan',
+    #     hovermode='x unified',
+    #     hoverdistance=1000,
+    #     spikedistance=-1,
+    #     margin={
+    #         'l': 50,
+    #         'r': 50,
+    #         'b': 50,
+    #         't': 50,
+    #     },
+    #     height=height,
+    #     hoverlabel=dict(
+    #         namelength=-1,
+    #     ),
+    #     barmode='stack',
+    #     showlegend=show_legend
+    # )
 
-    # config={'displayModeBar': False}, 
-    plot_json = plotly.io.to_json(fig)
+    # # config={'displayModeBar': False}, 
+    # plot_json = plotly.io.to_json(fig)
     
-    return plot_json
+    # return plot_json
+
+    return df.to_json()
 
 def poll_votes(proposicao):
     """
