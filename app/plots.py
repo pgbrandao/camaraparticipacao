@@ -207,10 +207,10 @@ def summary_plot(group_by, height, proposicao=None, initial_date=None, final_dat
     # fig.update_traces(xaxis='x{}'.format(i))
 
     if initial_date and final_date:
-        range_param = [initial_date, final_date]
-    else:
-        range_param = [datetime.date.today() - datetime.timedelta(days=180), datetime.date.today()]
+        df = df[(df['date'] > initial_date) & (df['date'] < final_date)]
 
+    df = df.fillna(0)
+    
     # fig.update_xaxes(
     #     range=range_param,
     #     showspikes=True,
