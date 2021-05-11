@@ -47,10 +47,15 @@ def api_top_noticias(request, initial_date, final_date=None):
 
     stats = reports.api_top_noticias(initial_date, final_date)
 
-    return JsonResponse({
+    response = JsonResponse({
         **params,
         'rows': stats['rows']
     })
+    response["Access-Control-Allow-Origin"] = "*"
+    response["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+    response["Access-Control-Max-Age"] = "1000"
+    response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
+    return response
 
 
 def api_top_proposicoes(request, initial_date, final_date=None):
@@ -70,10 +75,15 @@ def api_top_proposicoes(request, initial_date, final_date=None):
 
     stats = reports.api_top_proposicoes(initial_date, final_date)
 
-    return JsonResponse({
+    response = JsonResponse({
         **params,
         'rows': stats['rows']
     })
+    response["Access-Control-Allow-Origin"] = "*"
+    response["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+    response["Access-Control-Max-Age"] = "1000"
+    response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
+    return response
 
 def enquetes_temas(request, year=None):
     if not year:

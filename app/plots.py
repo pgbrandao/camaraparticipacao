@@ -428,7 +428,12 @@ def enquetes_temas(initial_date, final_date):
     df_sum = ProposicaoAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
     if df_dimension is not None and df_sum is not None:
-        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Votos nas enquetes")
+        # return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Votos nas enquetes")
+        return {
+            'dimension': df_dimension.to_dict('records'),
+            'sum': df_sum.to_dict('records')
+        }
+
     else:
         return None
 
