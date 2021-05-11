@@ -244,7 +244,13 @@ def relatorio_consolidado(request, custom):
     if initial_date and final_date:
         stats = reports.relatorio_consolidado(initial_date, final_date)
 
-        return JsonResponse(stats)
+        response = JsonResponse(stats)
+        response["Access-Control-Allow-Origin"] = "*"
+        response["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+        response["Access-Control-Max-Age"] = "1000"
+        response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
+        return response
+
 
 
 def enquetes_busca_data(request):
