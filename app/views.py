@@ -57,7 +57,7 @@ def api_relatorio_consolidado(request):
         period_humanized = datetime.datetime.strftime(initial_date, '%Y')
 
     if initial_date and final_date:
-        stats = reports.relatorio_consolidado(initial_date, final_date)
+        stats = reports.api_relatorio_consolidado(initial_date, final_date)
 
         response = JsonResponse(stats)
         response["Access-Control-Allow-Origin"] = "*"
