@@ -19,6 +19,7 @@ def rebuild_caches():
         reports.proposicoes_temas(initial_date=year_start, final_date=year_end, save_cache=True)
         reports.noticias_temas(initial_date=year_start, final_date=year_end, save_cache=True)
         reports.noticias_tags(initial_date=year_start, final_date=year_end, save_cache=True)
+        reports.api_relatorio_consolidado(initial_date=year_start, final_date=year_end, save_cache=True)
         reports.relatorio_consolidado(initial_date=year_start, final_date=year_end, save_cache=True)
 
     for month_start in pd.date_range(start='2019-01-01', end=datetime.date.today(), freq='MS'):
