@@ -13,6 +13,100 @@ from .models import *
 from . import helpers
 
 
+
+def api_summary_plot(group_by, height, proposicao=None, initial_date=None, final_date=None):
+    """
+    group_by: 'day', 'month' or 'year'
+    proposicao: Proposicao object or None
+    initial_date and final_date: if both are set, plot will be restricted to showing that period's data
+    subplots: 'all' for all available subplots, or list with one or more of: ('ficha', 'enquete', 'noticia', 'prisma')
+    """
+    if not proposicao:
+        qs1 = ProposicaoAggregated.objects.values('date') \
+            .annotate(
+                ficha_pageviews_total=Sum('ficha_pageviews'),
+                poll_votes_total=Sum('poll_votes'),
+                poll_comments_unchecked_total=Sum('poll_comments_unchecked'),
+                poll_comments_authorized_total=Sum('poll_comments_authorized')
+            )
+        qs2 = NoticiaAggregated.objects.values('date') \
+            .annotate(
+                noticia_pageviews_total=Sum('pageviews'),
+                portal_comments_authorized_total=Sum('portal_comments_authorized'),
+                portal_comments_unchecked_total=Sum('portal_comments_unchecked')
+            )
+        qs3 = DailySummary.objects.values('date') \
+            .annotate(
+                atendimentos_total=Sum('atendimentos'),
+            )
+        df = pd.DataFrame(qs1).merge(pd.DataFrame(qs2), how='outer').merge(pd.DataFrame(qs3), how='outer')
+    else:
+        # Grouping is strictly speaking not necessary here. But we do it this way for consistency.
+        qs = ProposicaoAggregated.objects.filter(proposicao=proposicao).values('date') \
+            .annotate(
+                ficha_pageviews_total=Sum('ficha_pageviews'),
+                poll_votes_total=Sum('poll_votes'),
+                poll_comments_unchecked_total=Sum('poll_comments_unchecked'),
+                poll_comments_authorized_total=Sum('poll_comments_authorized'),
+                noticia_pageviews_total=Sum('noticia_pageviews')
+            )
+        df = pd.DataFrame(qs)
+
+    df['date'] = pd.to_datetime(df['date'])
+
+    df.sort_values('date', inplace=True)
+    
+    # Group data when showing by year or month
+    freq = None
+    if group_by == 'year':
+        freq = 'Y'
+    elif group_by == 'month':
+        freq = 'M'
+
+    if freq:
+        df = df.groupby(pd.Grouper(key='date', freq=freq)) \
+            .agg({
+                'ficha_pageviews_total': 'sum',
+                'poll_votes_total': 'sum',
+                'poll_comments_unchecked_total': 'sum',
+                'poll_comments_authorized_total': 'sum',
+                'portal_comments_unchecked_total': 'sum',
+                'portal_comments_authorized_total': 'sum',
+                'atendimentos_total': 'sum',
+                'noticia_pageviews_total': 'sum'
+            }) \
+            .reset_index()
+    
+
+    # Set api_params (this can be moved to the client-side in the future)
+    if group_by == 'year':
+        df['api_params'] = df.apply(lambda x: helpers.get_api_params(
+                x['date'].replace(day=1).replace(month=1),
+                x['date']
+        ), axis=1)
+
+        df['date'] = df['date'].dt.strftime('%Y')
+    elif group_by == 'month':
+        df['api_params'] = df.apply(lambda x: helpers.get_api_params(
+                x['date'].replace(day=1),
+                x['date']
+        ), axis=1)
+
+        df['date'] = df['date'].dt.strftime('%B %Y')
+    elif group_by == 'day':
+        df['api_params'] = df.apply(lambda x: helpers.get_api_params(
+                x['date'],
+                x['date']
+        ), axis=1)
+
+
+    if initial_date and final_date:
+        df = df[(df['date'] >= pd.to_datetime(initial_date)) & (df['date'] <= pd.to_datetime(final_date))]
+
+    df = df.fillna(0)
+
+    return df.to_dict('records')
+
 def summary_plot(group_by, height, proposicao=None, initial_date=None, final_date=None, subplots='all', show_legend=False):
     """
     group_by: 'day', 'month' or 'year'
@@ -101,158 +195,154 @@ def summary_plot(group_by, height, proposicao=None, initial_date=None, final_dat
                 x['date']
         ), axis=1)
 
+    subplots_list = []
+    if subplots == 'all' or 'ficha' in subplots:
+        ficha_pageviews_trace = go.Scatter(
+            x=df.date,
+            y=df.ficha_pageviews_total,
+            customdata=df.api_params,
+            name='Acessos às fichas de tramitação',
+            fill='tozeroy',
+            )
+        subplots_list.append({
+            'traces': [ficha_pageviews_trace],
+            'title': 'Acessos às fichas de tramitação',
+        })
+    if subplots == 'all' or 'enquete' in subplots:
+        poll_votes_trace = go.Scatter(
+            x=df.date,
+            y=df.poll_votes_total,
+            customdata=df.api_params,
+            name='Votos nas enquetes',
+            fill='tozeroy',
+            )
+        subplots_list.append({
+            'traces': [poll_votes_trace],
+            'title': 'Votos nas enquetes',
+        })
+        poll_comments_authorized_trace = go.Scatter(
+            x=df.date,
+            y=df.poll_comments_authorized_total,
+            customdata=df.api_params,
+            name='Comentários aprovados nas enquetes',
+            fill='tozeroy',
+            )
+        poll_comments_unchecked_trace = go.Scatter(
+            x=df.date,
+            y=df.poll_comments_unchecked_total,
+            customdata=df.api_params,
+            name='Comentários não moderados nas enquetes',
+            fill='tozeroy',
+            )
+        subplots_list.append({
+            'traces': [poll_comments_authorized_trace, poll_comments_unchecked_trace],
+            'title': 'Comentários nas enquetes',
+        })
+    if subplots == 'all' or 'noticia' in subplots:
+        noticia_pageviews_trace = go.Scatter(
+            x=df.date,
+            y=df.noticia_pageviews_total,
+            customdata=df.api_params,
+            name='Acessos às notícias',
+            fill='tozeroy',
+            )
+        subplots_list.append({
+            'traces': [noticia_pageviews_trace],
+            'title': 'Acessos às notícias',
+        })
+        if not proposicao:
+            portal_comments_authorized_trace = go.Scatter(
+                x=df.date,
+                y=df.portal_comments_authorized_total,
+                customdata=df.api_params,
+                name='Comentários aprovados nas notícias',
+                fill='tozeroy',
+                )
+            portal_comments_unchecked_trace = go.Scatter(
+                x=df.date,
+                y=df.portal_comments_unchecked_total,
+                customdata=df.api_params,
+                name='Comentários não moderados nas notícias',
+                fill='tozeroy',
+                )
+            subplots_list.append({
+                'traces': [portal_comments_authorized_trace, portal_comments_unchecked_trace],
+                'title': 'Comentários nas notícias',
+            })
+    if (subplots == 'all' or 'prisma' in subplots) and not proposicao:
+        atendimentos_trace = go.Scatter(
+            x=df.date,
+            y=df.atendimentos_total,
+            customdata=df.api_params,
+            name='Atendimentos',
+            fill='tozeroy',
+            )
+        subplots_list.append({
+            'traces': [atendimentos_trace],
+            'title': 'Atendimentos',
+        })
 
-    # subplots_list = []
-    # if subplots == 'all' or 'ficha' in subplots:
-    #     ficha_pageviews_trace = go.Scatter(
-    #         x=df.date,
-    #         y=df.ficha_pageviews_total,
-    #         customdata=df.api_params,
-    #         name='Acessos às fichas de tramitação',
-    #         fill='tozeroy',
-    #         )
-    #     subplots_list.append({
-    #         'traces': [ficha_pageviews_trace],
-    #         'title': 'Acessos às fichas de tramitação',
-    #     })
-    # if subplots == 'all' or 'enquete' in subplots:
-    #     poll_votes_trace = go.Scatter(
-    #         x=df.date,
-    #         y=df.poll_votes_total,
-    #         customdata=df.api_params,
-    #         name='Votos nas enquetes',
-    #         fill='tozeroy',
-    #         )
-    #     subplots_list.append({
-    #         'traces': [poll_votes_trace],
-    #         'title': 'Votos nas enquetes',
-    #     })
-    #     poll_comments_authorized_trace = go.Scatter(
-    #         x=df.date,
-    #         y=df.poll_comments_authorized_total,
-    #         customdata=df.api_params,
-    #         name='Comentários aprovados nas enquetes',
-    #         fill='tozeroy',
-    #         )
-    #     poll_comments_unchecked_trace = go.Scatter(
-    #         x=df.date,
-    #         y=df.poll_comments_unchecked_total,
-    #         customdata=df.api_params,
-    #         name='Comentários não moderados nas enquetes',
-    #         fill='tozeroy',
-    #         )
-    #     subplots_list.append({
-    #         'traces': [poll_comments_authorized_trace, poll_comments_unchecked_trace],
-    #         'title': 'Comentários nas enquetes',
-    #     })
-    # if subplots == 'all' or 'noticia' in subplots:
-    #     noticia_pageviews_trace = go.Scatter(
-    #         x=df.date,
-    #         y=df.noticia_pageviews_total,
-    #         customdata=df.api_params,
-    #         name='Acessos às notícias',
-    #         fill='tozeroy',
-    #         )
-    #     subplots_list.append({
-    #         'traces': [noticia_pageviews_trace],
-    #         'title': 'Acessos às notícias',
-    #     })
-    #     if not proposicao:
-    #         portal_comments_authorized_trace = go.Scatter(
-    #             x=df.date,
-    #             y=df.portal_comments_authorized_total,
-    #             customdata=df.api_params,
-    #             name='Comentários aprovados nas notícias',
-    #             fill='tozeroy',
-    #             )
-    #         portal_comments_unchecked_trace = go.Scatter(
-    #             x=df.date,
-    #             y=df.portal_comments_unchecked_total,
-    #             customdata=df.api_params,
-    #             name='Comentários não moderados nas notícias',
-    #             fill='tozeroy',
-    #             )
-    #         subplots_list.append({
-    #             'traces': [portal_comments_authorized_trace, portal_comments_unchecked_trace],
-    #             'title': 'Comentários nas notícias',
-    #         })
-    # if (subplots == 'all' or 'prisma' in subplots) and not proposicao:
-    #     atendimentos_trace = go.Scatter(
-    #         x=df.date,
-    #         y=df.atendimentos_total,
-    #         customdata=df.api_params,
-    #         name='Atendimentos',
-    #         fill='tozeroy',
-    #         )
-    #     subplots_list.append({
-    #         'traces': [atendimentos_trace],
-    #         'title': 'Atendimentos',
-    #     })
 
-
-    # fig = plotly.subplots.make_subplots(
-    #     rows=len(subplots_list),
-    #     cols=1,
-    #     shared_xaxes=True,
-    #     subplot_titles=list(map(lambda x: x['title'], subplots_list)),
-    #     x_title='Data',
-    #     vertical_spacing=0.08
-    # )
-
-    # i = 0
-    # for subplot in subplots_list:
-    #     i += 1
-    #     for trace in subplot['traces']:
-    #         fig.append_trace(trace, i, 1)
-    # fig.update_traces(xaxis='x{}'.format(i))
+    fig = plotly.subplots.make_subplots(
+        rows=len(subplots_list),
+        cols=1,
+        shared_xaxes=True,
+        subplot_titles=list(map(lambda x: x['title'], subplots_list)),
+        x_title='Data',
+        vertical_spacing=0.08
+    )
+    i = 0
+    for subplot in subplots_list:
+        i += 1
+        for trace in subplot['traces']:
+            fig.append_trace(trace, i, 1)
+    fig.update_traces(xaxis='x{}'.format(i))
 
     if initial_date and final_date:
-        df = df[(df['date'] >= pd.to_datetime(initial_date)) & (df['date'] <= pd.to_datetime(final_date))]
+        range_param = [initial_date, final_date]
+    else:
+        range_param = [datetime.date.today() - datetime.timedelta(days=180), datetime.date.today()]
 
-    df = df.fillna(0)
+    fig.update_xaxes(
+        range=range_param,
+        showspikes=True,
+        spikethickness=2,
+        spikedash="dot",
+        spikecolor="#999999",
+        spikemode="across+marker",
+        spikesnap="data",
+        type='category' if group_by in ('month', 'year') else 'date',
+        tickformat='%d/%m/%Y',
+    )
+    fig.update_yaxes(
+        gridcolor='#fff',
+        fixedrange=True,
+        rangemode='tozero',
+        hoverformat=',d'
+    )
+    fig.update_layout(
+        dragmode=False if initial_date and final_date else 'pan',
+        hovermode='x unified',
+        hoverdistance=1000,
+        spikedistance=-1,
+        margin={
+            'l': 50,
+            'r': 50,
+            'b': 50,
+            't': 50,
+        },
+        height=height,
+        hoverlabel=dict(
+            namelength=-1,
+        ),
+        barmode='stack',
+        showlegend=show_legend
+    )
 
-    # fig.update_xaxes(
-    #     range=range_param,
-    #     showspikes=True,
-    #     spikethickness=2,
-    #     spikedash="dot",
-    #     spikecolor="#999999",
-    #     spikemode="across+marker",
-    #     spikesnap="data",
-    #     type='category' if group_by in ('month', 'year') else 'date',
-    #     tickformat='%d/%m/%Y',
-    # )
-    # fig.update_yaxes(
-    #     gridcolor='#fff',
-    #     fixedrange=True,
-    #     rangemode='tozero',
-    #     hoverformat=',d'
-    # )
-    # fig.update_layout(
-    #     dragmode=False if initial_date and final_date else 'pan',
-    #     hovermode='x unified',
-    #     hoverdistance=1000,
-    #     spikedistance=-1,
-    #     margin={
-    #         'l': 50,
-    #         'r': 50,
-    #         'b': 50,
-    #         't': 50,
-    #     },
-    #     height=height,
-    #     hoverlabel=dict(
-    #         namelength=-1,
-    #     ),
-    #     barmode='stack',
-    #     showlegend=show_legend
-    # )
+    # config={'displayModeBar': False}, 
+    plot_json = plotly.io.to_json(fig)
 
-    # # config={'displayModeBar': False}, 
-    # plot_json = plotly.io.to_json(fig)
-    
-    # return plot_json
-
-    return df.to_dict('records')
+    return plot_json
 
 def poll_votes(proposicao):
     """
@@ -417,7 +507,7 @@ def proposicao_heatmap(proposicao):
 
     return values
 
-def enquetes_temas(initial_date, final_date):
+def enquetes_temas(initial_date, final_date, plot=True):
     metric_field = 'poll_votes'
     dimension_field = 'proposicao__tema__nome'
 
@@ -428,16 +518,17 @@ def enquetes_temas(initial_date, final_date):
     df_sum = ProposicaoAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
     if df_dimension is not None and df_sum is not None:
-        # return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Votos nas enquetes")
-        return {
-            'dimension': df_dimension.to_dict('records'),
-            'sum': df_sum.to_dict('records')
-        }
-
+        if plot:
+            return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Votos nas enquetes")
+        else:        
+            return {
+                'dimension': df_dimension.to_dict('records'),
+                'sum': df_sum.to_dict('records')
+            }
     else:
         return None
 
-def proposicoes_temas(initial_date, final_date):
+def proposicoes_temas(initial_date, final_date, plot=True):
     metric_field = 'ficha_pageviews'
     dimension_field = 'proposicao__tema__nome'
 
@@ -448,16 +539,18 @@ def proposicoes_temas(initial_date, final_date):
     df_sum = ProposicaoAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
     if df_dimension is not None and df_sum is not None:
-        # return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Acessos às proposições")
-        return {
-            'dimension': df_dimension.to_dict('records'),
-            'sum': df_sum.to_dict('records')
-        }
+        if plot:
+            return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Acessos às proposições")
+        else:
+            return {
+                'dimension': df_dimension.to_dict('records'),
+                'sum': df_sum.to_dict('records')
+            }
     else:
         return None
 
 
-def noticias_temas(initial_date, final_date):
+def noticias_temas(initial_date, final_date, plot=True):
     metric_field = 'pageviews'
     dimension_field = 'noticia__tema_principal__titulo'
 
@@ -468,15 +561,17 @@ def noticias_temas(initial_date, final_date):
     df_sum = NoticiaAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
     if df_dimension is not None and df_sum is not None:
-        # return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Acessos às notícias")
-        return {
-            'dimension': df_dimension.to_dict('records'),
-            'sum': df_sum.to_dict('records')
-        }
+        if plot:
+            return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Acessos às notícias")
+        else:
+            return {
+                'dimension': df_dimension.to_dict('records'),
+                'sum': df_sum.to_dict('records')
+            }
     else:
         return None
 
-def noticias_tags(initial_date, final_date):
+def noticias_tags(initial_date, final_date, plot=True):
     metric_field = 'pageviews'
     dimension_field = 'noticia__tags_conteudo__nome'
 
@@ -487,11 +582,13 @@ def noticias_tags(initial_date, final_date):
     df_sum = NoticiaAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
     if df_dimension is not None and df_sum is not None:
-        # return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Acessos às notícias")
-        return {
-            'dimension': df_dimension.to_dict('records'),
-            'sum': df_sum.to_dict('records')
-        }
+        if plot:
+            return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Acessos às notícias")
+        else:
+            return {
+                'dimension': df_dimension.to_dict('records'),
+                'sum': df_sum.to_dict('records')
+            }
     else:
         return None
 
