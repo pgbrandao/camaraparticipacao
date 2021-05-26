@@ -250,7 +250,7 @@ def relatorio_ano(request, year):
 
     return render(request, 'pages/relatorio/custom/{}.html'.format(year), locals())
     
-def relatorio_consolidado(request, custom):
+def relatorio_consolidado(request):
     year = request.GET.get('year')
     month_year = request.GET.get('month_year')
     period_type = request.GET.get('period_type') or 'year'
@@ -287,7 +287,7 @@ def relatorio_consolidado(request, custom):
         period_humanized = datetime.datetime.strftime(initial_date, '%Y')
 
     stats = reports.relatorio_consolidado(initial_date, final_date)
-    
+
     return render(request, 'pages/relatorio/relatorio.html', locals())
 
 
