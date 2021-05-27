@@ -38,15 +38,8 @@ dashboard_urls = [
     path('login/', LoginView.as_view(template_name='admin/login.html')),
 ]
 
-reports_urls = [
-    path('', views.relatorios_index, name='relatorios_index'),
-    path('<int:year>/', views.relatorio_ano, name='relatorio_ano'),
-]
-
 dashboard_prefix = re.search(r'/(.*)', settings.DASHBOARD_BASE_PATH).group(1)
-reports_prefix = re.search(r'/(.*)', settings.REPORTS_BASE_PATH).group(1)
 
 urlpatterns = [
     path(dashboard_prefix, include(dashboard_urls)),
-    path(reports_prefix, include(reports_urls)),
 ]

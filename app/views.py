@@ -237,19 +237,6 @@ def noticias_tags(request, year=None):
     view_name = 'noticias_tags'
     return render(request, 'pages/noticias_tags.html', locals())
 
-def relatorios_index(request):
-    return render(request, 'pages/relatorio/index.html', locals())
-
-def relatorio_ano(request, year):
-    initial_date = datetime.date(year=int(year), month=1, day=1)
-    final_date = datetime.date(year=int(year), month=12, day=31)
-
-    period_humanized = datetime.datetime.strftime(initial_date, '%Y')
-
-    stats = reports.relatorio_consolidado(initial_date, final_date)
-
-    return render(request, 'pages/relatorio/custom/{}.html'.format(year), locals())
-    
 def relatorio_consolidado(request):
     year = request.GET.get('year')
     month_year = request.GET.get('month_year')
