@@ -13,6 +13,100 @@ from .models import *
 from . import helpers
 
 
+
+def api_summary_plot(group_by, height, proposicao=None, initial_date=None, final_date=None):
+    """
+    group_by: 'day', 'month' or 'year'
+    proposicao: Proposicao object or None
+    initial_date and final_date: if both are set, plot will be restricted to showing that period's data
+    subplots: 'all' for all available subplots, or list with one or more of: ('ficha', 'enquete', 'noticia', 'prisma')
+    """
+    if not proposicao:
+        qs1 = ProposicaoAggregated.objects.values('date') \
+            .annotate(
+                ficha_pageviews_total=Sum('ficha_pageviews'),
+                poll_votes_total=Sum('poll_votes'),
+                poll_comments_unchecked_total=Sum('poll_comments_unchecked'),
+                poll_comments_authorized_total=Sum('poll_comments_authorized')
+            )
+        qs2 = NoticiaAggregated.objects.values('date') \
+            .annotate(
+                noticia_pageviews_total=Sum('pageviews'),
+                portal_comments_authorized_total=Sum('portal_comments_authorized'),
+                portal_comments_unchecked_total=Sum('portal_comments_unchecked')
+            )
+        qs3 = DailySummary.objects.values('date') \
+            .annotate(
+                atendimentos_total=Sum('atendimentos'),
+            )
+        df = pd.DataFrame(qs1).merge(pd.DataFrame(qs2), how='outer').merge(pd.DataFrame(qs3), how='outer')
+    else:
+        # Grouping is strictly speaking not necessary here. But we do it this way for consistency.
+        qs = ProposicaoAggregated.objects.filter(proposicao=proposicao).values('date') \
+            .annotate(
+                ficha_pageviews_total=Sum('ficha_pageviews'),
+                poll_votes_total=Sum('poll_votes'),
+                poll_comments_unchecked_total=Sum('poll_comments_unchecked'),
+                poll_comments_authorized_total=Sum('poll_comments_authorized'),
+                noticia_pageviews_total=Sum('noticia_pageviews')
+            )
+        df = pd.DataFrame(qs)
+
+    df['date'] = pd.to_datetime(df['date'])
+
+    df.sort_values('date', inplace=True)
+    
+    # Group data when showing by year or month
+    freq = None
+    if group_by == 'year':
+        freq = 'Y'
+    elif group_by == 'month':
+        freq = 'M'
+
+    if freq:
+        df = df.groupby(pd.Grouper(key='date', freq=freq)) \
+            .agg({
+                'ficha_pageviews_total': 'sum',
+                'poll_votes_total': 'sum',
+                'poll_comments_unchecked_total': 'sum',
+                'poll_comments_authorized_total': 'sum',
+                'portal_comments_unchecked_total': 'sum',
+                'portal_comments_authorized_total': 'sum',
+                'atendimentos_total': 'sum',
+                'noticia_pageviews_total': 'sum'
+            }) \
+            .reset_index()
+    
+
+    # Set api_params (this can be moved to the client-side in the future)
+    if group_by == 'year':
+        df['api_params'] = df.apply(lambda x: helpers.get_api_params(
+                x['date'].replace(day=1).replace(month=1),
+                x['date']
+        ), axis=1)
+
+        df['date'] = df['date'].dt.strftime('%Y')
+    elif group_by == 'month':
+        df['api_params'] = df.apply(lambda x: helpers.get_api_params(
+                x['date'].replace(day=1),
+                x['date']
+        ), axis=1)
+
+        df['date'] = df['date'].dt.strftime('%B %Y')
+    elif group_by == 'day':
+        df['api_params'] = df.apply(lambda x: helpers.get_api_params(
+                x['date'],
+                x['date']
+        ), axis=1)
+
+
+    if initial_date and final_date:
+        df = df[(df['date'] >= pd.to_datetime(initial_date)) & (df['date'] <= pd.to_datetime(final_date))]
+
+    df = df.fillna(0)
+
+    return df.to_dict('records')
+
 def summary_plot(group_by, height, proposicao=None, initial_date=None, final_date=None, subplots='all', show_legend=False):
     """
     group_by: 'day', 'month' or 'year'
@@ -100,7 +194,6 @@ def summary_plot(group_by, height, proposicao=None, initial_date=None, final_dat
                 x['date'],
                 x['date']
         ), axis=1)
-
 
     subplots_list = []
     if subplots == 'all' or 'ficha' in subplots:
@@ -248,7 +341,7 @@ def summary_plot(group_by, height, proposicao=None, initial_date=None, final_dat
 
     # config={'displayModeBar': False}, 
     plot_json = plotly.io.to_json(fig)
-    
+
     return plot_json
 
 def poll_votes(proposicao):
@@ -414,7 +507,7 @@ def proposicao_heatmap(proposicao):
 
     return values
 
-def enquetes_temas(initial_date, final_date):
+def enquetes_temas(initial_date, final_date, plot=True):
     metric_field = 'poll_votes'
     dimension_field = 'proposicao__tema__nome'
 
@@ -425,11 +518,17 @@ def enquetes_temas(initial_date, final_date):
     df_sum = ProposicaoAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
     if df_dimension is not None and df_sum is not None:
-        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Votos nas enquetes")
+        if plot:
+            return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Votos nas enquetes")
+        else:        
+            return {
+                'dimension': df_dimension.to_dict('records'),
+                'sum': df_sum.to_dict('records')
+            }
     else:
         return None
 
-def proposicoes_temas(initial_date, final_date):
+def proposicoes_temas(initial_date, final_date, plot=True):
     metric_field = 'ficha_pageviews'
     dimension_field = 'proposicao__tema__nome'
 
@@ -440,12 +539,18 @@ def proposicoes_temas(initial_date, final_date):
     df_sum = ProposicaoAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
     if df_dimension is not None and df_sum is not None:
-        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Acessos às proposições")
+        if plot:
+            return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Acessos às proposições")
+        else:
+            return {
+                'dimension': df_dimension.to_dict('records'),
+                'sum': df_sum.to_dict('records')
+            }
     else:
         return None
 
 
-def noticias_temas(initial_date, final_date):
+def noticias_temas(initial_date, final_date, plot=True):
     metric_field = 'pageviews'
     dimension_field = 'noticia__tema_principal__titulo'
 
@@ -456,11 +561,17 @@ def noticias_temas(initial_date, final_date):
     df_sum = NoticiaAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
     if df_dimension is not None and df_sum is not None:
-        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Acessos às notícias")
+        if plot:
+            return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Acessos às notícias")
+        else:
+            return {
+                'dimension': df_dimension.to_dict('records'),
+                'sum': df_sum.to_dict('records')
+            }
     else:
         return None
 
-def noticias_tags(initial_date, final_date):
+def noticias_tags(initial_date, final_date, plot=True):
     metric_field = 'pageviews'
     dimension_field = 'noticia__tags_conteudo__nome'
 
@@ -471,7 +582,13 @@ def noticias_tags(initial_date, final_date):
     df_sum = NoticiaAggregated.objects.get_metric_date_df(initial_date, final_date, metric_field)
 
     if df_dimension is not None and df_sum is not None:
-        return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Acessos às notícias")
+        if plot:
+            return raiox_anual_plot(initial_date, final_date, df_dimension, df_sum, dimension_field, metric_field, "Acessos às notícias")
+        else:
+            return {
+                'dimension': df_dimension.to_dict('records'),
+                'sum': df_sum.to_dict('records')
+            }
     else:
         return None
 

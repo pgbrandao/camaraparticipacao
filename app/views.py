@@ -31,6 +31,41 @@ def index(request):
 
     return render(request, 'pages/index.html', locals())
 
+
+def api_relatorio_consolidado(request):
+    year = request.GET.get('year')
+    month_year = request.GET.get('month_year')
+    period_type = request.GET.get('period_type') or 'year'
+
+    initial_date = None
+    final_date = None
+
+    if period_type == 'month' and month_year:
+        dt = datetime.datetime.strptime(month_year, '%m-%Y')
+        _, num_days = calendar.monthrange(
+            int(dt.strftime('%Y')), int(dt.strftime('%m')))
+
+        initial_date = dt
+        final_date = dt.replace(day=num_days)
+
+        period_humanized = datetime.datetime.strftime(initial_date, '%B/%Y')
+
+    elif period_type == 'year' and year:
+        initial_date = datetime.date(year=int(year), month=1, day=1)
+        final_date = datetime.date(year=int(year), month=12, day=31)
+
+        period_humanized = datetime.datetime.strftime(initial_date, '%Y')
+
+    if initial_date and final_date:
+        stats = reports.api_relatorio_consolidado(initial_date, final_date)
+
+        response = JsonResponse(stats)
+        response["Access-Control-Allow-Origin"] = "*"
+        response["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+        response["Access-Control-Max-Age"] = "1000"
+        response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
+        return response
+
 def api_top_noticias(request, initial_date, final_date=None):
     initial_date = datetime.datetime.strptime(initial_date, settings.STRFTIME_SHORT_DATE_FORMAT_URL).date()
 
@@ -47,10 +82,15 @@ def api_top_noticias(request, initial_date, final_date=None):
 
     stats = reports.api_top_noticias(initial_date, final_date)
 
-    return JsonResponse({
+    response = JsonResponse({
         **params,
         'rows': stats['rows']
     })
+    response["Access-Control-Allow-Origin"] = "*"
+    response["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+    response["Access-Control-Max-Age"] = "1000"
+    response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
+    return response
 
 
 def api_top_proposicoes(request, initial_date, final_date=None):
@@ -70,10 +110,15 @@ def api_top_proposicoes(request, initial_date, final_date=None):
 
     stats = reports.api_top_proposicoes(initial_date, final_date)
 
-    return JsonResponse({
+    response = JsonResponse({
         **params,
         'rows': stats['rows']
     })
+    response["Access-Control-Allow-Origin"] = "*"
+    response["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+    response["Access-Control-Max-Age"] = "1000"
+    response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
+    return response
 
 def enquetes_temas(request, year=None):
     if not year:
@@ -192,20 +237,7 @@ def noticias_tags(request, year=None):
     view_name = 'noticias_tags'
     return render(request, 'pages/noticias_tags.html', locals())
 
-def relatorios_index(request):
-    return render(request, 'pages/relatorio/index.html', locals())
-
-def relatorio_ano(request, year):
-    initial_date = datetime.date(year=int(year), month=1, day=1)
-    final_date = datetime.date(year=int(year), month=12, day=31)
-
-    period_humanized = datetime.datetime.strftime(initial_date, '%Y')
-
-    stats = reports.relatorio_consolidado(initial_date, final_date)
-
-    return render(request, 'pages/relatorio/custom/{}.html'.format(year), locals())
-    
-def relatorio_consolidado(request, custom):
+def relatorio_consolidado(request):
     year = request.GET.get('year')
     month_year = request.GET.get('month_year')
     period_type = request.GET.get('period_type') or 'year'

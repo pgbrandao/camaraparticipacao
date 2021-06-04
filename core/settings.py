@@ -21,7 +21,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Base path which will be prepended to all URLs. Should include trailing slash
 DASHBOARD_BASE_PATH = os.environ.get('DASHBOARD_BASE_PATH', default='/')
-REPORTS_BASE_PATH = os.environ.get('REPORTS_BASE_PATH', default='/')
 
 LOGIN_URL = DASHBOARD_BASE_PATH + 'login/'
 

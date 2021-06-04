@@ -9,7 +9,17 @@ from django.contrib.auth.views import LoginView
 
 
 dashboard_urls = [
+
+    # API urls (used within Django and from camara-participacao-ui)
+    path('api/relatorio-consolidado/', views.api_relatorio_consolidado, name='api_relatorio_consolidado'),
+    re_path(r'api/top-proposicoes/(?:(?P<initial_date>[\d-]+)/)?(?:(?P<final_date>[\d-]+)/)?$', views.api_top_proposicoes, name='api_top_proposicoes'),
+    re_path(r'api/top-noticias/(?:(?P<initial_date>[\d-]+)/)?(?:(?P<final_date>[\d-]+)/)?$', views.api_top_noticias, name='api_top_noticias'),
+
+
+    # Django report pages
     path('', views.index, name='index'),
+
+    path('relatorio-consolidado/', views.relatorio_consolidado, name='relatorio_consolidado'),
 
     re_path(r'enquetes/temas/(?:(?P<year>\d+)/)?$', views.enquetes_temas, name='enquetes_temas'),
     path('enquetes/busca-data/', views.enquetes_busca_data, name='enquetes_busca_data'),
@@ -23,23 +33,13 @@ dashboard_urls = [
     re_path(r'noticias/temas/(?:(?P<year>\d+)/)?$', views.noticias_temas, name='noticias_temas'),
     re_path(r'noticias/tags/(?:(?P<year>\d+)/)?$', views.noticias_tags, name='noticias_tags'),
 
-    path('relatorio-consolidado/', views.relatorio_consolidado, {'custom': False}, name='relatorio_consolidado'),
 
-    re_path(r'api/top-proposicoes/(?:(?P<initial_date>[\d-]+)/)?(?:(?P<final_date>[\d-]+)/)?$', views.api_top_proposicoes, name='api_top_proposicoes'),
-    re_path(r'api/top-noticias/(?:(?P<initial_date>[\d-]+)/)?(?:(?P<final_date>[\d-]+)/)?$', views.api_top_noticias, name='api_top_noticias'),
 
     path('login/', LoginView.as_view(template_name='admin/login.html')),
 ]
 
-reports_urls = [
-    path('', views.relatorios_index, name='relatorios_index'),
-    path('<int:year>/', views.relatorio_ano, name='relatorio_ano'),
-]
-
 dashboard_prefix = re.search(r'/(.*)', settings.DASHBOARD_BASE_PATH).group(1)
-reports_prefix = re.search(r'/(.*)', settings.REPORTS_BASE_PATH).group(1)
 
 urlpatterns = [
     path(dashboard_prefix, include(dashboard_urls)),
-    path(reports_prefix, include(reports_urls)),
 ]
